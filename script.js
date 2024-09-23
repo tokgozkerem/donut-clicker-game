@@ -383,7 +383,7 @@ donut.addEventListener("click", (event) => {
 function createFallingDonut(x, y) {
   // Yeni bir donut oluştur
   const fallingDonut = document.createElement("img");
-  fallingDonut.src = "img/DonutPixelArt.png";
+  fallingDonut.src = "img/donutPixelArt.png";
   fallingDonut.classList.add("falling-donut");
 
   // Donut'un başlangıç pozisyonunu tıklanan yere göre ayarla
