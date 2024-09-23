@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Donut Clicker</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="img/donutPixelArt.ico" type="image/x-icon" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- Donut Kısmı -->
+      <div class="donut-container">
+        <p id="bakery-name"></p>
+        <p id="donut-count">0 donuts</p>
+        <p id="per-second">per second: 0</p>
+        <div class="donut-wrapper">
+          <img src="img/donut.png" alt="Donut" id="donut" />
+          <div id="cursor-container"></div>
+          <!-- Cursorlar bu alana eklenecek -->
+        </div>
+      </div>
+      <!-- Store Bölümü -->
+      <div id="section-right">
+        <div class="store">
+          <div id="store-title" class="title">Store</div>
+          <div id="upgrade-container">
+            <div id="upgrade-list">
+              <!-- Burada upgrade'ler görünecek -->
+            </div>
+          </div>
+
+          <!-- Satın Alma Seçenekleri -->
+          <div class="purchase-options">
+            <button onclick="setPurchaseAmount(1)">1</button>
+            <button onclick="setPurchaseAmount(10)">10</button>
+            <button onclick="setPurchaseAmount(100)">100</button>
+          </div>
+
+          <!-- Cursor -->
+          <div
+            class="store-item"
+            data-item="cursor"
+            onclick="buyItem('cursor')"
+          >
+            <div class="item-img">
+              <img src="img/Designer.png" alt="Cursor" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Cursor</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="cursorCost">15</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalCursors" class="total">0</p>
+            </div>
+          </div>
+
+          <!-- Baker -->
+          <div class="store-item" data-item="baker" onclick="buyItem('baker')">
+            <div class="item-img">
+              <img src="img/Baker.png" alt="Baker" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Baker</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="bakerCost">100</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalBakers" class="total">0</p>
+            </div>
+          </div>
+
+          <!-- Farm -->
+          <div class="store-item" data-item="farm" onclick="buyItem('farm')">
+            <div class="item-img">
+              <img src="img/donutFarm.png" alt="Farm" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Farm</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="farmCost">1000</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalFarms" class="total">0</p>
+            </div>
+          </div>
+
+          <!-- Mine -->
+          <div class="store-item" data-item="mine" onclick="buyItem('mine')">
+            <div class="item-img mine">
+              <img src="img/mineDonut.png" alt="mineDonut" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Mine</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="mineCost">15000</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalMines" class="total">0</p>
+            </div>
+          </div>
+
+          <!-- Factory -->
+          <div
+            class="store-item"
+            data-item="factory"
+            onclick="buyItem('factory')"
+          >
+            <div class="item-img">
+              <img src="img/donutFactoryNew.png" alt="Factory" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Factory</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="factoryCost">65000</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalFactories" class="total">0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button id="reset-button">Reset</button>
+    <script src="script.js"></script>
+  </body>
+</html>
