@@ -88,13 +88,20 @@ const items = {
     costMultiplier: 1.1,
     production: 215,
   },
+  portal: {
+    name: "Portal",
+    count: 0,
+    baseCost: 250000,
+    costMultiplier: 1.1,
+    production: 575,
+  },
 };
 
 // Upgrade'ler her item için dizi şeklinde yapılandırılmış veri
 const upgrades = {
   cursor: [
     {
-      name: "Cursor Upgrade 1",
+      name: "First Upgrade!",
       cost: 100,
       multiplier: 2,
       purchased: false,
@@ -102,84 +109,340 @@ const upgrades = {
       img: "cursorUpgrade.png",
     },
     {
-      name: "Cursor Upgrade 2",
+      name: "Tidal Surge",
       cost: 500,
       multiplier: 2,
       purchased: false,
-      requirement: 10,
+      requirement: 5,
       img: "cursorUpgrade-2.png",
+    },
+    {
+      name: "Blazing Touch",
+      cost: 2500,
+      multiplier: 2,
+      purchased: false,
+      requirement: 15,
+      img: "cursorUpgrade-3.png",
+    },
+    {
+      name: "Abyssal Grasp",
+      cost: 10000,
+      multiplier: 2,
+      purchased: false,
+      requirement: 25,
+      img: "cursorUpgrade-4.png",
+    },
+    {
+      name: "undefined",
+      cost: 50000,
+      multiplier: 2,
+      purchased: false,
+      requirement: 35,
+      img: "cursorUpgrade-5.png",
     },
   ],
   baker: [
     {
-      name: "Baker Upgrade 1",
+      name: "FlameBaker",
       cost: 1000,
       multiplier: 2,
       purchased: false,
-      requirement: 5,
+      requirement: 1,
       img: "bakerUpgrade-1.png",
     },
     {
-      name: "Baker Upgrade 2",
+      name: "ShadowBaker",
       cost: 50000,
       multiplier: 3,
       purchased: false,
-      requirement: 20,
+      requirement: 5,
       img: "bakerUpgrade-2.png",
+    },
+    {
+      name: "TitanBaker",
+      cost: 250000,
+      multiplier: 4,
+      purchased: false,
+      requirement: 50,
+      img: "bakerUpgrade-3.png",
+    },
+    {
+      name: "NebulaBaker",
+      cost: 1000000,
+      multiplier: 5,
+      purchased: false,
+      requirement: 100,
+      img: "bakerUpgrade-4.png",
+    },
+    {
+      name: "GalacticBaker",
+      cost: 5000000,
+      multiplier: 6,
+      purchased: false,
+      requirement: 500,
+      img: "bakerUpgrade-5.png",
+    },
+  ],
+  farm: [
+    {
+      name: "Harvest Plains",
+      cost: 5000,
+      multiplier: 2,
+      purchased: false,
+      requirement: 1,
+      img: "farmUpgrade-1.png",
+    },
+    {
+      name: "Golden Acre",
+      cost: 250000,
+      multiplier: 3,
+      purchased: false,
+      requirement: 5,
+      img: "farmUpgrade-2.png",
+    },
+    {
+      name: "Elder Grove",
+      cost: 1250000,
+      multiplier: 4,
+      purchased: false,
+      requirement: 50,
+      img: "farmUpgrade-3.png",
+    },
+    {
+      name: "Ironroot Fields",
+      cost: 5000000,
+      multiplier: 5,
+      purchased: false,
+      requirement: 100,
+      img: "farmUpgrade-4.png",
+    },
+    {
+      name: "GalacticFarm",
+      cost: 25000000,
+      multiplier: 6,
+      purchased: false,
+      requirement: 500,
+      img: "farmUpgrade-5.png",
+    },
+  ],
+  mine: [
+    {
+      name: "Harvest Plains",
+      cost: 20000,
+      multiplier: 2,
+      purchased: false,
+      requirement: 1,
+      img: "mineUpgrade-1.png",
+    },
+    {
+      name: "Golden Acre",
+      cost: 1000000,
+      multiplier: 3,
+      purchased: false,
+      requirement: 5,
+      img: "mineUpgrade-2.png",
+    },
+    {
+      name: "Elder Grove",
+      cost: 5000000,
+      multiplier: 4,
+      purchased: false,
+      requirement: 50,
+      img: "mineUpgrade-3.png",
+    },
+    {
+      name: "Ironroot Fields",
+      cost: 20000000,
+      multiplier: 5,
+      purchased: false,
+      requirement: 100,
+      img: "mineUpgrade-4.png",
+    },
+    {
+      name: "Skybound Farms",
+      cost: 100000000,
+      multiplier: 6,
+      purchased: false,
+      requirement: 500,
+      img: "mineUpgrade-5.png",
+    },
+  ],
+  factory: [
+    {
+      name: "FlameFactory",
+      cost: 50000,
+      multiplier: 2,
+      purchased: false,
+      requirement: 1,
+      img: "factoryUpgrade-1.png",
+    },
+    {
+      name: "ShadowFactory",
+      cost: 2500000,
+      multiplier: 3,
+      purchased: false,
+      requirement: 5,
+      img: "factoryUpgrade-2.png",
+    },
+    {
+      name: "TitanFactory",
+      cost: 12500000,
+      multiplier: 4,
+      purchased: false,
+      requirement: 50,
+      img: "factoryUpgrade-3.png",
+    },
+    {
+      name: "NebulaFactory",
+      cost: 50000000,
+      multiplier: 5,
+      purchased: false,
+      requirement: 100,
+      img: "factoryUpgrade-4.png",
+    },
+    {
+      name: "GalacticFactory",
+      cost: 250000000,
+      multiplier: 6,
+      purchased: false,
+      requirement: 500,
+      img: "factoryUpgrade-5.png",
     },
   ],
 };
 
-let donutCount = 0;
+let donutCount = 33399330;
 let accumulator = 0;
 const updateInterval = 100;
 const donut = document.getElementById("donut");
 const counter = document.getElementById("donut-count");
 const perSecondDisplay = document.getElementById("per-second");
 
+// Upgrade'leri gösteren fonksiyonda hover olaylarını ekleyelim
 function showUpgrades() {
   const upgradeList = document.getElementById("upgrade-list");
-  const existingUpgrades = Array.from(upgradeList.children); // Mevcut upgrade'leri saklayın
+  const existingUpgrades = Array.from(upgradeList.children);
+
+  let allUpgrades = [];
 
   for (let key in upgrades) {
-    const itemUpgrades = upgrades[key]; // Bu item için upgrade'ler
+    const itemUpgrades = upgrades[key];
 
     itemUpgrades.forEach((upgrade, index) => {
-      // Eğer upgrade satın alınmışsa onu listeye eklemeyin
       if (upgrade.purchased) return;
 
-      // Şartlar sağlandığında upgrade'leri göster
       if (items[key].count >= upgrade.requirement) {
-        const existingUpgrade = existingUpgrades.find(
-          (div) =>
-            div.dataset.key === key && div.dataset.index === String(index)
-        );
-
-        if (!existingUpgrade) {
-          const upgradeDiv = document.createElement("div");
-          upgradeDiv.classList.add("upgrade");
-          upgradeDiv.dataset.key = key; // upgrade'in anahtarı
-          upgradeDiv.dataset.index = String(index); // upgrade'in sırası
-
-          // Görsel tıklanabilir hale getirilir
-          upgradeDiv.addEventListener("click", () => {
-            buyUpgrade(key, index);
-          });
-
-          upgradeDiv.innerHTML = `<img src="img/${upgrade.img}" alt="${upgrade.name}" />`;
-          upgradeList.appendChild(upgradeDiv);
-        }
-
-        // Paranın yetip yetmediğini kontrol et ve stil ekle/kaldır
-        if (donutCount >= upgrade.cost) {
-          existingUpgrade?.classList.remove("insufficient-funds");
-        } else {
-          existingUpgrade?.classList.add("insufficient-funds");
-        }
+        allUpgrades.push({ key, index, upgrade });
       }
     });
   }
+
+  // Upgrade'leri fiyata göre sırala (küçükten büyüğe)
+  allUpgrades.sort((a, b) => a.upgrade.cost - b.upgrade.cost);
+
+  // DOM'daki upgrade'leri yönet
+  allUpgrades.forEach(({ key, index, upgrade }, position) => {
+    let existingUpgrade = existingUpgrades.find(
+      (div) => div.dataset.key === key && div.dataset.index === String(index)
+    );
+
+    if (!existingUpgrade) {
+      const upgradeDiv = document.createElement("div");
+      upgradeDiv.classList.add("upgrade");
+      upgradeDiv.dataset.key = key;
+      upgradeDiv.dataset.index = String(index);
+
+      // Hover events
+      upgradeDiv.addEventListener("mouseenter", () => {
+        showInfoPanel(upgrade, key);
+      });
+
+      upgradeDiv.addEventListener("mouseleave", hideInfoPanel);
+
+      upgradeDiv.addEventListener("click", () => {
+        buyUpgrade(key, index);
+        hideInfoPanel();
+      });
+
+      upgradeDiv.innerHTML = `<img src="img/${upgrade.img}" alt="${upgrade.name}" />`;
+
+      // Donut sayısına göre yeterli mi kontrol et
+      if (donutCount >= upgrade.cost) {
+        upgradeDiv.classList.remove("insufficient-funds");
+      } else {
+        upgradeDiv.classList.add("insufficient-funds");
+      }
+
+      // Sıralamaya göre upgrade'i doğru pozisyona yerleştir
+      if (position === 0) {
+        upgradeList.prepend(upgradeDiv); // Listenin başına ekle
+      } else {
+        upgradeList.insertBefore(upgradeDiv, upgradeList.children[position]);
+      }
+    } else {
+      // Mevcut upgrade'i güncelle (sadece gerekli yerlerini)
+      if (donutCount >= upgrade.cost) {
+        existingUpgrade.classList.remove("insufficient-funds");
+      } else {
+        existingUpgrade.classList.add("insufficient-funds");
+      }
+
+      // Eğer yanlış sıradaysa doğru pozisyona taşı
+      const currentPos = existingUpgrades.indexOf(existingUpgrade);
+      if (currentPos !== position) {
+        upgradeList.insertBefore(
+          existingUpgrade,
+          upgradeList.children[position]
+        );
+      }
+    }
+  });
 }
+
+function showInfoPanel(upgrade, itemName) {
+  const infoPanel = document.getElementById("info-panel");
+
+  const formattedItemName =
+    itemName.charAt(0).toUpperCase() + itemName.slice(1);
+
+  const costColor = donutCount >= upgrade.cost ? "green" : "red";
+
+  infoPanel.innerHTML = `
+    <div class="header">
+      <img src="img/${upgrade.img}" alt="${upgrade.name}">
+      <h4>${upgrade.name}</h4>
+      <span class="cost" style="color: ${costColor}; display: inline-flex; align-items: center;">
+      <img src="img/donutMoney.png" alt="Donut Money" style="height: 12px; width: 12px; margin-right: 5px;">
+      ${upgrade.cost}
+    </span>
+    </div>
+    <p class ='efficiency-text'>${formattedItemName}s are <strong>twice</strong> as efficient</p>
+    <p class="description">"What's a life to a gigaton of donuts?"</p>
+  `;
+
+  infoPanel.style.display = "block";
+
+  const upgradeList = document.getElementById("upgrade-list");
+  const rect = upgradeList.getBoundingClientRect();
+  infoPanel.style.left = `${rect.left - infoPanel.offsetWidth - 10}px`;
+  infoPanel.style.top = `${rect.top}px`;
+}
+
+function hideInfoPanel() {
+  const infoPanel = document.getElementById("info-panel");
+  infoPanel.style.display = "none";
+}
+
+// Upgrade hover
+document.querySelectorAll(".upgrade").forEach((upgradeDiv) => {
+  upgradeDiv.addEventListener("mouseover", (event) => {
+    const key = upgradeDiv.dataset.key;
+    const index = upgradeDiv.dataset.index;
+    showInfoPanel(upgrades[key][index], event);
+  });
+
+  upgradeDiv.addEventListener("mouseout", hideInfoPanel);
+});
 
 function buyItem(itemKey) {
   const item = items[itemKey];

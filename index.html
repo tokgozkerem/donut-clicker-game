@@ -16,6 +16,11 @@
   </head>
   <body>
     <div class="game-container">
+      <div id="info-panel" class="info-panel">
+        <h4 id="info-name"></h4>
+        <p id="info-cost"></p>
+        <p id="info-feature"></p>
+      </div>
       <!-- Donut Kısmı -->
       <div class="donut-container">
         <p id="bakery-name"></p>
@@ -134,6 +139,27 @@
             </div>
             <div class="item-total">
               <p id="totalFactories" class="total">0</p>
+            </div>
+          </div>
+
+          <!-- Portal -->
+          <div
+            class="store-item"
+            data-item="portal"
+            onclick="buyItem('portal')"
+          >
+            <div class="item-img">
+              <img src="img/donutPortal.png" alt="portalDonut" />
+            </div>
+            <div class="item-info">
+              <p class="item-name title">Portal</p>
+              <p class="item-cost">
+                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                <span id="portalCost">250000</span>
+              </p>
+            </div>
+            <div class="item-total">
+              <p id="totalPortals" class="total">0</p>
             </div>
           </div>
         </div>
