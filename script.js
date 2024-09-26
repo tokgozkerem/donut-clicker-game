@@ -311,7 +311,7 @@ const upgrades = {
   ],
 };
 
-let donutCount = 33399330;
+let donutCount = 0;
 let accumulator = 0;
 const updateInterval = 100;
 const donut = document.getElementById("donut");
