@@ -1,6 +1,8 @@
+html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
   background: linear-gradient(135deg, #fccb72, #fd9193);
   font-family: "Playpen Sans", cursive;
   font-optical-sizing: auto;
@@ -10,9 +12,10 @@ body {
 
 .game-container {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   z-index: 1;
 }
 .info-panel {
@@ -152,20 +155,6 @@ body {
   color: rgb(255, 0, 0);
 }
 
-#section-right {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 300px;
-  height: auto;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  background: #ffeab628;
-  border-left: 10px solid #ffeab6;
-  z-index: 25;
-}
-
 #upgrade-container {
   position: relative;
   display: flex;
@@ -230,57 +219,69 @@ body {
 .upgrade:hover {
   border-color: #ff8c00;
 }
+#section-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* Yatay kaydırmayı gizleyip dikey kaydırmayı aktif yap */
+  background: #ffeab628;
+  border-left: 10px solid #ffeab6;
+  z-index: 25;
+  max-height: 100vh; /* Ekran boyutuna göre dinamik yükseklik */
+  box-sizing: border-box; /* Kenar boşluklarını içeriden hesaplar */
+}
 
 #store-title {
-  position: relative;
-  width: 284px;
+  position: sticky; /* Sabitlenen konumda kalmasını sağlar */
+  top: 0;
+  width: 100%; /* Tüm alanı kaplasın */
   text-align: center;
   padding: 8px;
   font-size: 28px;
+
+  z-index: 30; /* Diğer elemanların üzerine çıksın */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Hafif gölge ver */
 }
+
 .title {
   font-size: 15px;
   text-shadow: 0px 1px 4px #000;
   color: #fff;
 }
 
+#buildings {
+  height: auto;
+}
+
 /* Store CSS */
 .store {
   position: relative;
-  right: 0;
-  top: 35%;
-  transform: translateY(-50%);
   width: 300px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
+
 .store-container {
-  position: relative;
-  width: 300px;
+  width: 100%; /* Yüzde bazlı yaparak mobilde daha uyumlu olur */
   padding: 20px;
   background-color: #f0f0f0;
   border: 2px solid #ccc;
   border-radius: 10px;
-}
-
-.store-container:after {
-  display: block;
-  height: 64px;
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -64px;
+  box-sizing: border-box;
 }
 
 .store-item {
   display: flex;
   align-items: center;
   padding: 10px;
-  padding-left: 0;
   border: 1px solid #ffeab6;
   background-color: #b4845c;
   transition: background-color 0.3s ease;
   height: 55px;
   overflow: hidden;
+  width: auto;
 }
 .store-item:hover {
   background-color: #b9a18d;
@@ -293,6 +294,7 @@ body {
   letter-spacing: -1px;
   color: white;
 }
+
 /* Genel span stilleri */
 .store-item span {
   font-size: 14px;
@@ -301,24 +303,27 @@ body {
 .store-item span.affordable {
   color: #6f6;
 }
+
 .store-item span.insufficient-funds {
   color: rgb(255, 0, 0);
 }
+
 .item-cost img {
   height: 15px;
   width: 15px;
 }
+
 .item-img {
-  flex-shrink: 0; /* Resmin boyutu div'e uymadığı zaman daralmasını engeller */
-  overflow: hidden; /* Taşan kısımları gizlemek için */
-  width: 65px; /* Resmin genişliğini belirle, istediğin kadar artırabilirsin */
-  height: 65px; /* Resmin yüksekliğini sabit tut */
+  flex-shrink: 0;
+  overflow: hidden;
+  width: 65px;
+  height: 65px;
 }
 
 .item-img img {
-  object-fit: cover; /* Resmi kapsama göre kırp */
-  width: 100%; /* Genişliği tam doldur */
-  height: 100%; /* Yüksekliği tam doldur */
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
   background-repeat: no-repeat;
 }
 
@@ -480,4 +485,60 @@ button {
 
 .bounce {
   animation: bounce 0.3s ease;
+}
+
+/* Telefon ve küçük tabletler için */
+@media (max-width: 768px) {
+  .game-container {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start; /* Üst hizalamayı sağla */
+  }
+
+  .donut-container {
+    width: 45vw;
+    height: auto;
+    margin-left: -105px;
+    top: 45%;
+  }
+
+  #donut {
+    width: 100%;
+    height: auto;
+  }
+
+  #section-right {
+    width: 300px;
+    margin-right: 5px; /* Sağdan biraz boşluk bırak */
+    top: 5%;
+    max-height: 100vh; /* Ekran yüksekliğinin %75'i kadar yükseklik ayarla */
+    overflow-y: auto; /* Kaydırma özelliğini aktif tut */
+  }
+
+  /* İçerikleri optimize etmek için daha küçük boyutlar */
+  .store-item {
+    font-size: 14px; /* Biraz daha büyük font boyutu */
+    width: 300px;
+  }
+  .item-total {
+    opacity: 0.5;
+    margin-right: 115px;
+  }
+}
+
+/* Daha küçük telefonlar için (480px ve altı) */
+@media (max-width: 480px) {
+  .donut-wrapper {
+    width: 40vw;
+    height: auto;
+  }
+
+  #section-right {
+    width: 55vw; /* Küçük ekranlar için section-right'ı genişlet */
+    max-height: 60vh; /* Ekran yüksekliğini biraz daha küçült */
+  }
+
+  .store-item {
+    font-size: 12px; /* Daha küçük font boyutu */
+  }
 }

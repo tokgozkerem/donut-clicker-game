@@ -71,29 +71,43 @@ const items = {
     name: "Farm",
     count: 0,
     baseCost: 1000,
-    costMultiplier: 1.13,
+    costMultiplier: 1.1447,
     production: 7,
   },
   mine: {
     name: "Mine",
     count: 0,
-    baseCost: 15000,
-    costMultiplier: 1.12,
+    baseCost: 14500,
+    costMultiplier: 1.15,
     production: 50,
   },
   factory: {
     name: "Factory",
     count: 0,
-    baseCost: 65000,
-    costMultiplier: 1.1,
-    production: 215,
+    baseCost: 76500,
+    costMultiplier: 1.1557,
+    production: 255,
   },
   portal: {
     name: "Portal",
     count: 0,
-    baseCost: 250000,
-    costMultiplier: 1.1,
-    production: 575,
+    baseCost: 367500,
+    costMultiplier: 1.16,
+    production: 1225,
+  },
+  powerPlant: {
+    name: "Power Plant",
+    count: 0,
+    baseCost: 2475000,
+    costMultiplier: 1.2167,
+    production: 8250,
+  },
+  neuralNetworkBakery: {
+    name: "Neural Network Bakery",
+    count: 0,
+    baseCost: 225000000,
+    costMultiplier: 1.4777,
+    production: 36750,
   },
 };
 
@@ -133,7 +147,7 @@ const upgrades = {
       img: "cursorUpgrade-4.png",
     },
     {
-      name: "undefined",
+      name: "Golden Cursor",
       cost: 50000,
       multiplier: 2,
       purchased: false,
@@ -143,7 +157,7 @@ const upgrades = {
   ],
   baker: [
     {
-      name: "FlameBaker",
+      name: "Crustaire",
       cost: 1000,
       multiplier: 2,
       purchased: false,
@@ -151,35 +165,35 @@ const upgrades = {
       img: "bakerUpgrade-1.png",
     },
     {
-      name: "ShadowBaker",
+      name: "Doughmire",
       cost: 50000,
-      multiplier: 3,
+      multiplier: 2,
       purchased: false,
       requirement: 5,
       img: "bakerUpgrade-2.png",
     },
     {
-      name: "TitanBaker",
+      name: "Flourist",
       cost: 250000,
-      multiplier: 4,
+      multiplier: 2,
       purchased: false,
-      requirement: 50,
+      requirement: 15,
       img: "bakerUpgrade-3.png",
     },
     {
-      name: "NebulaBaker",
+      name: "Batteron",
       cost: 1000000,
-      multiplier: 5,
+      multiplier: 2,
       purchased: false,
-      requirement: 100,
+      requirement: 25,
       img: "bakerUpgrade-4.png",
     },
     {
-      name: "GalacticBaker",
+      name: "Crèmeor",
       cost: 5000000,
-      multiplier: 6,
+      multiplier: 2,
       purchased: false,
-      requirement: 500,
+      requirement: 45,
       img: "bakerUpgrade-5.png",
     },
   ],
@@ -195,7 +209,7 @@ const upgrades = {
     {
       name: "Golden Acre",
       cost: 250000,
-      multiplier: 3,
+      multiplier: 2,
       purchased: false,
       requirement: 5,
       img: "farmUpgrade-2.png",
@@ -203,25 +217,25 @@ const upgrades = {
     {
       name: "Elder Grove",
       cost: 1250000,
-      multiplier: 4,
+      multiplier: 2,
       purchased: false,
-      requirement: 50,
+      requirement: 20,
       img: "farmUpgrade-3.png",
     },
     {
       name: "Ironroot Fields",
       cost: 5000000,
-      multiplier: 5,
+      multiplier: 2,
       purchased: false,
-      requirement: 100,
+      requirement: 30,
       img: "farmUpgrade-4.png",
     },
     {
-      name: "GalacticFarm",
+      name: "Magicland",
       cost: 25000000,
-      multiplier: 6,
+      multiplier: 2,
       purchased: false,
-      requirement: 500,
+      requirement: 50,
       img: "farmUpgrade-5.png",
     },
   ],
@@ -318,6 +332,28 @@ const donut = document.getElementById("donut");
 const counter = document.getElementById("donut-count");
 const perSecondDisplay = document.getElementById("per-second");
 
+function formatNumber(number, type = "count") {
+  if (type === "perSecond") {
+    // Eğer type 'perSecond' ise, 1 ondalık basamağa kadar göster
+    return number.toFixed(1).replace(/\.0$/, ""); // Eğer 0.0 gibi bir sonuç varsa, ".0" kısmını kaldır
+  }
+
+  if (number < 1000) {
+    return Math.floor(number).toString();
+  } else if (number < 1000000) {
+    // Virgülden sonrası olmadan, binlik ayracı olarak nokta kullan
+    return Math.floor(number)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  } else if (number < 1000000000) {
+    // Milyon cinsinden, 3 ondalık basamak, gereksiz sıfırları kaldır
+    return (number / 1000000).toFixed(2).replace(/\.?0+$/, "") + " million";
+  } else {
+    // Milyar cinsinden, 3 ondalık basamak
+    return (number / 1000000000).toFixed(2).replace(/\.?0+$/, "") + " billion";
+  }
+}
+
 // Upgrade'leri gösteren fonksiyonda hover olaylarını ekleyelim
 function showUpgrades() {
   const upgradeList = document.getElementById("upgrade-list");
@@ -364,7 +400,13 @@ function showUpgrades() {
         hideInfoPanel();
       });
 
-      upgradeDiv.innerHTML = `<img src="img/${upgrade.img}" alt="${upgrade.name}" />`;
+      // Maliyeti formatla ('cost' türünde)
+      const formattedCost = formatNumber(upgrade.cost, "cost");
+
+      upgradeDiv.innerHTML = `
+        <img src="img/${upgrade.img}" alt="${upgrade.name}" />
+
+      `;
 
       // Donut sayısına göre yeterli mi kontrol et
       if (donutCount >= upgrade.cost) {
@@ -387,6 +429,12 @@ function showUpgrades() {
         existingUpgrade.classList.add("insufficient-funds");
       }
 
+      // Maliyeti tekrar formatla ve güncelle
+      const upgradeCostElem = existingUpgrade.querySelector(".upgrade-cost");
+      if (upgradeCostElem) {
+        upgradeCostElem.textContent = formatNumber(upgrade.cost, "cost");
+      }
+
       // Eğer yanlış sıradaysa doğru pozisyona taşı
       const currentPos = existingUpgrades.indexOf(existingUpgrade);
       if (currentPos !== position) {
@@ -398,25 +446,76 @@ function showUpgrades() {
     }
   });
 }
+function updateDisplay() {
+  const counter = document.getElementById("donut-count");
+  const perSecondDisplay = document.getElementById("per-second");
 
+  if (!counter || !perSecondDisplay) return; // Elementler yoksa güncelleme yapma
+
+  // Donut sayısını formatla (count türünde)
+  counter.textContent = `${formatNumber(donutCount, "count")} donuts`;
+
+  // Saniyedeki üretimi formatla (ondalık basamaklı olarak)
+  perSecondDisplay.textContent = `per second: ${formatNumber(
+    calculatePerSecond(),
+    "perSecond"
+  )}`;
+
+  for (let key in items) {
+    const costElem = document.getElementById(`${key}Cost`);
+    const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
+
+    if (costElem) {
+      // Cost'u formatla ('cost' türünde)
+      costElem.textContent = formatNumber(items[key].baseCost, "cost");
+
+      // Donut sayısına bağlı olarak fiyatın rengini ve kararma efektini ayarla
+      if (donutCount < items[key].baseCost) {
+        costElem.classList.remove("affordable");
+        costElem.classList.add("insufficient-funds");
+        if (storeItem) {
+          storeItem.classList.add("insufficient-funds");
+        }
+      } else {
+        costElem.classList.remove("insufficient-funds");
+        costElem.classList.add("affordable");
+        if (storeItem) {
+          storeItem.classList.remove("insufficient-funds");
+        }
+      }
+    }
+
+    const totalElem = document.getElementById(`total${capitalize(key)}s`);
+    if (totalElem) {
+      // Toplam sayıyı formatla ('count' türünde)
+      totalElem.textContent = formatNumber(items[key].count, "count");
+    }
+  }
+
+  // Upgrade'lerin durumunu dinamik olarak güncelle
+  showUpgrades();
+}
 function showInfoPanel(upgrade, itemName) {
   const infoPanel = document.getElementById("info-panel");
 
   const formattedItemName =
     itemName.charAt(0).toUpperCase() + itemName.slice(1);
 
-  const costColor = donutCount >= upgrade.cost ? "green" : "red";
+  const costColor = donutCount >= upgrade.cost ? "#6f6" : "red";
+
+  // Maliyeti formatla ('cost' türünde)
+  const formattedCost = formatNumber(upgrade.cost, "cost");
 
   infoPanel.innerHTML = `
     <div class="header">
       <img src="img/${upgrade.img}" alt="${upgrade.name}">
       <h4>${upgrade.name}</h4>
       <span class="cost" style="color: ${costColor}; display: inline-flex; align-items: center;">
-      <img src="img/donutMoney.png" alt="Donut Money" style="height: 12px; width: 12px; margin-right: 5px;">
-      ${upgrade.cost}
-    </span>
+        <img src="img/donutMoney.png" alt="Donut Money" style="height: 12px; width: 12px; margin-right: 5px;">
+        ${formattedCost}
+      </span>
     </div>
-    <p class ='efficiency-text'>${formattedItemName}s are <strong>twice</strong> as efficient</p>
+    <p class='efficiency-text'>${formattedItemName}s are <strong>twice</strong> as efficient</p>
     <p class="description">"What's a life to a gigaton of donuts?"</p>
   `;
 
@@ -432,24 +531,13 @@ function hideInfoPanel() {
   const infoPanel = document.getElementById("info-panel");
   infoPanel.style.display = "none";
 }
-
-// Upgrade hover
-document.querySelectorAll(".upgrade").forEach((upgradeDiv) => {
-  upgradeDiv.addEventListener("mouseover", (event) => {
-    const key = upgradeDiv.dataset.key;
-    const index = upgradeDiv.dataset.index;
-    showInfoPanel(upgrades[key][index], event);
-  });
-
-  upgradeDiv.addEventListener("mouseout", hideInfoPanel);
-});
-
 function buyItem(itemKey) {
   const item = items[itemKey];
   if (donutCount >= Math.ceil(item.baseCost)) {
     donutCount -= item.baseCost;
     item.count++;
-    item.baseCost = Math.ceil(item.baseCost * item.costMultiplier);
+    item.baseCost = item.baseCost * item.costMultiplier;
+
     updateDisplay();
 
     showUpgrades();
@@ -485,6 +573,16 @@ function buyUpgrade(itemKey, upgradeIndex) {
     showUpgrades();
   }
 }
+// Upgrade hover
+document.querySelectorAll(".upgrade").forEach((upgradeDiv) => {
+  upgradeDiv.addEventListener("mouseover", (event) => {
+    const key = upgradeDiv.dataset.key;
+    const index = upgradeDiv.dataset.index;
+    showInfoPanel(upgrades[key][index], event);
+  });
+
+  upgradeDiv.addEventListener("mouseout", hideInfoPanel);
+});
 
 let currentCursorIndex = 0;
 let cursors = []; // global cursor arr
@@ -561,50 +659,6 @@ function startCursorAnimation() {
 // First cursor animation
 startCursorAnimation();
 
-function updateDisplay() {
-  const counter = document.getElementById("donut-count");
-  const perSecondDisplay = document.getElementById("per-second");
-
-  if (!counter || !perSecondDisplay) return; // Elementler yoksa güncelleme yapma
-
-  counter.textContent = `${donutCount} donuts`;
-  perSecondDisplay.textContent = `per second: ${calculatePerSecond().toFixed(
-    1
-  )}`;
-
-  for (let key in items) {
-    const costElem = document.getElementById(`${key}Cost`);
-    const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
-
-    if (costElem) {
-      costElem.textContent = items[key].baseCost.toFixed(0);
-
-      // Donut sayısına bağlı olarak fiyatın rengini ve kararma efektini ayarla
-      if (donutCount < items[key].baseCost) {
-        costElem.classList.remove("affordable");
-        costElem.classList.add("insufficient-funds"); // Kırmızı yap ve karart
-        if (storeItem) {
-          storeItem.classList.add("insufficient-funds"); // Store item'ı da karart
-        }
-      } else {
-        costElem.classList.remove("insufficient-funds");
-        costElem.classList.add("affordable");
-        if (storeItem) {
-          storeItem.classList.remove("insufficient-funds"); // Kararma efektini kaldır
-        }
-      }
-    }
-
-    const totalElem = document.getElementById(`total${capitalize(key)}s`);
-    if (totalElem) {
-      totalElem.textContent = items[key].count;
-    }
-  }
-
-  // Upgrade'lerin durumunu dinamik olarak güncelle
-  showUpgrades();
-}
-
 // Dinamik olarak isimlendirme
 function capitalize(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -634,7 +688,8 @@ donut.addEventListener("click", (event) => {
 
   const plusOne = document.createElement("div");
   plusOne.className = "plus-one";
-  plusOne.textContent = `+${clickValue}`;
+  // Click değerini formatla ('count' türünde)
+  plusOne.textContent = `+${formatNumber(clickValue, "count")}`;
   plusOne.style.left = `${event.clientX}px`;
   plusOne.style.top = `${event.clientY}px`;
 
@@ -643,6 +698,7 @@ donut.addEventListener("click", (event) => {
   createFallingDonut(event.clientX, event.clientY);
   updateDisplay();
 });
+
 function createFallingDonut(x, y) {
   // Yeni bir donut oluştur
   const fallingDonut = document.createElement("img");
@@ -769,64 +825,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
-  const donut = document.getElementById("donut");
-  const counter = document.getElementById("donut-count");
-  const perSecondDisplay = document.getElementById("per-second");
-
-  function updateDisplay() {
-    if (!counter || !perSecondDisplay) return; // Elementler yoksa güncelleme yapma
-
-    counter.textContent = `${donutCount} donuts`;
-    perSecondDisplay.textContent = `per second: ${calculatePerSecond().toFixed(
-      1
-    )}`;
-
-    for (let key in items) {
-      const costElem = document.getElementById(`${key}Cost`);
-
-      // Doğru ID'yi bulup güncelleyelim
-      let totalElemId = "";
-      if (key === "cursor") totalElemId = "totalCursors";
-      else if (key === "baker") totalElemId = "totalBakers";
-      else if (key === "farm") totalElemId = "totalFarms";
-      else if (key === "mine") totalElemId = "totalMines";
-      else if (key === "factory") totalElemId = "totalFactories";
-
-      const totalElem = document.getElementById(totalElemId);
-
-      if (costElem) {
-        costElem.textContent = items[key].baseCost.toFixed(0);
-      }
-      if (totalElem) {
-        totalElem.textContent = items[key].count;
-      }
-    }
-  }
-
-  // Diğer fonksiyonlar ve setInterval işlemlerini burada başlat
-
-  setInterval(() => {
-    const totalPerSecond = calculatePerSecond();
-    accumulator += totalPerSecond / 10;
-
-    while (accumulator >= 1) {
-      donutCount++;
-      accumulator--;
-    }
-
-    updateDisplay();
-  }, updateInterval);
-
-  for (let key in items) {
-    const item = items[key];
-    const storeItem = document.querySelector(
-      `.store-item[onclick="buy${capitalize(key)}()"]`
-    );
-
-    if (storeItem) {
-      storeItem.addEventListener("click", () => buyItem(key));
-    }
-  }
+  updateDisplay();
 });
 // Donut sayısını güncelleyip title'a yazdırma
 function updateTitleWithDonuts() {

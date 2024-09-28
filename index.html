@@ -48,118 +48,168 @@
             <button onclick="setPurchaseAmount(10)">10</button>
             <button onclick="setPurchaseAmount(100)">100</button>
           </div>
+          <div id="buildings">
+            <!-- Cursor -->
+            <div
+              class="store-item"
+              data-item="cursor"
+              onclick="buyItem('cursor')"
+            >
+              <div class="item-img">
+                <img src="img/Designer.png" alt="Cursor" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Cursor</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="cursorCost">15</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalCursors" class="total">0</p>
+              </div>
+            </div>
 
-          <!-- Cursor -->
-          <div
-            class="store-item"
-            data-item="cursor"
-            onclick="buyItem('cursor')"
-          >
-            <div class="item-img">
-              <img src="img/Designer.png" alt="Cursor" />
+            <!-- Baker -->
+            <div
+              class="store-item"
+              data-item="baker"
+              onclick="buyItem('baker')"
+            >
+              <div class="item-img">
+                <img src="img/Baker.png" alt="Baker" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Baker</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="bakerCost">100</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalBakers" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Cursor</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="cursorCost">15</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalCursors" class="total">0</p>
-            </div>
-          </div>
 
-          <!-- Baker -->
-          <div class="store-item" data-item="baker" onclick="buyItem('baker')">
-            <div class="item-img">
-              <img src="img/Baker.png" alt="Baker" />
+            <!-- Farm -->
+            <div class="store-item" data-item="farm" onclick="buyItem('farm')">
+              <div class="item-img">
+                <img src="img/donutFarm.png" alt="Farm" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Farm</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="farmCost">1000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalFarms" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Baker</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="bakerCost">100</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalBakers" class="total">0</p>
-            </div>
-          </div>
 
-          <!-- Farm -->
-          <div class="store-item" data-item="farm" onclick="buyItem('farm')">
-            <div class="item-img">
-              <img src="img/donutFarm.png" alt="Farm" />
+            <!-- Mine -->
+            <div class="store-item" data-item="mine" onclick="buyItem('mine')">
+              <div class="item-img mine">
+                <img src="img/donutMine.png" alt="mineDonut" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Mine</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="mineCost">15000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalMines" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Farm</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="farmCost">1000</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalFarms" class="total">0</p>
-            </div>
-          </div>
 
-          <!-- Mine -->
-          <div class="store-item" data-item="mine" onclick="buyItem('mine')">
-            <div class="item-img mine">
-              <img src="img/mineDonut.png" alt="mineDonut" />
+            <!-- Factory -->
+            <div
+              class="store-item"
+              data-item="factory"
+              onclick="buyItem('factory')"
+            >
+              <div class="item-img">
+                <img src="img/donutFactory.png" alt="Factory" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Factory</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="factoryCost">65000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalFactorys" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Mine</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="mineCost">15000</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalMines" class="total">0</p>
-            </div>
-          </div>
 
-          <!-- Factory -->
-          <div
-            class="store-item"
-            data-item="factory"
-            onclick="buyItem('factory')"
-          >
-            <div class="item-img">
-              <img src="img/donutFactoryNew.png" alt="Factory" />
+            <!-- Portal -->
+            <div
+              class="store-item"
+              data-item="portal"
+              onclick="buyItem('portal')"
+            >
+              <div class="item-img">
+                <img src="img/PortalDonutt.png" alt="portalDonut" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Portal</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="portalCost">250000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalPortals" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Factory</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="factoryCost">65000</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalFactories" class="total">0</p>
-            </div>
-          </div>
 
-          <!-- Portal -->
-          <div
-            class="store-item"
-            data-item="portal"
-            onclick="buyItem('portal')"
-          >
-            <div class="item-img">
-              <img src="img/donutPortal.png" alt="portalDonut" />
+            <!-- Power Plant -->
+            <div
+              class="store-item"
+              data-item="powerPlant"
+              onclick="buyItem('powerPlant')"
+            >
+              <div class="item-img">
+                <img src="img/donutPowerPlant.png" alt="powerPlantDonut" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Power Plant</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="powerPlantCost">625000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalPowerPlants" class="total">0</p>
+              </div>
             </div>
-            <div class="item-info">
-              <p class="item-name title">Portal</p>
-              <p class="item-cost">
-                <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                <span id="portalCost">250000</span>
-              </p>
-            </div>
-            <div class="item-total">
-              <p id="totalPortals" class="total">0</p>
+
+            <!-- Neural Network Bakery -->
+            <div
+              class="store-item"
+              data-item="neuralNetworkBakery"
+              onclick="buyItem('neuralNetworkBakery')"
+            >
+              <div class="item-img">
+                <img
+                  src="img/NeuralNetworkBakery.png"
+                  alt="neuralNetworkBakery"
+                />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Neural Network Bakery</p>
+                <p class="item-cost">
+                  <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+                  <span id="neuralNetworkBakeryCost">225000000</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalNeuralNetworkBakerys" class="total">0</p>
+              </div>
             </div>
           </div>
         </div>
