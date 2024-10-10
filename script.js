@@ -414,7 +414,7 @@ const items = {
   },
 };
 
-let donutCount = 16045305460;
+let donutCount = 0;
 let accumulator = 0;
 let totalDonutsEarned = 0;
 let lastUpdateTime = Date.now();
