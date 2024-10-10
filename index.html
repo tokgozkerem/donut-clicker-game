@@ -21,6 +21,74 @@
         <p id="info-cost"></p>
         <p id="info-feature"></p>
       </div>
+      <div id="item-info-panel" class="info-panel">
+        <div id="item-info-header">
+          <img
+            id="item-info-image"
+            src=""
+            alt="item image"
+            class="item-image"
+          />
+          <div id="item-info-text">
+            <h4 id="item-info-name"></h4>
+            <p id="item-info-owned"></p>
+          </div>
+          <p id="item-info-cost" class="item-cost"></p>
+        </div>
+        <p id="item-info-feature"></p>
+      </div>
+
+      <!-- Section Left -->
+      <div id="section-left">
+        <div id="page-title" class="title">Options</div>
+        <div class="page-content">
+          <div id="pages">
+            <div class="page-item" id="quests">
+              <div class="page-img">
+                <img src="img/quests.png" alt="Quests" />
+              </div>
+              <div class="page-info">
+                <p class="page-name title">Quests</p>
+                <p class="page-description">
+                  Complete various quests to gain rewards.
+                </p>
+              </div>
+            </div>
+
+            <div class="page-item" id="prestige" style="cursor: pointer">
+              <div class="page-img">
+                <img src="img/prestige.png" alt="Prestige" />
+              </div>
+              <div class="page-info">
+                <p class="page-name title">Prestige</p>
+                <p class="page-description">
+                  Reset progress to gain permanent bonuses.
+                </p>
+                <div id="prestigeBarContainer">
+                  <div id="prestigeBarFill"></div>
+                </div>
+                <p id="prestigePoints">Prestige Points: 0</p>
+                <p id="nextPrestigeThreshold">
+                  Next Prestige at: 10,000,000 donuts
+                </p>
+              </div>
+            </div>
+
+            <div class="page-item" id="combos">
+              <div class="page-img">
+                <img src="img/combos.png" alt="Combos" />
+              </div>
+              <div class="page-info">
+                <p class="page-name title">Combos</p>
+                <p class="page-description">
+                  Maximize efficiency through combo strategies.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Donut Kısmı -->
       <div class="donut-container">
         <p id="bakery-name"></p>
@@ -30,6 +98,13 @@
           <img src="img/donut.png" alt="Donut" id="donut" />
           <div id="cursor-container"></div>
           <!-- Cursorlar bu alana eklenecek -->
+        </div>
+
+        <div id="combo-display" class="combo-display" style="display: none">
+          <p>
+            Combo Active! Production x2 for
+            <span id="combo-timer">10</span> seconds
+          </p>
         </div>
       </div>
       <!-- Store Bölümü -->
@@ -56,7 +131,7 @@
               onclick="buyItem('cursor')"
             >
               <div class="item-img">
-                <img src="img/Designer.png" alt="Cursor" />
+                <img src="img/cursor.png" alt="Cursor" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Cursor</p>
@@ -83,7 +158,7 @@
                 <p class="item-name title">Baker</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="bakerCost">100</span>
+                  <span id="bakerCost">115</span>
                 </p>
               </div>
               <div class="item-total">
@@ -94,13 +169,13 @@
             <!-- Farm -->
             <div class="store-item" data-item="farm" onclick="buyItem('farm')">
               <div class="item-img">
-                <img src="img/donutFarm.png" alt="Farm" />
+                <img src="img/farm.png" alt="Farm" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Farm</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="farmCost">1000</span>
+                  <span id="farmCost">1400</span>
                 </p>
               </div>
               <div class="item-total">
@@ -111,13 +186,13 @@
             <!-- Mine -->
             <div class="store-item" data-item="mine" onclick="buyItem('mine')">
               <div class="item-img mine">
-                <img src="img/donutMine.png" alt="mineDonut" />
+                <img src="img/mine.png" alt="mineDonut" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Mine</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="mineCost">15000</span>
+                  <span id="mineCost">16000</span>
                 </p>
               </div>
               <div class="item-total">
@@ -132,13 +207,13 @@
               onclick="buyItem('factory')"
             >
               <div class="item-img">
-                <img src="img/donutFactory.png" alt="Factory" />
+                <img src="img/factory.png" alt="Factory" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Factory</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="factoryCost">65000</span>
+                  <span id="factoryCost">176000</span>
                 </p>
               </div>
               <div class="item-total">
@@ -153,13 +228,13 @@
               onclick="buyItem('portal')"
             >
               <div class="item-img">
-                <img src="img/PortalDonutt.png" alt="portalDonut" />
+                <img src="img/Portal.png" alt="portalDonut" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Portal</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="portalCost">250000</span>
+                  <span id="portalCost">1927200</span>
                 </p>
               </div>
               <div class="item-total">
@@ -174,13 +249,13 @@
               onclick="buyItem('powerPlant')"
             >
               <div class="item-img">
-                <img src="img/donutPowerPlant.png" alt="powerPlantDonut" />
+                <img src="img/PowerPlant.png" alt="powerPlantDonut" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Power Plant</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="powerPlantCost">625000</span>
+                  <span id="powerPlantCost">20910000</span>
                 </p>
               </div>
               <div class="item-total">
@@ -204,7 +279,7 @@
                 <p class="item-name title">Neural Network Bakery</p>
                 <p class="item-cost">
                   <img src="img/donutMoney.png" alt="donut icon" class="icon" />
-                  <span id="neuralNetworkBakeryCost">225000000</span>
+                  <span id="neuralNetworkBakeryCost">225828000</span>
                 </p>
               </div>
               <div class="item-total">
@@ -216,6 +291,7 @@
       </div>
     </div>
     <button id="reset-button">Reset</button>
+
     <script src="script.js"></script>
   </body>
 </html>
