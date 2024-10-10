@@ -749,7 +749,7 @@ function updateProduction() {
 let activeIntervalId = null; // Global bir değişken tanımlıyoruz
 // Donut click event
 donut.addEventListener("click", (event) => {
-  let clickValue = 4353491;
+  let clickValue = 1;
 
   // Tüm cursor upgrade'lerinin çarpanlarını kontrol et
   upgrades.cursor.forEach((upgrade) => {
