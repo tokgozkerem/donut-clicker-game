@@ -15,8 +15,149 @@ body {
   flex-direction: column;
   justify-content: space-between;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   z-index: 1;
+  overflow: hidden;
+}
+
+#bakery-name {
+  position: relative;
+  bottom: 60px;
+}
+#donut-count,
+#per-second {
+  position: relative;
+  bottom: 50px;
+}
+.donut-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: calc(100% - 650px);
+  height: 100%;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+#section-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* Yatay kaydırmayı gizleyip dikey kaydırmayı aktif yap */
+  background: #ffeab628;
+  border-left: 10px solid #ffeab6;
+  z-index: 25;
+  width: 20%; /* Ekran genişliğinin %20'sini kaplasın */
+  max-width: 310px; /* Daha geniş ekranlarda maksimum genişlik verelim */
+  min-width: 100px; /* Küçük ekranlarda daha fazla küçülmesini engelleyelim */
+  box-sizing: border-box; /* Kenar boşluklarını içeriden hesaplar */
+}
+
+#store-title {
+  position: sticky; /* Sabitlenen konumda kalmasını sağlar */
+  top: 0;
+  width: 100%; /* Tüm alanı kaplasın */
+  text-align: center;
+  padding: 8px;
+  font-size: 28px;
+  z-index: 30; /* Diğer elemanların üzerine çıksın */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Hafif gölge ver */
+}
+#section-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* Dikey kaydırmayı etkin yap */
+  background: #ffeab628; /* Arka plan rengini aynı yap */
+  border-right: 10px solid #ffeab6; /* Sağ tarafında border ekle */
+  z-index: 25;
+  width: 20%; /* Ekran genişliğinin %20'sini kaplasın */
+  max-width: 310px; /* Daha geniş ekranlarda maksimum genişlik verelim */
+  min-width: 100px; /* Küçük ekranlarda daha fazla küçülmesini engelleyelim */
+  box-sizing: border-box;
+}
+
+#page-title {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  padding: 8px;
+  font-size: 28px;
+  z-index: 30;
+  margin-top: 10px;
+}
+.donut-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 250px;
+  height: 250px;
+}
+
+.donut-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(230, 230, 230, 0.7),
+    rgba(255, 255, 255, 0.2),
+    transparent 70%
+  );
+  z-index: -1;
+  box-shadow: 0 0 80px rgba(255, 255, 255, 0.8),
+    0 0 150px rgba(255, 255, 255, 0.6), 0 0 300px rgba(255, 255, 255, 0.4);
+  animation: pulse 2s infinite;
+}
+.donut-wrapper img {
+  width: 100%;
+  height: auto;
+  max-width: 300px; /* Maksimum donut genişliği */
+}
+#donut {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-size: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  z-index: 1;
+}
+
+#cursor-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13%;
+  height: 13%;
+  transform: translate(-60%, -60%);
+  pointer-events: none;
+  pointer-events: none;
+}
+
+.cursor {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform-origin: center;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+#donut:active {
+  transform: scale(0.95);
 }
 .info-panel {
   position: absolute;
@@ -68,89 +209,6 @@ body {
   margin-top: 10px;
   font-size: 14px;
   font-weight: 100;
-}
-
-#bakery-name {
-  position: relative;
-  bottom: 100px;
-}
-#donut-count,
-#per-second {
-  position: relative;
-  bottom: 50px;
-}
-.donut-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  width: calc(100% - 650px);
-  height: 100%;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.donut-wrapper {
-  position: relative;
-  display: inline-block;
-  width: 250px;
-  height: 250px;
-}
-#donut {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-size: cover;
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
-  z-index: 1;
-}
-
-.donut-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80%;
-  height: 80%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    rgba(230, 230, 230, 0.7),
-    rgba(255, 255, 255, 0.2),
-    transparent 70%
-  );
-  z-index: -1;
-  box-shadow: 0 0 80px rgba(255, 255, 255, 0.8),
-    0 0 150px rgba(255, 255, 255, 0.6), 0 0 300px rgba(255, 255, 255, 0.4);
-  animation: pulse 2s infinite;
-}
-
-#cursor-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.cursor {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  transform-origin: center;
-  transition: transform 0.3s ease;
-  will-change: transform;
-}
-
-#donut:active {
-  transform: scale(0.95);
 }
 
 .insufficient-funds {
@@ -283,32 +341,6 @@ body {
   color: #bbb;
 }
 
-#section-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  overflow-x: hidden;
-  overflow-y: auto; /* Yatay kaydırmayı gizleyip dikey kaydırmayı aktif yap */
-  background: #ffeab628;
-  border-left: 10px solid #ffeab6;
-  z-index: 25;
-  max-height: 100vh; /* Ekran boyutuna göre dinamik yükseklik */
-  box-sizing: border-box; /* Kenar boşluklarını içeriden hesaplar */
-}
-
-#store-title {
-  position: sticky; /* Sabitlenen konumda kalmasını sağlar */
-  top: 0;
-  width: 100%; /* Tüm alanı kaplasın */
-  text-align: center;
-  padding: 8px;
-  font-size: 28px;
-
-  z-index: 30; /* Diğer elemanların üzerine çıksın */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Hafif gölge ver */
-}
-
 .title {
   font-size: 15px;
   text-shadow: 0px 1px 4px #000;
@@ -322,7 +354,7 @@ body {
 /* Store CSS */
 .store {
   position: relative;
-  width: 300px;
+  width: 100%;
   padding-top: 10px;
   padding-bottom: 10px;
 }
@@ -404,34 +436,10 @@ body {
 .hidden {
   display: none;
 }
-#section-left {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  overflow-x: hidden;
-  overflow-y: auto; /* Dikey kaydırmayı etkin yap */
-  background: #ffeab628; /* Arka plan rengini aynı yap */
-  border-right: 10px solid #ffeab6; /* Sağ tarafında border ekle */
-  z-index: 25;
-  max-height: 100vh; /* Dinamik yükseklik */
-  box-sizing: border-box;
-}
 
-#page-title {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  text-align: center;
-  padding: 8px;
-  font-size: 28px;
-  z-index: 30;
-
-  margin-top: 10px;
-}
 .page-content {
   position: relative;
-  width: 300px;
+  width: 100%;
   padding-top: 70px;
   padding-bottom: 10px;
 }
@@ -572,6 +580,19 @@ button {
   animation-delay: 1.5s; /* İkinci parıltı daha sonra başlasın */
 }
 
+/* Prestige Points Text */
+#prestigePoints {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* Next Prestige Threshold Text */
+#nextPrestigeThreshold {
+  font-size: 10px;
+
+  margin-top: 4px;
+}
+
 @keyframes shimmer {
   0% {
     transform: translate(-50%, -50%) scale(0.2);
@@ -608,19 +629,6 @@ button {
     transform: translate(200%, -200%) scale(1.5);
     opacity: 0;
   }
-}
-
-/* Prestige Points Text */
-#prestigePoints {
-  font-size: 14px;
-  margin-top: 8px;
-}
-
-/* Next Prestige Threshold Text */
-#nextPrestigeThreshold {
-  font-size: 10px;
-
-  margin-top: 4px;
 }
 
 /* Reset Butonu Stilleri */
@@ -748,58 +756,135 @@ button {
   animation: bounce 0.3s ease;
 }
 
-/* Telefon ve küçük tabletler için */
-@media (max-width: 768px) {
-  .game-container {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start; /* Üst hizalamayı sağla */
+@media (max-width: 764px) {
+  #section-right {
+    width: 150px;
+    overflow-x: scroll;
   }
 
+  #section-left {
+    width: 150px;
+    overflow-x: scroll;
+  }
   .donut-container {
-    width: 45vw;
-    height: auto;
-    margin-left: -105px;
-    top: 45%;
+    width: 100px;
+    font-size: 12px;
+  }
+  .page-info {
+    margin-left: 0px;
+    font-size: 3px;
+  }
+  .page-content {
+    position: relative;
+    width: 100%; /* Genişlik sınırlaması olmadan ekranın genişliğine uyum sağlar */
+    padding-top: 70px;
+    padding-bottom: 10px;
   }
 
-  #donut {
+  .store {
+    position: relative;
     width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  /* Donut resmi küçültme */
+  #donut {
+    width: 100%; /* Donut resmi daha da küçültüldü */
+  }
+
+  /* Info panel */
+  .info-panel {
+    width: 240px;
+    font-size: 12px;
+  }
+
+  .info-panel h4 {
+    font-size: 16px;
+  }
+
+  /* Store ve item boyutları küçültme */
+  .store-item {
+    height: 45px;
+    padding: 5px;
+  }
+
+  .store-item p {
+    font-size: 11px;
+  }
+  .item-cost img {
+    height: 11px;
+    width: 11px;
+  }
+
+  .store-item span {
+    font-size: 10px;
+  }
+
+  .item-img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .item-img img {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Upgrade list hover */
+  #upgrade-list:hover {
+    max-height: 200px;
+  }
+
+  /* Prestij kutuları görünür hale getirme */
+  #prestige {
+    overflow: visible;
     height: auto;
   }
 
-  #section-right {
-    width: 300px;
-    margin-right: 5px; /* Sağdan biraz boşluk bırak */
-    top: 5%;
-    max-height: 100vh; /* Ekran yüksekliğinin %75'i kadar yükseklik ayarla */
-    overflow-y: auto; /* Kaydırma özelliğini aktif tut */
+  /* Page item boyutları */
+  .page-item {
+    padding: 8px;
   }
 
-  /* İçerikleri optimize etmek için daha küçük boyutlar */
-  .store-item {
-    font-size: 14px; /* Biraz daha büyük font boyutu */
-    width: 300px;
-  }
-  .item-total {
-    opacity: 0.5;
-    margin-right: 115px;
-  }
-}
-
-/* Daha küçük telefonlar için (480px ve altı) */
-@media (max-width: 480px) {
-  .donut-wrapper {
-    width: 40vw;
-    height: auto;
+  .page-img {
+    width: 50px;
+    height: 50px;
   }
 
-  #section-right {
-    width: 55vw; /* Küçük ekranlar için section-right'ı genişlet */
-    max-height: 60vh; /* Ekran yüksekliğini biraz daha küçült */
+  .page-name {
+    font-size: 18px;
   }
 
-  .store-item {
-    font-size: 12px; /* Daha küçük font boyutu */
+  .page-description {
+    font-size: 10px;
+  }
+
+  /* Store item isimleri ayarlanması */
+  .item-info .item-name {
+    font-size: 11px;
+  }
+  .item-info {
+    flex-grow: 1;
+    margin-left: -4px;
+    gap: 2px;
+  }
+  #cursor-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 15%;
+    height: 15%;
+    pointer-events: none;
+    /* Prestij kutuları tam görünüm için */
+    #prestigeBarContainer {
+      width: 90%;
+      height: 12px;
+      margin-top: 8px;
+    }
+
+    #prestigePoints,
+    #nextPrestigeThreshold {
+      font-size: 12px;
+    }
   }
 }

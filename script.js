@@ -926,15 +926,18 @@ let cursors = []; // global cursor arr
 
 function addCursor() {
   const cursorContainer = document.getElementById("cursor-container");
-  const totalCursors = items.cursor.count;
+  let totalCursors = items.cursor.count;
 
-  // Yeni cursor eklerken mevcut cursor'ları silme, sadece yeni olanları ekle
+  // Maksimum 60 cursor eklenmesine izin veriyoruz
+  const maxCursors = 60;
+  totalCursors = Math.min(totalCursors, maxCursors); // 60'tan fazla cursor eklenmeyecek
+
   const radius = 145; // Donut'un etrafındaki çemberin yarıçapı
   const centerX = cursorContainer.clientWidth / 2;
   const centerY = cursorContainer.clientHeight / 2;
 
   const initialAngle = Math.PI / 2; // İlk cursor sağda, 90 derece
-  const angleStep = (2 * Math.PI) / 60; // Bir tam tur için 60 cursor'luk bir sınır
+  const angleStep = (2 * Math.PI) / maxCursors; // Bir tam tur için 60 cursor'luk bir sınır
 
   for (let i = cursors.length; i < totalCursors; i++) {
     const angle = initialAngle - i * angleStep; // Her yeni cursor saat yönünde yerleşecek
