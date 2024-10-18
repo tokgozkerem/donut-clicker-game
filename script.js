@@ -1149,6 +1149,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+function showGameSaved() {
+  const gameSavedElement = document.getElementById("game-saved");
+  gameSavedElement.classList.add("show");
+
+  // 2 saniye sonra tekrar gizle
+  setTimeout(() => {
+    gameSavedElement.classList.remove("show");
+  }, 2000);
+}
+
 function saveGame() {
   const gameState = {
     items: items, //items
@@ -1160,6 +1171,11 @@ function saveGame() {
     cursors: cursors, // cursorlar da kaydediliyor
   };
   localStorage.setItem("gameState", JSON.stringify(gameState));
+
+  // Buraya log ekleyelim
+  console.log("Game Saved at " + new Date().toLocaleTimeString());
+
+  showGameSaved();
 }
 
 function loadGame() {
@@ -1226,7 +1242,8 @@ function loadGame() {
   }
 }
 
-setInterval(saveGame, 180000); // 3 minute
+// Her 3 dakikada bir saveGame fonksiyonu çağrılıyor
+setInterval(saveGame, 180000); // 3 dakika
 
 // Sayfa yüklendiğinde rastgele bir bakery ismi göster
 document.addEventListener("DOMContentLoaded", () => {

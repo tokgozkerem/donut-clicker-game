@@ -717,6 +717,25 @@ button {
   text-decoration: none; /* Altı çizgiyi kaldırır */
   display: inline-block; /* Buton görünümünü korur */
 }
+#game-saved {
+  position: fixed;
+  bottom: -50px; /* Başlangıçta ekran dışında */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  opacity: 0;
+  transition: all 0.5s ease;
+  z-index: 1000;
+}
+
+#game-saved.show {
+  bottom: 20px; /* Ekranın altından 20px yukarı */
+  opacity: 1;
+}
 
 @keyframes pulse {
   0% {
