@@ -8,6 +8,7 @@ body {
   font-optical-sizing: auto;
   font-weight: 660;
   font-style: normal;
+  touch-action: manipulation;
 }
 
 .game-container {
