@@ -257,7 +257,7 @@
               onclick="buyItem('powerPlant')"
             >
               <div class="item-img">
-                <img src="img/powerPlant.png" alt="powerPlantDonut" />
+                <img src="img/powerplant.png" alt="powerPlantDonut" />
               </div>
               <div class="item-info">
                 <p class="item-name title">Power Plant</p>
@@ -279,7 +279,7 @@
             >
               <div class="item-img">
                 <img
-                  src="img/neuralNetworkBakery.png"
+                  src="img/neuralnetworkbakery.png"
                   alt="neuralNetworkBakery"
                 />
               </div>
@@ -298,8 +298,28 @@
         </div>
       </div>
     </div>
-    <button id="reset-button">Reset</button>
+    <!-- Prestige modal -->
+    <!-- Prestige modal -->
+    <div id="prestigeModal" class="modal">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2>Prestige Action</h2>
+        <p>
+          Performing prestige will reset all progress, and all items' production
+          will be doubled. Are you sure you want to proceed?
+        </p>
+        <button id="prestigeYes">Yes</button>
+        <button id="prestigeNo">No</button>
+      </div>
+    </div>
 
+    <button id="reset-button">Reset</button>
+    <a
+      href="https://buymeacoffee.com/donutclickernet"
+      id="buy-me-a-donut"
+      target="_blank"
+      >🍩 Buy me a Donut!</a
+    >
     <script src="script.js"></script>
   </body>
 </html>

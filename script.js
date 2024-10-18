@@ -511,9 +511,40 @@ function performPrestige() {
   }
 }
 
-// Make the Prestige div clickable
+// Modal elementleri al
+const prestigeModal = document.getElementById("prestigeModal");
+const closeModal = document.getElementById("closeModal");
+const prestigeYes = document.getElementById("prestigeYes");
+const prestigeNo = document.getElementById("prestigeNo");
+
+// Prestij tıklanınca modalı aç (Prestige bar dolduğunda tetiklenmeli)
 document.getElementById("prestige").addEventListener("click", () => {
-  performPrestige();
+  if (totalDonutsEarned >= nextPrestigeThreshold) {
+    prestigeModal.style.display = "block"; // Modalı aç
+  }
+});
+
+// "Yes" butonuna tıklanınca prestij işlemini başlat
+prestigeYes.addEventListener("click", () => {
+  performPrestige(); // Prestij fonksiyonunu çağır
+  prestigeModal.style.display = "none"; // Modalı kapat
+});
+
+// "No" butonuna tıklayınca modalı kapat
+prestigeNo.addEventListener("click", () => {
+  prestigeModal.style.display = "none";
+});
+
+// Modalı "X" butonuna tıklayınca kapat
+closeModal.addEventListener("click", () => {
+  prestigeModal.style.display = "none";
+});
+
+// Kullanıcı pencerenin dışına tıklarsa modalı kapat
+window.addEventListener("click", (event) => {
+  if (event.target === prestigeModal) {
+    prestigeModal.style.display = "none";
+  }
 });
 
 // Call this function to update the bar regularly
@@ -1125,6 +1156,8 @@ function saveGame() {
     donutCount: donutCount, //donut
     accumulator: accumulator, //accumulator
     currentBakeryName: currentBakeryName,
+    totalDonutsEarned: totalDonutsEarned, // totalDonutsEarned kaydediliyor
+    cursors: cursors, // cursorlar da kaydediliyor
   };
   localStorage.setItem("gameState", JSON.stringify(gameState));
 }
@@ -1151,6 +1184,34 @@ function loadGame() {
         upgrades[key] = gameState.upgrades[key];
       }
     }
+
+    // totalDonutsEarned ve cursors load
+    totalDonutsEarned = gameState.totalDonutsEarned || 0;
+    cursors = []; // cursorlar boşaltılıp yeniden oluşturulacak
+
+    // Eğer cursorlar varsa tekrar ekranda yerleştirilir ve cursors dizisine eklenir
+    if (gameState.cursors.length > 0) {
+      gameState.cursors.forEach((cursorData) => {
+        const cursor = document.createElement("img");
+        cursor.src = "img/cursorDonut.png";
+        cursor.classList.add("cursor");
+        cursor.style.left = `${cursorData.x}px`;
+        cursor.style.top = `${cursorData.y}px`;
+        cursor.style.transform = `rotate(${
+          cursorData.angle * (180 / Math.PI) - 90
+        }deg)`;
+        document.getElementById("cursor-container").appendChild(cursor);
+
+        // Yeni oluşturulan cursor'u cursors dizisine ekliyoruz
+        cursors.push({
+          element: cursor,
+          x: cursorData.x,
+          y: cursorData.y,
+          angle: cursorData.angle,
+        });
+      });
+    }
+
     currentBakeryName =
       gameState.currentBakeryName || getRandomBakeryName() + "'s Bakery";
     const bakeryNameElement = document.getElementById("bakery-name");
@@ -1161,7 +1222,6 @@ function loadGame() {
     updateDisplay();
     showUpgrades();
   } else {
-    // Eğer oyun kaydedilmemişse, ilk kez bir bakery adı atayın
     updateBakeryName();
   }
 }

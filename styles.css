@@ -630,19 +630,64 @@ button {
     opacity: 0;
   }
 }
+/* Modalın kendisi (gizli) */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Modal içeriği */
+.modal-content {
+  background-color: #2c2c2c;
+  color: white;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #a0522d;
+  width: 50%;
+  text-align: center;
+}
+.modal-content button {
+  background-color: #a0522d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 15px;
+  width: 50px;
+}
+.modal-content p {
+  font-weight: normal;
+}
+
+/* Kapatma butonu */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
 /* Reset Butonu Stilleri */
 #reset-button {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  padding: 10px 20px;
+  padding: 5px 10px;
   background-color: #ff4d4d;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   z-index: 1000;
   transition: background-color 0.3s;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -651,6 +696,26 @@ button {
 #reset-button:hover {
   background-color: #ff1a1a;
   transform: scale(1.05);
+}
+#buy-me-a-donut {
+  position: fixed;
+  bottom: 20px;
+  left: calc(
+    20px + 120px
+  ); /* Reset butonunun genişliğine bağlı olarak ayarlayın */
+  padding: 5px 10px;
+  background-color: #fccb72; /* Aynı arka plan rengi */
+  color: black;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 1000;
+  transition: background-color 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-decoration: none; /* Altı çizgiyi kaldırır */
+  display: inline-block; /* Buton görünümünü korur */
 }
 
 @keyframes pulse {
