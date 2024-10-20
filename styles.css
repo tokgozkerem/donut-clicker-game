@@ -135,6 +135,7 @@ body {
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
   z-index: 1;
+  pointer-events: auto;
 }
 
 #cursor-container {
@@ -215,6 +216,15 @@ body {
 .insufficient-funds {
   filter: grayscale(15%) brightness(65%);
   color: rgb(255, 0, 0);
+}
+.upgrades-container {
+  display: flex; /* Resimleri yan yana sıralar */
+}
+
+.upgrades-container img {
+  width: 36px; /* Resmin boyutu */
+  height: 36px; /* Resmin boyutu */
+  margin: 0;
 }
 
 #upgrade-container {
@@ -972,4 +982,12 @@ button {
       font-size: 12px;
     }
   }
+}
+
+img {
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  pointer-events: none;
+  user-select: none;
 }

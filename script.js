@@ -137,7 +137,7 @@ const upgrades = {
       cost: 5250,
       multiplier: 2,
       purchased: false,
-      requirement: 5,
+      requirement: 15,
       img: "bakerUpgrade-2.png",
       description:
         "Harness the power of ancient dough magic to knead perfection into every donut.",
@@ -147,7 +147,7 @@ const upgrades = {
       cost: 52500,
       multiplier: 2,
       purchased: false,
-      requirement: 15,
+      requirement: 25,
       img: "bakerUpgrade-3.png",
       description:
         "A flour conjurer whose delicate touch transforms ingredients into donut gold.",
@@ -157,7 +157,7 @@ const upgrades = {
       cost: 525000,
       multiplier: 2,
       purchased: false,
-      requirement: 25,
+      requirement: 35,
       img: "bakerUpgrade-4.png",
       description:
         "An elemental baker, crafting cosmic donuts from primordial batter.",
@@ -167,7 +167,7 @@ const upgrades = {
       cost: 5250000,
       multiplier: 2,
       purchased: false,
-      requirement: 45,
+      requirement: 50,
       img: "bakerUpgrade-5.png",
       description:
         "A mythical baker whose crème-filled creations are the stuff of legends.",
@@ -189,7 +189,7 @@ const upgrades = {
       cost: 50000,
       multiplier: 2,
       purchased: false,
-      requirement: 5,
+      requirement: 15,
       img: "farmUpgrade-2.png",
       description:
         "A golden field where each stalk of grain yields a bounty of donut flour.",
@@ -199,7 +199,7 @@ const upgrades = {
       cost: 500000,
       multiplier: 2,
       purchased: false,
-      requirement: 20,
+      requirement: 25,
       img: "farmUpgrade-3.png",
       description:
         "An ancient grove, where the oldest trees bear the finest donut fruits.",
@@ -209,7 +209,7 @@ const upgrades = {
       cost: 5000000,
       multiplier: 2,
       purchased: false,
-      requirement: 50,
+      requirement: 35,
       img: "farmUpgrade-4.png",
       description:
         "Fields with roots of iron, pulling forth the strongest crops for donut production.",
@@ -219,7 +219,7 @@ const upgrades = {
       cost: 50000000,
       multiplier: 2,
       purchased: false,
-      requirement: 100,
+      requirement: 50,
       img: "farmUpgrade-5.png",
       description:
         "A mystical realm where the land itself grows donut-making magic.",
@@ -241,7 +241,7 @@ const upgrades = {
       cost: 125000,
       multiplier: 2,
       purchased: false,
-      requirement: 5,
+      requirement: 15,
       img: "mineUpgrade-2.png",
       description:
         "A mine where every vein glistens with pure golden resources for your donuts.",
@@ -251,7 +251,7 @@ const upgrades = {
       cost: 1250000,
       multiplier: 2,
       purchased: false,
-      requirement: 20,
+      requirement: 25,
       img: "mineUpgrade-3.png",
       description:
         "Towering spires of diamonds, feeding your production with unrivaled hardness and beauty.",
@@ -261,7 +261,7 @@ const upgrades = {
       cost: 12500000,
       multiplier: 2,
       purchased: false,
-      requirement: 50,
+      requirement: 35,
       img: "mineUpgrade-4.png",
       description:
         "A deep cavern of shimmering emeralds, infusing your donuts with rare energy.",
@@ -271,7 +271,7 @@ const upgrades = {
       cost: 125000000,
       multiplier: 2,
       purchased: false,
-      requirement: 100,
+      requirement: 50,
       img: "mineUpgrade-5.png",
       description:
         "A mine that ascends to the heavens, where rubies pulse with the heart of donut production.",
@@ -293,7 +293,7 @@ const upgrades = {
       cost: 4125000,
       multiplier: 2,
       purchased: false,
-      requirement: 5,
+      requirement: 15,
       img: "factoryUpgrade-2.png",
       description:
         "At the core of your factory, the golden heart beats with unstoppable donut-making power.",
@@ -303,7 +303,7 @@ const upgrades = {
       cost: 41250000,
       multiplier: 2,
       purchased: false,
-      requirement: 15,
+      requirement: 25,
       img: "factoryUpgrade-3.png",
       description:
         "A blazing core of diamond-powered energy, driving your factory to new heights.",
@@ -330,6 +330,7 @@ const upgrades = {
     },
   ],
 };
+
 // Donut ve üretim item'ları için yapılandırılmış veri
 const items = {
   cursor: {
@@ -413,7 +414,7 @@ const items = {
     totalProduced: 0,
   },
 };
-
+let hasDonutClicked = false;
 let donutCount = 0;
 let accumulator = 0;
 let totalDonutsEarned = 0;
@@ -432,123 +433,6 @@ const UPGRADE_COST_MULTIPLIER = 1.1; // Upgrade fiyatları %10 artar
 let prestigeCount = 0;
 let nextPrestigeThreshold = 10000000; // 10 million donuts
 let prestigeMultiplier = 2;
-
-function updatePrestigeBar() {
-  const prestigeBarFill = document.getElementById("prestigeBarFill");
-  const prestigePoints = document.getElementById("prestigePoints");
-  const nextPrestigeText = document.getElementById("nextPrestigeThreshold");
-
-  // Prestij ilerlemesini totalDonutsEarned'a göre hesapla
-  const progress = Math.min(totalDonutsEarned / nextPrestigeThreshold, 1);
-  prestigeBarFill.style.width = `${progress * 100}%`; // Prestij barını genişlet
-
-  // Eğer bar doluysa 'full' sınıfını ekle, değilse çıkar
-  if (progress === 1) {
-    prestigeBarFill.classList.add("full");
-  } else {
-    prestigeBarFill.classList.remove("full");
-  }
-
-  // Prestij puanlarını ve sıradaki prestij eşiklerini güncelle
-  prestigePoints.textContent = `Prestige Points: ${prestigeCount}`;
-  nextPrestigeText.textContent = `Next Prestige at: ${nextPrestigeThreshold} donuts`;
-}
-
-function clearUpgradeList() {
-  const upgradeListDiv = document.getElementById("upgrade-list");
-  while (upgradeListDiv.firstChild) {
-    upgradeListDiv.removeChild(upgradeListDiv.firstChild);
-  }
-}
-
-function performPrestige() {
-  if (totalDonutsEarned >= nextPrestigeThreshold) {
-    prestigeCount++;
-
-    // Üretimi ve maliyeti sıfırla
-    for (let key in items) {
-      // Itemlerin originalProduction değerini prestij çarpanı ile çarp
-      items[key].originalProduction *= prestigeMultiplier;
-
-      // Yeni production değeri olarak originalProduction'u kullan
-      items[key].production = items[key].originalProduction;
-
-      // Itemlerin sayısını sıfırla
-      items[key].count = 0;
-
-      // Her prestijde bina fiyatlarının artması için prestij sayısına göre bina fiyat çarpanını artır
-      const dynamicBuildingCostMultiplier =
-        BUILDING_COST_MULTIPLIER *
-        Math.pow(
-          PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT,
-          prestigeCount - 1
-        );
-
-      // Fiyatları yeni dinamik çarpana göre ayarla
-      items[key].baseCost =
-        items[key].originalBaseCost * dynamicBuildingCostMultiplier;
-    }
-
-    // Upgrade maliyetlerini sıfırla ve satın alımları temizle
-    for (let key in upgrades) {
-      upgrades[key].forEach((upgrade) => {
-        upgrade.cost *= UPGRADE_COST_MULTIPLIER;
-        upgrade.purchased = false;
-      });
-    }
-
-    // Donut ve prestij verilerini sıfırla
-    donutCount = 0;
-    totalDonutsEarned = 0;
-    nextPrestigeThreshold *= 2;
-
-    // Upgrade listesi sıfırla
-    clearUpgradeList();
-
-    // UI güncellemesi
-    updatePrestigeBar();
-    updateDisplay();
-  }
-}
-
-// Modal elementleri al
-const prestigeModal = document.getElementById("prestigeModal");
-const closeModal = document.getElementById("closeModal");
-const prestigeYes = document.getElementById("prestigeYes");
-const prestigeNo = document.getElementById("prestigeNo");
-
-// Prestij tıklanınca modalı aç (Prestige bar dolduğunda tetiklenmeli)
-document.getElementById("prestige").addEventListener("click", () => {
-  if (totalDonutsEarned >= nextPrestigeThreshold) {
-    prestigeModal.style.display = "block"; // Modalı aç
-  }
-});
-
-// "Yes" butonuna tıklanınca prestij işlemini başlat
-prestigeYes.addEventListener("click", () => {
-  performPrestige(); // Prestij fonksiyonunu çağır
-  prestigeModal.style.display = "none"; // Modalı kapat
-});
-
-// "No" butonuna tıklayınca modalı kapat
-prestigeNo.addEventListener("click", () => {
-  prestigeModal.style.display = "none";
-});
-
-// Modalı "X" butonuna tıklayınca kapat
-closeModal.addEventListener("click", () => {
-  prestigeModal.style.display = "none";
-});
-
-// Kullanıcı pencerenin dışına tıklarsa modalı kapat
-window.addEventListener("click", (event) => {
-  if (event.target === prestigeModal) {
-    prestigeModal.style.display = "none";
-  }
-});
-
-// Call this function to update the bar regularly
-setInterval(updatePrestigeBar, updateInterval);
 
 // Upgrade'leri gösteren fonksiyonda hover olaylarını ekleyelim
 function showUpgrades() {
@@ -745,9 +629,7 @@ function buyUpgrade(itemKey, upgradeIndex) {
 setupStoreHover();
 
 setInterval(() => {
-  if (!document.hidden) {
-    updateProduction(); // Hem donutCount'u hem totalProduced'u güncelle
-  }
+  updateProduction();
 }, updateInterval);
 
 // Donut üretimini hesapla
@@ -759,10 +641,13 @@ function calculatePerSecond() {
   return totalPerSecond;
 }
 function updateProduction() {
-  let totalPerSecond = calculatePerSecond();
+  const currentTime = Date.now();
+  const deltaTime = (currentTime - lastUpdateTime) / 1000; // Saniye olarak geçen süre
+  lastUpdateTime = currentTime;
 
-  // Üretim miktarını güncelle ve donutCount ve totalProduced'u aynı anda artır
-  const donutsProduced = totalPerSecond * (updateInterval / 1000);
+  let totalPerSecond = calculatePerSecond();
+  const donutsProduced = totalPerSecond * deltaTime; // Geçen süreye göre üretim
+
   donutCount += donutsProduced;
   totalDonutsEarned += donutsProduced;
 
@@ -770,9 +655,10 @@ function updateProduction() {
   for (let key in items) {
     if (items[key].count > 0) {
       items[key].totalProduced +=
-        items[key].count * items[key].production * (updateInterval / 1000);
+        items[key].count * items[key].production * deltaTime;
     }
   }
+
   updatePrestigeBar();
   updateDisplay(); // Üretim sonrası ekranı güncelle
 }
@@ -780,7 +666,9 @@ function updateProduction() {
 let activeIntervalId = null; // Global bir değişken tanımlıyoruz
 // Donut click event
 donut.addEventListener("click", (event) => {
-  let clickValue = 1;
+  hasDonutClicked = true; // İlk tıklamada true olur
+
+  let clickValue = 1534534;
 
   // Tüm cursor upgrade'lerinin çarpanlarını kontrol et
   upgrades.cursor.forEach((upgrade) => {
@@ -795,6 +683,7 @@ donut.addEventListener("click", (event) => {
   });
 
   donutCount += clickValue;
+  totalDonutsEarned += clickValue;
 
   // Görsel ve ses efektlerini çalıştır
   const plusOne = document.createElement("div");
@@ -809,6 +698,8 @@ donut.addEventListener("click", (event) => {
   createFallingDonut(event.clientX, event.clientY);
   playRandomClickSound();
   updateDisplay();
+
+  updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
 });
 function showInfoPanel(upgrade, itemName) {
   const infoPanel = document.getElementById("info-panel");
@@ -886,6 +777,27 @@ function showItemInfo(itemKey) {
     )} donuts</strong> per second<br>
       Total produced: ${formatNumber(item.totalProduced, "count")}
     `;
+
+    // Eklenen kısım: Satın alınan upgrade'leri göster
+    if (upgrades[itemKey]) {
+      // upgrades[itemKey] tanımlı mı kontrol et
+      const purchasedUpgrades = upgrades[itemKey]
+        .filter((upgrade) => upgrade.purchased)
+        .map(
+          (upgrade) => `
+        <img src="img/${upgrade.img}" alt="${upgrade.name}" class="upgrade-icon" />
+      `
+        )
+        .join("");
+
+      const upgradesInfo = purchasedUpgrades
+        ? `Buyed upgrades: <div class="upgrades-container">${purchasedUpgrades}</div>`
+        : "No upgrades purchased yet.";
+
+      document.getElementById("item-info-feature").innerHTML += `
+      <br>${upgradesInfo}
+    `;
+    }
   }
 
   // Bilgileri hemen güncelle
@@ -990,6 +902,12 @@ function addCursor() {
 
   // Eğer animasyon zaten çalışıyorsa, yeni cursor'lar sadece eklenir, animasyon bozulmaz
 }
+function clearUpgradeList() {
+  const upgradeListDiv = document.getElementById("upgrade-list");
+  while (upgradeListDiv.firstChild) {
+    upgradeListDiv.removeChild(upgradeListDiv.firstChild);
+  }
+}
 
 // Cursor animation
 function startCursorAnimation() {
@@ -1029,6 +947,117 @@ function startCursorAnimation() {
 
 // First cursor animation
 startCursorAnimation();
+function updatePrestigeBar() {
+  const prestigeBarFill = document.getElementById("prestigeBarFill");
+  const prestigePoints = document.getElementById("prestigePoints");
+  const nextPrestigeText = document.getElementById("nextPrestigeThreshold");
+
+  // Prestij ilerlemesini totalDonutsEarned'a göre hesapla
+  const progress = Math.min(totalDonutsEarned / nextPrestigeThreshold, 1);
+  prestigeBarFill.style.width = `${progress * 100}%`; // Prestij barını genişlet
+
+  // Eğer bar doluysa 'full' sınıfını ekle, değilse çıkar
+  if (progress === 1) {
+    prestigeBarFill.classList.add("full");
+  } else {
+    prestigeBarFill.classList.remove("full");
+  }
+
+  // Prestij puanlarını ve sıradaki prestij eşiklerini güncelle
+  prestigePoints.textContent = `Prestige Points: ${prestigeCount}`;
+  nextPrestigeText.textContent = `Next Prestige at: ${nextPrestigeThreshold} donuts`;
+}
+
+function performPrestige() {
+  if (totalDonutsEarned >= nextPrestigeThreshold) {
+    prestigeCount++;
+
+    // Üretimi ve maliyeti sıfırla
+    for (let key in items) {
+      items[key].originalProduction *= prestigeMultiplier;
+      items[key].production = items[key].originalProduction;
+      items[key].count = 0;
+
+      const dynamicBuildingCostMultiplier =
+        BUILDING_COST_MULTIPLIER *
+        Math.pow(
+          PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT,
+          prestigeCount - 1
+        );
+
+      items[key].baseCost =
+        items[key].originalBaseCost * dynamicBuildingCostMultiplier;
+    }
+
+    // Upgrade maliyetlerini sıfırla ve satın alımları temizle
+    for (let key in upgrades) {
+      upgrades[key].forEach((upgrade) => {
+        upgrade.cost *= UPGRADE_COST_MULTIPLIER;
+        upgrade.purchased = false;
+      });
+    }
+
+    // Donut ve prestij verilerini sıfırla
+    donutCount = 0;
+    totalDonutsEarned = 0;
+    nextPrestigeThreshold *= 2;
+
+    // Cursorları sıfırla
+    cursors = []; // Cursors dizisini sıfırla
+
+    // Cursorları DOM'dan kaldır
+    const cursorContainer = document.getElementById("cursor-container");
+    while (cursorContainer.firstChild) {
+      cursorContainer.removeChild(cursorContainer.firstChild);
+    }
+
+    // Upgrade listesi sıfırla
+    clearUpgradeList();
+
+    // UI güncellemesi
+    updatePrestigeBar();
+    updateDisplay();
+  }
+}
+
+// Modal elementleri al
+const prestigeModal = document.getElementById("prestigeModal");
+const closeModal = document.getElementById("closeModal");
+const prestigeYes = document.getElementById("prestigeYes");
+const prestigeNo = document.getElementById("prestigeNo");
+
+// Prestij tıklanınca modalı aç (Prestige bar dolduğunda tetiklenmeli)
+document.getElementById("prestige").addEventListener("click", () => {
+  if (totalDonutsEarned >= nextPrestigeThreshold) {
+    prestigeModal.style.display = "block"; // Modalı aç
+  }
+});
+
+// "Yes" butonuna tıklanınca prestij işlemini başlat
+prestigeYes.addEventListener("click", () => {
+  performPrestige(); // Prestij fonksiyonunu çağır
+  prestigeModal.style.display = "none"; // Modalı kapat
+});
+
+// "No" butonuna tıklayınca modalı kapat
+prestigeNo.addEventListener("click", () => {
+  prestigeModal.style.display = "none";
+});
+
+// Modalı "X" butonuna tıklayınca kapat
+closeModal.addEventListener("click", () => {
+  prestigeModal.style.display = "none";
+});
+
+// Kullanıcı pencerenin dışına tıklarsa modalı kapat
+window.addEventListener("click", (event) => {
+  if (event.target === prestigeModal) {
+    prestigeModal.style.display = "none";
+  }
+});
+
+// Call this function to update the bar regularly
+setInterval(updatePrestigeBar, updateInterval);
 
 // Dinamik olarak isimlendirme
 function capitalize(string) {
@@ -1125,8 +1154,9 @@ function formatNumber(number, type = "count") {
 
 // Donut sayısını güncelleyip title'a yazdırma
 function updateTitleWithDonuts() {
-  const donutCountElement = document.getElementById("donut-count");
+  if (!hasDonutClicked) return; // Kullanıcı tıklamadıysa fonksiyon çalışmaz
 
+  const donutCountElement = document.getElementById("donut-count");
   let donutCountText = donutCountElement?.textContent.trim();
   if (donutCountText) {
     document.title = `${donutCountText} - Donut Clicker`;
@@ -1162,19 +1192,17 @@ function showGameSaved() {
 
 function saveGame() {
   const gameState = {
-    items: items, //items
-    upgrades: upgrades, //upgrades
-    donutCount: donutCount, //donut
-    accumulator: accumulator, //accumulator
+    items: items, // items
+    upgrades: upgrades, // upgrades
+    donutCount: donutCount, // donut
+    accumulator: accumulator, // accumulator
     currentBakeryName: currentBakeryName,
     totalDonutsEarned: totalDonutsEarned, // totalDonutsEarned kaydediliyor
     cursors: cursors, // cursorlar da kaydediliyor
+    prestigeCount: prestigeCount, // prestij sayısı kaydediliyor
+    nextPrestigeThreshold: nextPrestigeThreshold, // sıradaki prestij eşiği kaydediliyor
   };
   localStorage.setItem("gameState", JSON.stringify(gameState));
-
-  // Buraya log ekleyelim
-  console.log("Game Saved at " + new Date().toLocaleTimeString());
-
   showGameSaved();
 }
 
@@ -1206,7 +1234,7 @@ function loadGame() {
     cursors = []; // cursorlar boşaltılıp yeniden oluşturulacak
 
     // Eğer cursorlar varsa tekrar ekranda yerleştirilir ve cursors dizisine eklenir
-    if (gameState.cursors.length > 0) {
+    if (gameState.cursors && gameState.cursors.length > 0) {
       gameState.cursors.forEach((cursorData) => {
         const cursor = document.createElement("img");
         cursor.src = "img/cursorDonut.png";
@@ -1228,6 +1256,11 @@ function loadGame() {
       });
     }
 
+    // Prestige sistemine ait değişkenler
+    prestigeCount = gameState.prestigeCount || 0; // prestij sayısını yükle
+    nextPrestigeThreshold = gameState.nextPrestigeThreshold || 10000000; // prestij eşiğini yükle
+
+    // Bakery name load
     currentBakeryName =
       gameState.currentBakeryName || getRandomBakeryName() + "'s Bakery";
     const bakeryNameElement = document.getElementById("bakery-name");
@@ -1235,8 +1268,10 @@ function loadGame() {
       bakeryNameElement.textContent = currentBakeryName;
     }
 
+    // UI güncellemeleri
     updateDisplay();
     showUpgrades();
+    updatePrestigeBar(); // Prestige barını da güncelle
   } else {
     updateBakeryName();
   }
