@@ -668,7 +668,7 @@ let activeIntervalId = null; // Global bir değişken tanımlıyoruz
 donut.addEventListener("click", (event) => {
   hasDonutClicked = true; // İlk tıklamada true olur
 
-  let clickValue = 1534534;
+  let clickValue = 1;
 
   // Tüm cursor upgrade'lerinin çarpanlarını kontrol et
   upgrades.cursor.forEach((upgrade) => {
