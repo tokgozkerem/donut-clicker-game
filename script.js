@@ -66,7 +66,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "cursorUpgrade.png",
+      img: "cursorUpgrade.webp",
       description:
         "A rudimentary extension that powers your donut factory into overdrive.",
     },
@@ -76,7 +76,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "cursorUpgrade-2.png",
+      img: "cursorUpgrade-2.webp",
       description:
         "Unleash a wave of efficiency, drowning inefficiency in a sea of productivity.",
     },
@@ -86,7 +86,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 15,
-      img: "cursorUpgrade-3.png",
+      img: "cursorUpgrade-3.webp",
       description:
         "Ignite the donut cosmos with a touch that burns through production limits.",
     },
@@ -96,7 +96,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 25,
-      img: "cursorUpgrade-4.png",
+      img: "cursorUpgrade-4.webp",
       description:
         "Reach deep into the void, pulling forth untapped donut-making power.",
     },
@@ -106,7 +106,7 @@ const upgrades = {
       multiplier: 1.01, // %1 oranında clickValue artışı
       purchased: false,
       requirement: 35,
-      img: "cursorUpgrade-5.png",
+      img: "cursorUpgrade-5.webp",
       description:
         "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
     },
@@ -116,7 +116,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 50,
-      img: "cursorUpgrade-6.png",
+      img: "cursorUpgrade-6.webp",
       description:
         "A gilded tool of infinite precision, sculpting perfect donuts with every click.",
     },
@@ -128,7 +128,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "bakerUpgrade-1.png",
+      img: "bakerUpgrade-1.webp",
       description:
         "A master baker whose mere presence doubles the doughy yield of your donuts.",
     },
@@ -138,7 +138,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 15,
-      img: "bakerUpgrade-2.png",
+      img: "bakerUpgrade-2.webp",
       description:
         "Harness the power of ancient dough magic to knead perfection into every donut.",
     },
@@ -148,7 +148,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 25,
-      img: "bakerUpgrade-3.png",
+      img: "bakerUpgrade-3.webp",
       description:
         "A flour conjurer whose delicate touch transforms ingredients into donut gold.",
     },
@@ -158,7 +158,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 35,
-      img: "bakerUpgrade-4.png",
+      img: "bakerUpgrade-4.webp",
       description:
         "An elemental baker, crafting cosmic donuts from primordial batter.",
     },
@@ -168,7 +168,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 50,
-      img: "bakerUpgrade-5.png",
+      img: "bakerUpgrade-5.webp",
       description:
         "A mythical baker whose crème-filled creations are the stuff of legends.",
     },
@@ -180,7 +180,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "farmUpgrade-1.png",
+      img: "farmUpgrade-1.webp",
       description:
         "Lush fields bursting with crops, nurturing the perfect ingredients for your donuts.",
     },
@@ -190,7 +190,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 15,
-      img: "farmUpgrade-2.png",
+      img: "farmUpgrade-2.webp",
       description:
         "A golden field where each stalk of grain yields a bounty of donut flour.",
     },
@@ -200,7 +200,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 25,
-      img: "farmUpgrade-3.png",
+      img: "farmUpgrade-3.webp",
       description:
         "An ancient grove, where the oldest trees bear the finest donut fruits.",
     },
@@ -210,7 +210,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 35,
-      img: "farmUpgrade-4.png",
+      img: "farmUpgrade-4.webp",
       description:
         "Fields with roots of iron, pulling forth the strongest crops for donut production.",
     },
@@ -220,7 +220,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 50,
-      img: "farmUpgrade-5.png",
+      img: "farmUpgrade-5.webp",
       description:
         "A mystical realm where the land itself grows donut-making magic.",
     },
@@ -232,7 +232,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "mineUpgrade-1.png",
+      img: "mineUpgrade-1.webp",
       description:
         "Sturdy plains rich in minerals, fueling your donut factory with raw power.",
     },
@@ -242,7 +242,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 15,
-      img: "mineUpgrade-2.png",
+      img: "mineUpgrade-2.webp",
       description:
         "A mine where every vein glistens with pure golden resources for your donuts.",
     },
@@ -252,7 +252,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 25,
-      img: "mineUpgrade-3.png",
+      img: "mineUpgrade-3.webp",
       description:
         "Towering spires of diamonds, feeding your production with unrivaled hardness and beauty.",
     },
@@ -262,7 +262,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 35,
-      img: "mineUpgrade-4.png",
+      img: "mineUpgrade-4.webp",
       description:
         "A deep cavern of shimmering emeralds, infusing your donuts with rare energy.",
     },
@@ -272,7 +272,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 50,
-      img: "mineUpgrade-5.png",
+      img: "mineUpgrade-5.webp",
       description:
         "A mine that ascends to the heavens, where rubies pulse with the heart of donut production.",
     },
@@ -284,7 +284,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 1,
-      img: "factoryUpgrade-1.png",
+      img: "factoryUpgrade-1.webp",
       description:
         "A mighty nexus of steel and steam, churning out donuts at blinding speeds.",
     },
@@ -294,7 +294,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 15,
-      img: "factoryUpgrade-2.png",
+      img: "factoryUpgrade-2.webp",
       description:
         "At the core of your factory, the golden heart beats with unstoppable donut-making power.",
     },
@@ -304,7 +304,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 25,
-      img: "factoryUpgrade-3.png",
+      img: "factoryUpgrade-3.webp",
       description:
         "A blazing core of diamond-powered energy, driving your factory to new heights.",
     },
@@ -314,7 +314,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 35,
-      img: "factoryUpgrade-4.png",
+      img: "factoryUpgrade-4.webp",
       description:
         "Hidden deep in your factory lies an emerald vein, enhancing production with every pulse.",
     },
@@ -324,7 +324,7 @@ const upgrades = {
       multiplier: 2,
       purchased: false,
       requirement: 50,
-      img: "factoryUpgrade-5.png",
+      img: "factoryUpgrade-5.webp",
       description:
         "An engine of pure rubyfire, propelling your donut output beyond the stars.",
     },
@@ -717,7 +717,7 @@ function showInfoPanel(upgrade, itemName) {
       <img src="img/${upgrade.img}" alt="${upgrade.name}">
       <h4>${upgrade.name}</h4>
       <span class="cost" style="color: ${costColor}; display: inline-flex; align-items: center;">
-        <img src="img/donutMoney.png" alt="Donut Money" style="height: 12px; width: 12px; margin-right: 5px;">
+        <img src="img/donutMoney.webp" alt="Donut Money" style="height: 12px; width: 12px; margin-right: 5px;">
         ${formattedCost}
       </span>
     </div>
@@ -746,7 +746,7 @@ function showItemInfo(itemKey) {
     document.getElementById(
       "item-info-name"
     ).innerHTML = `<strong>${item.name}</strong>`;
-    document.getElementById("item-info-image").src = `img/${itemKey}.png`;
+    document.getElementById("item-info-image").src = `img/${itemKey}.webp`;
 
     // Owned güncelle
     document.getElementById(
@@ -756,7 +756,7 @@ function showItemInfo(itemKey) {
     // Cost'u güncelle ve donutMoney resmini kullan
     const costColor = donutCount >= item.baseCost ? "#6f6" : "red";
     document.getElementById("item-info-cost").innerHTML = `
-      <img src="img/donutMoney.png" alt="donut icon" class="icon" />
+      <img src="img/donutMoney.webp" alt="donut icon" class="icon" />
       <span style="color: ${costColor};">${formatNumber(
       item.baseCost,
       "cost"
@@ -888,7 +888,7 @@ function addCursor() {
     const y = centerY + radius * Math.sin(angle) - 15; // 15: cursor'un yarı yüksekliği
 
     const cursor = document.createElement("img");
-    cursor.src = "img/cursorDonut.png"; // Cursor resminin yolu
+    cursor.src = "img/cursorDonut.webp"; // Cursor resminin yolu
     cursor.classList.add("cursor");
     cursor.style.left = `${x}px`;
     cursor.style.top = `${y}px`;
@@ -1089,7 +1089,7 @@ function updateBakeryName() {
 
 function createFallingDonut(x, y) {
   const fallingDonut = document.createElement("img");
-  fallingDonut.src = "img/donutPixelArt.png";
+  fallingDonut.src = "img/donutPixelArt.webp";
   fallingDonut.classList.add("falling-donut");
 
   // Donut'un başlangıç pozisyonunu tıklanan yere göre ayarla
@@ -1237,7 +1237,7 @@ function loadGame() {
     if (gameState.cursors && gameState.cursors.length > 0) {
       gameState.cursors.forEach((cursorData) => {
         const cursor = document.createElement("img");
-        cursor.src = "img/cursorDonut.png";
+        cursor.src = "img/cursorDonut.webp";
         cursor.classList.add("cursor");
         cursor.style.left = `${cursorData.x}px`;
         cursor.style.top = `${cursorData.y}px`;
