@@ -738,6 +738,9 @@ function hideInfoPanel() {
   infoPanel.style.display = "none";
 }
 function showItemInfo(itemKey) {
+  if (window.innerWidth <= 764) {
+    return; // Mobilde panel açılmayacak
+  }
   const item = items[itemKey];
   const itemInfoPanel = document.getElementById("item-info-panel");
 
@@ -871,37 +874,43 @@ function addCursor() {
   const cursorContainer = document.getElementById("cursor-container");
   let totalCursors = items.cursor.count;
 
-  // Maksimum 60 cursor eklenmesine izin veriyoruz
-  const maxCursors = 60;
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  const maxCursors = isMobile ? 30 : 60; // Mobilde 20, PC'de 60 sınırı
   totalCursors = Math.min(totalCursors, maxCursors); // 60'tan fazla cursor eklenmeyecek
 
-  const radius = 145; // Donut'un etrafındaki çemberin yarıçapı
+  const radius = isMobile ? 85 : 145; // Mobilde daha küçük bir yarıçap kullan
+  cursorContainer.classList.add(isMobile ? "mobile" : "desktop");
+
   const centerX = cursorContainer.clientWidth / 2;
   const centerY = cursorContainer.clientHeight / 2;
 
   const initialAngle = Math.PI / 2; // İlk cursor sağda, 90 derece
-  const angleStep = (2 * Math.PI) / maxCursors; // Bir tam tur için 60 cursor'luk bir sınır
+  const angleStep = (2 * Math.PI) / maxCursors; // Bir tam tur için cursor sınırı
 
   for (let i = cursors.length; i < totalCursors; i++) {
-    const angle = initialAngle - i * angleStep; // Her yeni cursor saat yönünde yerleşecek
-    const x = centerX + radius * Math.cos(angle) - 15; // 15: cursor'un yarı genişliği
-    const y = centerY + radius * Math.sin(angle) - 15; // 15: cursor'un yarı yüksekliği
+    const angle = initialAngle - i * angleStep;
+    const x = centerX + radius * Math.cos(angle) - 15;
+    const y = centerY + radius * Math.sin(angle) - 15;
 
     const cursor = document.createElement("img");
-    cursor.src = "img/cursorDonut.webp"; // Cursor resminin yolu
-    cursor.classList.add("cursor");
+    cursor.src = "img/cursorDonut.webp";
+    cursor.classList.add(
+      "cursor",
+      isMobile ? "cursor-mobile" : "cursor-desktop"
+    );
     cursor.style.left = `${x}px`;
     cursor.style.top = `${y}px`;
 
-    const rotationAngle = angle * (180 / Math.PI) - 90; // Açıyı dereceye çeviriyoruz
-    cursor.style.transform = `rotate(${rotationAngle}deg)`; // Cursor'u donut'a bakacak şekilde döndürüyoruz
+    const rotationAngle = angle * (180 / Math.PI) - 90; // Cursor'u döndürüyoruz
+    cursor.style.transform = `rotate(${rotationAngle}deg)`; // Donut'a bakacak şekilde döndür
 
     cursorContainer.appendChild(cursor);
-    cursors.push({ element: cursor, x, y, angle }); // Yeni cursor'u listeye ekle
+    cursors.push({ element: cursor, x, y, angle });
   }
 
   // Eğer animasyon zaten çalışıyorsa, yeni cursor'lar sadece eklenir, animasyon bozulmaz
 }
+
 function clearUpgradeList() {
   const upgradeListDiv = document.getElementById("upgrade-list");
   while (upgradeListDiv.firstChild) {

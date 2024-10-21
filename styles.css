@@ -9,6 +9,12 @@ body {
   font-weight: 660;
   font-style: normal;
   touch-action: manipulation;
+  overflow-y: hidden;
+}
+@font-face {
+  font-family: "Playpen Sans";
+  src: url("fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap");
+  font-display: swap;
 }
 
 .game-container {
@@ -36,7 +42,8 @@ body {
   justify-content: center;
   align-items: center;
   position: absolute;
-  width: calc(100% - 650px);
+  width: 100%;
+  max-width: calc(100% - 300px);
   height: 100%;
   top: 40%;
   left: 50%;
@@ -49,25 +56,23 @@ body {
   right: 0;
   bottom: 0;
   overflow-x: hidden;
-  overflow-y: auto; /* Yatay kaydırmayı gizleyip dikey kaydırmayı aktif yap */
+  overflow-y: auto;
   background: #ffeab628;
   border-left: 10px solid #ffeab6;
   z-index: 25;
-  width: 20%; /* Ekran genişliğinin %20'sini kaplasın */
-  max-width: 310px; /* Daha geniş ekranlarda maksimum genişlik verelim */
-  min-width: 100px; /* Küçük ekranlarda daha fazla küçülmesini engelleyelim */
-  box-sizing: border-box; /* Kenar boşluklarını içeriden hesaplar */
+  width: 25%;
+  max-width: 310px;
+  min-width: 100px;
+  box-sizing: border-box;
 }
 
 #store-title {
-  position: sticky; /* Sabitlenen konumda kalmasını sağlar */
-  top: 0;
-  width: 100%; /* Tüm alanı kaplasın */
+  width: 100%;
   text-align: center;
   padding: 8px;
   font-size: 28px;
-  z-index: 30; /* Diğer elemanların üzerine çıksın */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Hafif gölge ver */
+  z-index: 30;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 #section-left {
   position: absolute;
@@ -75,13 +80,13 @@ body {
   left: 0;
   bottom: 0;
   overflow-x: hidden;
-  overflow-y: auto; /* Dikey kaydırmayı etkin yap */
-  background: #ffeab628; /* Arka plan rengini aynı yap */
-  border-right: 10px solid #ffeab6; /* Sağ tarafında border ekle */
+  overflow-y: auto;
+  background: #ffeab628;
+  border-right: 10px solid #ffeab6;
   z-index: 25;
-  width: 20%; /* Ekran genişliğinin %20'sini kaplasın */
-  max-width: 310px; /* Daha geniş ekranlarda maksimum genişlik verelim */
-  min-width: 100px; /* Küçük ekranlarda daha fazla küçülmesini engelleyelim */
+  width: 25%;
+  max-width: 310px;
+  min-width: 100px;
   box-sizing: border-box;
 }
 
@@ -157,6 +162,39 @@ body {
   transition: transform 0.3s ease;
   will-change: transform;
 }
+/* Mobil için stil */
+.cursor-mobile {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+}
+
+/* Masaüstü için stil */
+.cursor-desktop {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform-origin: center;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+/* Container boyutları */
+#cursor-container.mobile {
+  width: 30px;
+  height: 30px;
+}
+
+#cursor-container.desktop {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13%;
+  height: 13%;
+  transform: translate(-60%, -60%);
+  pointer-events: none;
+  pointer-events: none;
+}
 
 #donut:active {
   transform: scale(0.95);
@@ -218,12 +256,12 @@ body {
   color: rgb(255, 0, 0);
 }
 .upgrades-container {
-  display: flex; /* Resimleri yan yana sıralar */
+  display: flex;
 }
 
 .upgrades-container img {
-  width: 36px; /* Resmin boyutu */
-  height: 36px; /* Resmin boyutu */
+  width: 36px;
+  height: 36px;
   margin: 0;
 }
 
@@ -256,7 +294,7 @@ body {
   overflow: hidden;
   max-width: calc(54px * 5 + 2px * 4 + 10px);
   min-height: 50px;
-  max-height: 50px; /* İlk başta sadece 1 satır görünecek */
+  max-height: 50px;
   top: 0;
   right: 0;
   gap: 2px;
@@ -267,7 +305,7 @@ body {
 }
 
 #upgrade-list:hover {
-  max-height: 200px; /* Hover olduğunda alt satırdaki elemanları göster */
+  max-height: 200px;
 }
 
 .upgrade {
@@ -854,16 +892,16 @@ button {
 @media (max-width: 764px) {
   #section-right {
     width: 150px;
-    overflow-x: scroll;
   }
 
   #section-left {
-    width: 150px;
-    overflow-x: scroll;
+    width: 115px;
   }
   .donut-container {
-    width: 100px;
+    width: 125px;
     font-size: 12px;
+    top: 41%;
+    left: 46%;
   }
   .page-info {
     margin-left: 0px;
@@ -884,7 +922,24 @@ button {
   }
   /* Donut resmi küçültme */
   #donut {
-    width: 100%; /* Donut resmi daha da küçültüldü */
+    width: 145px; /* Daha küçük sabit genişlik */
+    height: 145px; /* Oranlı sabit yükseklik */
+  }
+
+  #cursor-container {
+    position: absolute;
+    top: 28%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; /* Varsayılan genişlik */
+    height: 100px; /* Varsayılan yükseklik */
+    pointer-events: none;
+  }
+
+  .donut-wrapper::before {
+    content: none; /* Mobilde pseudo element tamamen kaldırılıyor */
+    box-shadow: none; /* Box shadow devre dışı */
+    animation: none; /* Animasyonu durdur */
   }
 
   /* Info panel */
@@ -938,20 +993,20 @@ button {
 
   /* Page item boyutları */
   .page-item {
-    padding: 8px;
+    padding: 2px;
   }
 
   .page-img {
-    width: 50px;
-    height: 50px;
+    width: 36px;
+    height: 36px;
   }
 
   .page-name {
-    font-size: 18px;
+    font-size: 11px;
   }
 
   .page-description {
-    font-size: 10px;
+    font-size: 7px;
   }
 
   /* Store item isimleri ayarlanması */
@@ -963,24 +1018,39 @@ button {
     margin-left: -4px;
     gap: 2px;
   }
-  #cursor-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 15%;
-    height: 15%;
-    pointer-events: none;
-    /* Prestij kutuları tam görünüm için */
-    #prestigeBarContainer {
-      width: 90%;
-      height: 12px;
-      margin-top: 8px;
-    }
 
-    #prestigePoints,
-    #nextPrestigeThreshold {
-      font-size: 12px;
-    }
+  /* Prestij kutuları tam görünüm için */
+  #prestigeBarContainer {
+    width: 90%;
+    height: 12px;
+    margin-top: 8px;
+  }
+
+  #prestigePoints,
+  #nextPrestigeThreshold {
+    font-size: 7px;
+  }
+  .purchase-options button {
+    width: 35px;
+    height: 25px;
+  }
+  .upgrade {
+    width: 24px;
+    height: 25px;
+  }
+  .upgrade img {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  #upgrade-list {
+    min-height: 40px;
+    max-height: 40px;
+  }
+  #store-title {
+    font-size: 25px;
+  }
+  #page-title {
+    font-size: 20px;
   }
 }
 
