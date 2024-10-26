@@ -43,11 +43,7 @@ body {
   align-items: center;
   position: absolute;
   width: 100%;
-  max-width: calc(100% - 300px);
-  height: 100%;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  margin-top: 230px;
   text-align: center;
 }
 #section-right {
@@ -60,10 +56,28 @@ body {
   background: #ffeab628;
   border-left: 10px solid #ffeab6;
   z-index: 25;
-  width: 25%;
-  max-width: 310px;
+  width: 30%;
+  max-width: 315px;
   min-width: 100px;
   box-sizing: border-box;
+}
+/* Scrollbar Stil Ayarları */
+#section-right::-webkit-scrollbar {
+  width: 8px;
+}
+
+#section-right::-webkit-scrollbar-track {
+  background: #ffeab628;
+}
+
+#section-right::-webkit-scrollbar-thumb {
+  background-color: #ffeab6;
+  border-radius: 10px;
+  border: 2px solid #ffeab628;
+}
+
+#section-right::-webkit-scrollbar-thumb:hover {
+  background-color: #e2b584;
 }
 
 #store-title {
@@ -84,8 +98,8 @@ body {
   background: #ffeab628;
   border-right: 10px solid #ffeab6;
   z-index: 25;
-  width: 25%;
-  max-width: 310px;
+  width: 30%;
+  max-width: 315px;
   min-width: 100px;
   box-sizing: border-box;
 }
@@ -107,31 +121,6 @@ body {
   height: 250px;
 }
 
-.donut-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80%;
-  height: 80%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at center,
-    rgba(230, 230, 230, 0.7),
-    rgba(255, 255, 255, 0.2),
-    transparent 70%
-  );
-  z-index: -1;
-  box-shadow: 0 0 80px rgba(255, 255, 255, 0.8),
-    0 0 150px rgba(255, 255, 255, 0.6), 0 0 300px rgba(255, 255, 255, 0.4);
-  animation: pulse 2s infinite;
-}
-.donut-wrapper img {
-  width: 100%;
-  height: auto;
-  max-width: 300px; /* Maksimum donut genişliği */
-}
 #donut {
   width: 100%;
   height: 100%;
@@ -199,6 +188,7 @@ body {
 #donut:active {
   transform: scale(0.95);
 }
+
 .info-panel {
   position: absolute;
   width: 280px;
@@ -489,7 +479,7 @@ body {
 .page-content {
   position: relative;
   width: 100%;
-  padding-top: 70px;
+  padding-top: 93px;
   padding-bottom: 10px;
 }
 
@@ -724,8 +714,190 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
+/* Header Styles */
+#header-container {
+  position: relative;
+  width: 100%; /* Tam genişlik */
+  text-align: center;
+}
 
-/* Reset Butonu Stilleri */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1260px;
+  height: 133px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  border-bottom: 10px solid #ffeab6;
+}
+.headerImg {
+  position: absolute; /* Mutlak konumlandırma */
+  top: -25px; /* Üstten 0 piksel mesafede */
+  width: 200px;
+  height: 200px;
+  left: 50%; /* Yatay olarak ortalar */
+  transform: translateX(-50%); /* Tam olarak ortalamak için */
+  z-index: 1; /* Diğer öğelerin arkasında kalmaması için */
+}
+
+.header-left,
+.header-right {
+  flex: 1; /* Butonlar sol ve sağda genişliğe yayılacak */
+}
+
+.header-title {
+  flex: 2; /* Başlık daha geniş bir alan kaplayacak */
+  font-size: 36px;
+  color: #333;
+  text-align: center;
+}
+
+.header-left button,
+.header-right button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #2c2c2c;
+  color: white;
+  cursor: pointer;
+}
+
+.header-left button:hover,
+.header-right button:hover {
+  background-color: #444444;
+}
+
+.header-left {
+  text-align: left;
+}
+
+.header-right {
+  text-align: right;
+}
+#information-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 310px;
+  background-color: #2c2c2c;
+  color: white;
+  padding: 20px;
+  border: 2px solid #b8860b;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  box-sizing: border-box; /* Kenarlık ve padding dahil */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox için */
+  scrollbar-color: #b8860b #2c2c2c; /* Firefox için */
+}
+#stats-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 310px;
+  background-color: #2c2c2c;
+  color: white;
+  padding: 20px;
+  border: 2px solid #b8860b;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  box-sizing: border-box; /* Kenarlık ve padding dahil */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin; /* Firefox için */
+  scrollbar-color: #b8860b #2c2c2c; /* Firefox için */
+}
+#stats-section p {
+  font-weight: 800;
+  color: lightgray;
+}
+
+#stats-section span {
+  font-weight: 400;
+  color: white;
+}
+
+/* Webkit tabanlı tarayıcılar için */
+#information-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+#information-menu::-webkit-scrollbar-thumb {
+  background: #b8860b;
+  border-radius: 10px;
+}
+
+#information-menu::-webkit-scrollbar-thumb:hover {
+  background: #daa520; /* Hover efekti */
+}
+
+#information-menu::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+
+.menu-content {
+  max-width: 400px;
+}
+
+/* Close button for the modal */
+.close-btn {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+}
+.about-text {
+  font-weight: 200;
+  font-size: 12px;
+}
+
+/* Styling for the update sections */
+.update {
+  margin: 10px 0;
+  padding: 10px;
+  border-left: 4px solid #ccc;
+}
+
+.big-update {
+  border-color: #4caf50; /* Green for big updates */
+}
+
+.small-update {
+  border-color: #ff9800; /* Orange for small updates */
+}
+
+.big-update-title {
+  margin-top: 0;
+  color: #8be98e;
+}
+.big-update-text {
+  font-size: 13px;
+}
+.small-update-title {
+  color: #fdc167;
+}
+.small-update-text {
+  font-size: 11px;
+}
+h2::after,
+h3::after {
+  content: "";
+  display: block;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.66),
+    rgba(255, 255, 255, 0.33),
+    rgba(255, 255, 255, 0.11),
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0)
+  );
+  height: 1px;
+  margin: 6px 0; /* Üst ve alt boşluk */
+}
 #reset-button {
   position: fixed;
   bottom: 20px;
@@ -934,12 +1106,6 @@ button {
     width: 40px; /* Varsayılan genişlik */
     height: 100px; /* Varsayılan yükseklik */
     pointer-events: none;
-  }
-
-  .donut-wrapper::before {
-    content: none; /* Mobilde pseudo element tamamen kaldırılıyor */
-    box-shadow: none; /* Box shadow devre dışı */
-    animation: none; /* Animasyonu durdur */
   }
 
   /* Info panel */

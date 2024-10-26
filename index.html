@@ -102,7 +102,98 @@
           </div>
         </div>
       </div>
+      <!-- Header -->
+      <div id="header-container">
+        <div class="header-content">
+          <div class="header-left">
+            <button id="info-button">Info</button>
+          </div>
 
+          <img src="img/donutSign.png" alt="Donut Sign" class="headerImg" />
+
+          <!-- <h1 class="header-title">Donut Clicker</h1> -->
+
+          <div class="header-right">
+            <button id="stats-button">Stats</button>
+          </div>
+        </div>
+      </div>
+      <div id="stats-menu" class="hidden">
+        <div class="menu-content">
+          <span id="close-stats-menu" class="close-btn">&times;</span>
+          <h2>Statistics</h2>
+
+          <!-- Stats Section -->
+          <section id="stats-section">
+            <h3>Stats</h3>
+            <p>
+              Total Donuts:
+              <img
+                src="img/donut.webp"
+                alt="Donut"
+                style="width: 10px; height: 10px"
+              />
+              <span id="total-donuts">0</span>
+            </p>
+            <p>
+              Donuts Produced:
+              <img
+                src="img/donut.webp"
+                alt="Donut"
+                style="width: 10px; height: 10px"
+              />
+              <span id="donuts-produced">0</span>
+            </p>
+            <p>Total Items: <span id="total-items">0</span></p>
+            <p>Donuts per Second: <span id="donuts-per-second">0</span></p>
+            <p>Click Value: <span id="click-value">1</span></p>
+            <p>Total Clicks: <span id="total-clicks">0</span></p>
+          </section>
+        </div>
+      </div>
+
+      <!-- Information Panel -->
+      <div id="information-menu" class="hidden">
+        <div class="menu-content">
+          <span id="close-menu" class="close-btn">&times;</span>
+          <h2>Information</h2>
+
+          <!-- About Section -->
+          <section id="about-section">
+            <h3>About</h3>
+            <p class="about-text">Donut Clicker is developed by ktz and doa.</p>
+            <p class="about-text">
+              In this section, you can learn about the latest updates and
+              announcements related to the game.
+            </p>
+          </section>
+
+          <!-- Updates Section -->
+          <section id="updates-section">
+            <h3>Updates</h3>
+
+            <!-- Big Update -->
+            <div class="update big-update">
+              <h4 class="big-update-title">Big Update: Version 1.2.5</h4>
+              <ul class="big-update-text">
+                <li>Two new buildings added</li>
+                <li>New upgrades introduced</li>
+                <li>Stats-info panel implemented</li>
+                <li>UI improvements and bug fixes</li>
+                <li>Pricing adjustments made</li>
+                <li>Portal image updated</li>
+                <li>Complete overhaul of script.js</li>
+              </ul>
+            </div>
+
+            <!-- Small Update -->
+            <!-- <div class="update small-update">
+              <h5 class="small-update-title">Small Update: Version 2.1.1</h4>
+              <p class="small-update-text">Minor bug fixes and performance improvements.</p>
+            </div> -->
+          </section>
+        </div>
+      </div>
       <!-- Donut Kısmı -->
       <div class="donut-container">
         <p id="bakery-name"></p>
@@ -132,11 +223,7 @@
           </div>
           <div id="buildings">
             <!-- Cursor -->
-            <div
-              class="store-item"
-              data-item="cursor"
-              onclick="buyItem('cursor')"
-            >
+            <div class="store-item" data-item="cursor">
               <div class="item-img">
                 <img src="img/cursor.webp" alt="Cursor" />
               </div>
@@ -157,11 +244,7 @@
             </div>
 
             <!-- Baker -->
-            <div
-              class="store-item"
-              data-item="baker"
-              onclick="buyItem('baker')"
-            >
+            <div class="store-item" data-item="baker">
               <div class="item-img">
                 <img src="img/baker.webp" alt="Baker" />
               </div>
@@ -182,7 +265,7 @@
             </div>
 
             <!-- Farm -->
-            <div class="store-item" data-item="farm" onclick="buyItem('farm')">
+            <div class="store-item" data-item="farm">
               <div class="item-img">
                 <img src="img/farm.webp" alt="Farm" />
               </div>
@@ -203,7 +286,7 @@
             </div>
 
             <!-- Mine -->
-            <div class="store-item" data-item="mine" onclick="buyItem('mine')">
+            <div class="store-item" data-item="mine">
               <div class="item-img mine">
                 <img src="img/mine.webp" alt="mineDonut" />
               </div>
@@ -224,11 +307,7 @@
             </div>
 
             <!-- Factory -->
-            <div
-              class="store-item"
-              data-item="factory"
-              onclick="buyItem('factory')"
-            >
+            <div class="store-item" data-item="factory">
               <div class="item-img">
                 <img src="img/factory.webp" alt="Factory" />
               </div>
@@ -247,38 +326,29 @@
                 <p id="totalFactorys" class="total">0</p>
               </div>
             </div>
-
-            <!-- Portal -->
-            <div
-              class="store-item"
-              data-item="portal"
-              onclick="buyItem('portal')"
-            >
+            <!-- Factory -->
+            <div class="store-item" data-item="logisticCenter">
               <div class="item-img">
-                <img src="img/portal.webp" alt="portalDonut" />
+                <img src="img/logisticCenter.webp" alt="Factory" />
               </div>
               <div class="item-info">
-                <p class="item-name title">Portal</p>
+                <p class="item-name title">Logistic Center</p>
                 <p class="item-cost">
                   <img
                     src="img/donutMoney.webp"
                     alt="donut icon"
                     class="icon"
                   />
-                  <span id="portalCost">1927200</span>
+                  <span id="logisticCenterCost">1927200</span>
                 </p>
               </div>
               <div class="item-total">
-                <p id="totalPortals" class="total">0</p>
+                <p id="totalLogisticCenters" class="total">0</p>
               </div>
             </div>
 
             <!-- Power Plant -->
-            <div
-              class="store-item"
-              data-item="powerPlant"
-              onclick="buyItem('powerPlant')"
-            >
+            <div class="store-item" data-item="powerPlant">
               <div class="item-img">
                 <img src="img/powerPlant.webp" alt="powerPlantDonut" />
               </div>
@@ -290,20 +360,36 @@
                     alt="donut icon"
                     class="icon"
                   />
-                  <span id="powerPlantCost">20910000</span>
+                  <span id="powerPlantCost">21090250</span>
                 </p>
               </div>
               <div class="item-total">
                 <p id="totalPowerPlants" class="total">0</p>
               </div>
             </div>
+            <!-- Nature -->
+            <div class="store-item" data-item="nature">
+              <div class="item-img">
+                <img src="img/nature.webp" alt="nature" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Nature</p>
+                <p class="item-cost">
+                  <img
+                    src="img/donutMoney.webp"
+                    alt="donut icon"
+                    class="icon"
+                  />
+                  <span id="natureCost">230800850</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalNatures" class="total">0</p>
+              </div>
+            </div>
 
             <!-- Neural Network Bakery -->
-            <div
-              class="store-item"
-              data-item="neuralNetworkBakery"
-              onclick="buyItem('neuralNetworkBakery')"
-            >
+            <div class="store-item" data-item="neuralNetworkBakery">
               <div class="item-img">
                 <img
                   src="img/neuralNetworkBakery.webp"
@@ -318,11 +404,31 @@
                     alt="donut icon"
                     class="icon"
                   />
-                  <span id="neuralNetworkBakeryCost">225828000</span>
+                  <span id="neuralNetworkBakeryCost">2525256900</span>
                 </p>
               </div>
               <div class="item-total">
                 <p id="totalNeuralNetworkBakerys" class="total">0</p>
+              </div>
+            </div>
+            <!-- Portal -->
+            <div class="store-item" data-item="portal">
+              <div class="item-img">
+                <img src="img/portal.webp" alt="portalDonut" />
+              </div>
+              <div class="item-info">
+                <p class="item-name title">Portal</p>
+                <p class="item-cost">
+                  <img
+                    src="img/donutMoney.webp"
+                    alt="donut icon"
+                    class="icon"
+                  />
+                  <span id="portalCost">27650200500</span>
+                </p>
+              </div>
+              <div class="item-total">
+                <p id="totalPortals" class="total">0</p>
               </div>
             </div>
           </div>
