@@ -103,6 +103,68 @@ body {
   min-width: 100px;
   box-sizing: border-box;
 }
+/* Header Styles */
+#header-container {
+  position: relative;
+  width: 100%; /* Tam genişlik */
+  text-align: center;
+  border-bottom: 10px solid #ffeab6;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 35%; /* Daha esnek bir genişlik */
+  height: 133px;
+  margin: 0 auto; /* Ortaya almak için */
+  padding: 10px 20px;
+}
+.headerImg {
+  position: absolute; /* Mutlak konumlandırma */
+  top: -25px; /* Üstten 0 piksel mesafede */
+  width: 200px;
+  height: 200px;
+  left: 50%; /* Yatay olarak ortalar */
+  transform: translateX(-50%); /* Tam olarak ortalamak için */
+  z-index: 1; /* Diğer öğelerin arkasında kalmaması için */
+}
+
+.header-left,
+.header-right {
+  flex: 1; /* Butonlar sol ve sağda genişliğe yayılacak */
+}
+
+.header-title {
+  flex: 2; /* Başlık daha geniş bir alan kaplayacak */
+  font-size: 36px;
+  color: #333;
+  text-align: center;
+}
+
+.header-left button,
+.header-right button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #2c2c2c;
+  color: white;
+  cursor: pointer;
+}
+
+.header-left button:hover,
+.header-right button:hover {
+  background-color: #444444;
+}
+
+.header-left {
+  text-align: left;
+}
+
+.header-right {
+  text-align: right;
+}
 
 #page-title {
   position: sticky;
@@ -714,68 +776,7 @@ button {
   font-weight: bold;
   cursor: pointer;
 }
-/* Header Styles */
-#header-container {
-  position: relative;
-  width: 100%; /* Tam genişlik */
-  text-align: center;
-}
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1260px;
-  height: 133px;
-  margin: 0 auto;
-  padding: 10px 20px;
-  border-bottom: 10px solid #ffeab6;
-}
-.headerImg {
-  position: absolute; /* Mutlak konumlandırma */
-  top: -25px; /* Üstten 0 piksel mesafede */
-  width: 200px;
-  height: 200px;
-  left: 50%; /* Yatay olarak ortalar */
-  transform: translateX(-50%); /* Tam olarak ortalamak için */
-  z-index: 1; /* Diğer öğelerin arkasında kalmaması için */
-}
-
-.header-left,
-.header-right {
-  flex: 1; /* Butonlar sol ve sağda genişliğe yayılacak */
-}
-
-.header-title {
-  flex: 2; /* Başlık daha geniş bir alan kaplayacak */
-  font-size: 36px;
-  color: #333;
-  text-align: center;
-}
-
-.header-left button,
-.header-right button {
-  padding: 10px 20px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background-color: #2c2c2c;
-  color: white;
-  cursor: pointer;
-}
-
-.header-left button:hover,
-.header-right button:hover {
-  background-color: #444444;
-}
-
-.header-left {
-  text-align: left;
-}
-
-.header-right {
-  text-align: right;
-}
 #information-menu {
   position: absolute;
   top: 0;
@@ -1072,8 +1073,7 @@ h3::after {
   .donut-container {
     width: 125px;
     font-size: 12px;
-    top: 41%;
-    left: 46%;
+    left: 33%;
   }
   .page-info {
     margin-left: 0px;
@@ -1091,6 +1091,9 @@ h3::after {
     width: 100%;
     padding-top: 10px;
     padding-bottom: 10px;
+  }
+  .headerImg {
+    visibility: hidden;
   }
   /* Donut resmi küçültme */
   #donut {
