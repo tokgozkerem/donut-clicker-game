@@ -106,7 +106,8 @@ body {
 /* Header Styles */
 #header-container {
   position: relative;
-  width: 100%; /* Tam genişlik */
+  width: 68%;
+  left: 16%;
   text-align: center;
   border-bottom: 10px solid #ffeab6;
 }
@@ -116,7 +117,7 @@ body {
   justify-content: space-between;
   align-items: center;
   max-width: 35%; /* Daha esnek bir genişlik */
-  height: 133px;
+  height: 153px;
   margin: 0 auto; /* Ortaya almak için */
   padding: 10px 20px;
 }
@@ -309,6 +310,9 @@ body {
 }
 .upgrades-container {
   display: flex;
+  flex-wrap: wrap;
+  gap: 5px; /* İkonlar arasında boşluk bırakmak için */
+  max-width: 100%; /* Taşmasını önlemek için */
 }
 
 .upgrades-container img {
@@ -511,6 +515,7 @@ body {
 }
 
 .item-img {
+  position: relative;
   flex-shrink: 0;
   overflow: hidden;
   width: 65px;
@@ -603,7 +608,6 @@ body {
 /* Button Styling */
 button {
   padding: 5px;
-  background-color: #4caf50;
   color: white;
   border: none;
   cursor: pointer;
@@ -777,6 +781,27 @@ button {
   cursor: pointer;
 }
 
+.styled-button {
+  position: fixed;
+  width: 5%;
+  height: 19px;
+  background-color: #2c2c2c;
+  border: 2px solid #b8860b;
+  color: #fff;
+  font-weight: bold;
+  font-size: 9px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: -56px;
+  transition: background-color 0.3s, color 0.3s;
+  margin-left: 188px;
+}
+/* Hover efekti ile daha etkileşimli hale getirme */
+.styled-button:hover {
+  background-color: #b8860b;
+  color: #2c2c2c;
+}
+
 #information-menu {
   position: absolute;
   top: 0;
@@ -899,6 +924,256 @@ h3::after {
   height: 1px;
   margin: 6px 0; /* Üst ve alt boşluk */
 }
+#footer-container {
+  position: fixed;
+  bottom: 0;
+  width: 66%;
+  left: 16.4%;
+  text-align: center;
+  backdrop-filter: blur(10px); /* Cam efekti */
+  background: rgba(255, 234, 182, 0.2); /* Yarı şeffaf cam arka plan */
+  border-top: 2px solid rgba(255, 234, 182, 0.5);
+  border-radius: 15px 15px 0 0;
+  padding: 12px;
+  z-index: 30;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Roboto", sans-serif;
+  transform: translateY(100%);
+  transition: transform 0.5s ease;
+}
+#footer-container.visible {
+  display: block;
+  transform: translateY(0); /* Açıldığında yukarı kayacak */
+  z-index: 2000;
+}
+
+#footer-container.hidden {
+  transform: translateY(100%); /* Kapandığında aşağı kayacak */
+}
+
+.footer-panel {
+  width: 100%;
+  color: #f5f5f5;
+  display: none;
+}
+
+.close-btn {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 1.75rem;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: color 0.2s;
+  z-index: 1;
+}
+
+.close-btn:hover {
+  color: #ff6666;
+}
+
+#mine-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mine-content {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.left-section,
+.right-section {
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.left-section {
+  flex: 1;
+  background: rgba(51, 51, 51, 0.6);
+}
+
+.mine-content-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#item-info-text h4,
+#item-info-text p {
+  margin: 0;
+  color: #f5f5f5;
+}
+
+.ore-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+#oreList {
+  display: flex;
+  gap: 15px;
+  list-style: none;
+  padding: 0;
+}
+
+#oreList li {
+  display: flex;
+  align-items: center;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+}
+
+#oreList img {
+  width: 24px;
+  height: auto;
+  margin-right: 8px;
+}
+
+.right-section {
+  flex: 2;
+  background: rgba(51, 51, 51, 0.6);
+  padding: 5px;
+  overflow-y: auto;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.right-section h4 {
+  font-size: 1.2rem;
+  color: #ffd700;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.market-container ul {
+  display: flex;
+  flex-direction: row;
+  margin-left: 120px;
+}
+
+.market-container li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  border-radius: 8px;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.market-container li:hover {
+  background-color: rgba(40, 167, 69, 0.2);
+  transform: scale(1.05);
+  cursor: pointer;
+}
+.ore-name {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.price-display {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.5s ease;
+}
+
+.donut-money-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.ore-image {
+  width: 40px;
+  height: 40px;
+  margin-right: 5px;
+}
+
+.market-container span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #555;
+}
+.market-container span,
+.price-display {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff; /* Beyaz renk */
+}
+
+.active-mine-effect {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.active-mine-effect:hover {
+  transform: scale(1.06);
+}
+/* Market Başlığı ve Yazı Stili */
+#remainingChances {
+  font-size: 0.85em;
+  color: white;
+  margin-bottom: 10px;
+}
+
+/* Market Butonları */
+.market-btn {
+  background-color: #4caf50; /* Ana renk */
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px; /* Yuvarlak köşeler */
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Hafif gölge */
+}
+#sellBtn {
+  background-color: #f44336; /* Kırmızı renk */
+}
+
+#sellBtn:hover {
+  background-color: #d32f2f; /* Hover sırasında daha koyu kırmızı */
+}
+.market-btn:hover {
+  background-color: #3e8e41; /* Hover efekti için daha koyu ton */
+  transform: scale(1.05); /* Hafif büyütme efekti */
+}
+
+.market-btn:active {
+  transform: scale(0.98); /* Tıklama animasyonu için hafif küçültme */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Tıklama anında gölgeyi azalt */
+}
+
+/* Seçili Buton Stili */
+.market-btn.selected {
+  border: 2px solid #000; /* Seçili buton çerçevesi */
+  background-color: #2e7d32;
+}
+
+/* Pazar Listeleme Hover Efekti */
+#marketList li.buy-hover:hover {
+  background-color: rgba(
+    76,
+    175,
+    80,
+    0.1
+  ); /* Alım için hafif yeşil arka plan */
+}
+
+#marketList li.sell-hover:hover {
+  background-color: rgba(
+    244,
+    67,
+    54,
+    0.1
+  ); /* Satış için hafif kırmızı arka plan */
+}
+
 #reset-button {
   position: fixed;
   bottom: 20px;
@@ -1221,12 +1496,84 @@ h3::after {
   #page-title {
     font-size: 20px;
   }
+  #header-container {
+    position: relative;
+    width: 68%;
+    left: 8%;
+    text-align: center;
+    border-bottom: 10px solid #ffeab6;
+  }
+  #footer-container {
+    position: fixed;
+    bottom: 0;
+    width: 95%;
+    left: 0;
+    text-align: center;
+    background: rgba(255, 234, 182, 0.2);
+    border-top: 2px solid rgba(255, 234, 182, 0.5);
+    border-radius: 15px 15px 0 0;
+    padding: 12px;
+    z-index: 30;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    font-family: "Roboto", sans-serif;
+    transform: translateY(100%);
+    transition: transform 0.5s ease;
+  }
+  .market-container ul {
+    display: flex;
+    flex-direction: row;
+    margin-left: -35px;
+  }
+  .right-section {
+    flex: 2;
+    background: rgba(51, 51, 51, 0.6);
+    overflow-y: auto;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  .mine-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+@media only screen and (min-width: 768px) and (max-width: 1024px) and (min-height: 1024px) and (max-height: 1366px) {
+  #footer-container {
+    position: fixed;
+    bottom: 0;
+    width: 98%;
+    text-align: center;
+    left: 0;
+    background: rgba(255, 234, 182, 0.2);
+    border-top: 2px solid rgba(255, 234, 182, 0.5);
+    border-radius: 15px 15px 0 0;
+    padding: 12px;
+    z-index: 30;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    font-family: "Roboto", sans-serif;
+    transform: translateY(100%);
+    transition: transform 0.5s ease;
+  }
+
+  .market-container ul {
+    display: flex;
+    flex-direction: row;
+    margin-left: 40px;
+  }
+
+  .headerImg {
+    visibility: hidden;
+  }
+  .left-section,
+  .right-section {
+    padding: 5px;
+    border-radius: 10px;
+  }
 }
 
 img {
   -webkit-user-drag: none;
   -moz-user-drag: none;
   -o-user-drag: none;
-  pointer-events: none;
+
   user-select: none;
 }

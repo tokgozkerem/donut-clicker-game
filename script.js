@@ -1,5 +1,6 @@
 class Game {
   constructor() {
+    this.currentVersion = "1.2.6";
     this.bakeryNames = [
       "Sweet Crust",
       "Golden Dough",
@@ -99,16 +100,6 @@ class Game {
           img: "cursorUpgrade-4.webp",
           description:
             "Reach deep into the void, pulling forth untapped donut-making power.",
-        },
-        {
-          name: "Efficient Clicks",
-          cost: 500000,
-          multiplier: 1.01, // %1 oranında clickValue artışı
-          purchased: false,
-          requirement: 35,
-          img: "cursorUpgrade-5.webp",
-          description:
-            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
         },
         {
           name: "Golden Cursor",
@@ -381,6 +372,68 @@ class Game {
             "Fueled by the fastest ruby energy, this upgrade makes your donuts so quick that they deliver themselves.",
         },
       ],
+      nonItemUpgrades: [
+        {
+          name: "Chocolate Dream",
+          cost: 5000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 500,
+          img: "clickUpgrade1.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+        {
+          name: "Dough Delight",
+          cost: 500000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 1000,
+          img: "clickUpgrade2.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+        {
+          name: "Rainbow Sprinkle Surprise",
+          cost: 5000000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 2000,
+          img: "clickUpgrade3.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+        {
+          name: "Strawberry Bliss",
+          cost: 50000000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 4000,
+          img: "clickUpgrade4.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+        {
+          name: "Creamy Classic",
+          cost: 50000000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 8000,
+          img: "clickUpgrade5.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+        {
+          name: "Choco-Chip White Magic",
+          cost: 500000000,
+          multiplier: 1.01, // %1 increase in clickValue
+          purchased: false,
+          requirement: 16000,
+          img: "clickUpgrade6.webp",
+          description:
+            "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
+        },
+      ],
     };
     this.items = {
       cursor: {
@@ -490,26 +543,46 @@ class Game {
     this.totalDonutsEarned = 0;
     this.totalClicks = 0;
     this.lastUpdateTime = Date.now();
+    this.ores = {
+      Copper: { count: 0 },
+      Iron: { count: 0 },
+      Gold: { count: 0 },
+      Diamond: { count: 0 },
+    };
+    this.oreTypes = [
+      { type: "Copper", rarity: 0.7, price: this.items.mine.baseCost * 0.01 },
+      { type: "Iron", rarity: 0.2, price: this.items.mine.baseCost * 0.025 },
+      { type: "Gold", rarity: 0.075, price: this.items.mine.baseCost * 0.05 },
+      { type: "Diamond", rarity: 0.015, price: this.items.mine.baseCost * 0.1 },
+    ];
+    this.workerProductionInterval = 60000; // 60 saniyelik genel üretim döngüsü
+    this.workerCycleRemainingTime = this.workerProductionInterval; // Döngü süresi takibi için
+    this.orePurchaseLimit = 10;
+    this.workers = []; // İşçi listesi
     this.cursors = [];
+    this.isBuying = false; // Şu an alım mı yapılıyor
+    this.isSelling = false; // Şu an satım mı yapılıyor
+    this.setupMarketButtons();
     this.currentCursorIndex = 0;
     this.updateInterval = 125;
     this.donut = document.getElementById("donut");
     this.counter = document.getElementById("donut-count");
     this.perSecondDisplay = document.getElementById("per-second");
+    this.setupModal();
     this.setupStoreHover();
     this.startCursorAnimation();
     this.setupVisibilityChange();
     this.totalPerSecond = 0;
     this.updateTotalPerSecond(); // Başlangıçta hesapla
-    setInterval(() => this.updateProduction(), this.updateInterval);
 
     this.BUILDING_COST_MULTIPLIER = 1.15;
     this.PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT = 1.35;
     this.UPGRADE_COST_MULTIPLIER = 1.1;
     this.prestigeCount = 0;
-    this.nextPrestigeThreshold = 10000000; // 10 million donuts
+    this.nextPrestigeThreshold = 30000000;
     this.prestigeMultiplier = 2;
     this.setupPrestigeModal();
+
     setInterval(() => this.updatePrestigeBar(), this.updateInterval);
 
     this.updateDisplay();
@@ -525,7 +598,8 @@ class Game {
     setInterval(this.saveGame.bind(this), 180000); // 3 dakika
     setInterval(this.updateTitleWithDonuts.bind(this), 1000); // Başlığı her 1 saniyede bir güncelle
     setInterval(() => this.updateStatsDisplay(), 5000);
-
+    setInterval(this.updateProduction.bind(this), 125);
+    this.startProductionCycle();
     // Donut'a tıklama olayını bağla
     this.handleDonutClickBound = this.handleDonutClick.bind(this);
     this.donut.addEventListener("click", this.handleDonutClickBound);
@@ -540,6 +614,9 @@ class Game {
 
       // Tıklama olayı ile item satın almayı bağla
       storeItem.addEventListener("click", (event) => {
+        if (event.target.closest(".item-img img.active-mine-effect")) {
+          return;
+        }
         this.buyItem(itemKey);
       });
     });
@@ -605,78 +682,16 @@ class Game {
         console.error(`Missing total${this.capitalize(key)}s element`);
       }
     }
-
+    const mineImage = document.querySelector(
+      '.store-item[data-item="mine"] .item-img img'
+    );
+    if (this.items.mine.count >= 1) {
+      mineImage.classList.add("active-mine-effect");
+    } else {
+      mineImage.classList.remove("active-mine-effect");
+    }
     // Upgrade'lerin durumunu dinamik olarak güncelle
     this.showUpgrades();
-  }
-  updateTotalPerSecond() {
-    this.totalPerSecond = 0;
-    for (let key in this.items) {
-      this.totalPerSecond += this.items[key].count * this.items[key].production;
-    }
-  }
-  updateProduction() {
-    const currentTime = Date.now();
-    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
-    this.lastUpdateTime = currentTime;
-
-    // Depolanmış totalPerSecond kullanarak hesaplama
-    const donutsProduced = this.totalPerSecond * deltaTime;
-    this.donutCount += donutsProduced;
-    this.totalDonutsEarned += donutsProduced;
-
-    // Her item'in toplam üretimini de artır
-    for (let key in this.items) {
-      if (this.items[key].count > 0) {
-        this.items[key].totalProduced +=
-          this.items[key].count * this.items[key].production * deltaTime;
-      }
-    }
-
-    this.updatePrestigeBar();
-    this.updateDisplay(); // Üretim sonrası ekranı güncelle
-  }
-  calculateClickValue() {
-    let clickValue = 1; // Temel click value
-
-    // Tüm cursor upgrade'lerinin çarpanlarını kontrol et
-    this.upgrades.cursor.forEach((upgrade) => {
-      if (upgrade.purchased) {
-        clickValue *= upgrade.multiplier; // Her satın alınan upgrade ile çarpanı güncelle
-      }
-
-      // Efficient Clicks upgrade'ini kontrol et
-      if (upgrade.name === "Efficient Clicks" && upgrade.purchased) {
-        clickValue += this.calculatePerSecond() * 0.01; // perSecond'un %1'ini clickValue'ye ekle
-      }
-    });
-
-    return clickValue; // Hesaplanan clickValue'yi döndür
-  }
-  handleDonutClick(event) {
-    this.hasDonutClicked = true; // İlk tıklamada true olur
-    this.totalClicks++;
-
-    const clickValue = this.calculateClickValue(); // Click value'yi hesapla
-
-    this.donutCount += clickValue;
-    this.totalDonutsEarned += clickValue;
-    this.lastClickValue = clickValue;
-
-    // Görsel ve ses efektlerini çalıştır
-    const plusOne = document.createElement("div");
-    plusOne.className = "plus-one";
-    plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
-    plusOne.style.left = `${event.clientX}px`;
-    plusOne.style.top = `${event.clientY}px`;
-
-    document.body.appendChild(plusOne);
-    setTimeout(() => document.body.removeChild(plusOne), 1000);
-    this.createFallingDonut(event.clientX, event.clientY);
-    this.playRandomClickSound();
-    this.updateDisplay();
-
-    this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
   }
   showUpgrades() {
     const upgradeList = document.getElementById("upgrade-list");
@@ -685,17 +700,22 @@ class Game {
     let allUpgrades = [];
 
     for (let key in this.upgrades) {
+      if (key === "nonItemUpgrades") continue;
       const itemUpgrades = this.upgrades[key];
 
       itemUpgrades.forEach((upgrade, index) => {
         if (upgrade.purchased) return;
-
-        if (this.items[key].count >= upgrade.requirement) {
-          allUpgrades.push({ key, index, upgrade });
-        }
+        if (this.items[key].count < upgrade.requirement) return;
+        allUpgrades.push({ key, index, upgrade });
       });
     }
+    // Handle non-item upgrades separately
+    this.upgrades.nonItemUpgrades.forEach((upgrade, index) => {
+      if (upgrade.purchased) return;
+      if (this.totalClicks < upgrade.requirement) return; // totalClicks gereksinim kontrolü
 
+      allUpgrades.push({ key: "nonItemUpgrades", index, upgrade });
+    });
     allUpgrades.sort((a, b) => a.upgrade.cost - b.upgrade.cost);
 
     allUpgrades.forEach(({ key, index, upgrade }, position) => {
@@ -759,14 +779,6 @@ class Game {
       }
     });
   }
-  calculatePerSecond() {
-    let totalPerSecond = 0;
-    for (let key in this.items) {
-      totalPerSecond += this.items[key].count * this.items[key].production;
-    }
-    return totalPerSecond;
-  }
-
   buyItem(itemKey) {
     const item = this.items[itemKey];
     if (this.donutCount >= Math.ceil(item.baseCost)) {
@@ -775,27 +787,38 @@ class Game {
       item.count++;
       item.baseCost = item.baseCost * item.costMultiplier;
 
-      this.updateTotalPerSecond();
-      this.updateDisplay();
-      this.showUpgrades();
+      if (itemKey === "mine") {
+        this.addWorker();
+        this.showWorkersBtn.classList.remove("hidden");
+      }
 
       if (itemKey === "cursor") {
         this.addCursor();
       }
+
+      this.updateTotalPerSecond();
+      this.updateDisplay();
+      this.showUpgrades();
     }
   }
   buyUpgrade(itemKey, upgradeIndex) {
-    const upgrade = this.upgrades[itemKey][upgradeIndex];
-    const item = this.items[itemKey];
+    let upgrade;
+    if (itemKey === "nonItemUpgrades") {
+      upgrade = this.upgrades.nonItemUpgrades[upgradeIndex];
+    } else {
+      upgrade = this.upgrades[itemKey][upgradeIndex];
+    }
 
-    if (
-      this.donutCount >= upgrade.cost &&
-      item.count >= upgrade.requirement &&
-      !upgrade.purchased
-    ) {
+    if (this.donutCount >= upgrade.cost && !upgrade.purchased) {
       this.donutCount -= upgrade.cost;
       upgrade.purchased = true;
-      item.production *= upgrade.multiplier;
+
+      if (itemKey === "nonItemUpgrades") {
+        this.clickValue *= upgrade.multiplier; // Or any effect specific to click upgrades
+      } else {
+        const item = this.items[itemKey];
+        item.production *= upgrade.multiplier;
+      }
 
       const upgradeList = document.getElementById("upgrade-list");
       const upgradeDiv = upgradeList.querySelector(
@@ -809,7 +832,318 @@ class Game {
       this.showUpgrades();
     }
   }
+  updateTotalPerSecond() {
+    this.totalPerSecond = 0;
+    for (let key in this.items) {
+      this.totalPerSecond += this.items[key].count * this.items[key].production;
+    }
+  }
+  updateProduction() {
+    const currentTime = Date.now();
+    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
+    this.lastUpdateTime = currentTime;
 
+    // Depolanmış totalPerSecond kullanarak hesaplama
+    const donutsProduced = this.totalPerSecond * deltaTime;
+    this.donutCount += donutsProduced;
+    this.totalDonutsEarned += donutsProduced;
+
+    // Her item'in toplam üretimini de artır
+    for (let key in this.items) {
+      if (this.items[key].count > 0) {
+        this.items[key].totalProduced +=
+          this.items[key].count * this.items[key].production * deltaTime;
+      }
+    }
+
+    this.updatePrestigeBar();
+    this.updateDisplay(); // Üretim sonrası ekranı güncelle
+  }
+  calculateClickValue() {
+    let clickValue = 1; //click value
+
+    // Tüm cursor upgrade'lerini kontrol et
+    this.upgrades.cursor.forEach((upgrade) => {
+      if (upgrade.purchased) {
+        clickValue *= upgrade.multiplier;
+      }
+    });
+    let perSecondBoost = 0;
+    this.upgrades.nonItemUpgrades.forEach((upgrade) => {
+      if (upgrade.purchased) {
+        perSecondBoost += this.calculatePerSecond() * 0.01;
+      }
+    });
+
+    return clickValue + perSecondBoost;
+  }
+  handleDonutClick(event) {
+    this.hasDonutClicked = true; // İlk tıklamada true olur
+    this.totalClicks++;
+
+    const clickValue = this.calculateClickValue(); // Click value'yi hesapla
+
+    this.donutCount += clickValue;
+    this.totalDonutsEarned += clickValue;
+    this.lastClickValue = clickValue;
+
+    // Görsel ve ses efektlerini çalıştır
+    const plusOne = document.createElement("div");
+    plusOne.className = "plus-one";
+    plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
+    plusOne.style.left = `${event.clientX}px`;
+    plusOne.style.top = `${event.clientY}px`;
+
+    document.body.appendChild(plusOne);
+    setTimeout(() => document.body.removeChild(plusOne), 1000);
+    this.createFallingDonut(event.clientX, event.clientY);
+    this.playRandomClickSound();
+    this.updateDisplay();
+
+    this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
+  }
+  calculatePerSecond() {
+    let totalPerSecond = 0;
+    for (let key in this.items) {
+      totalPerSecond += this.items[key].count * this.items[key].production;
+    }
+    return totalPerSecond;
+  }
+  addWorker() {
+    this.workers.push({
+      productionRate: 5,
+    });
+
+    const workerCountElem = document.getElementById("workerCount");
+    if (workerCountElem) {
+      workerCountElem.textContent = this.workers.length;
+    }
+  }
+  generateOre() {
+    // İşçilerin üretim döngüsü
+    this.workers.forEach(() => {
+      const randomNum = Math.random();
+      let cumulativeChance = 0;
+
+      for (let ore of this.oreTypes) {
+        cumulativeChance += ore.rarity;
+        if (randomNum < cumulativeChance) {
+          if (!this.ores[ore.type]) {
+            this.ores[ore.type] = { count: 0 };
+          }
+          this.ores[ore.type].count++;
+          break;
+        }
+      }
+    });
+
+    // Üretim güncelleme
+    this.updateTotalOreCount();
+    this.updateOreList();
+  }
+  updateOreList() {
+    const oreList = document.getElementById("oreList");
+    oreList.innerHTML = "";
+
+    this.oreTypes.forEach((ore) => {
+      const oreData = this.ores[ore.type] || { count: 0 }; // Default to 0 if ore not generated yet
+      const listItem = document.createElement("li");
+
+      listItem.style.opacity = oreData.count > 0 ? "1" : "0.5";
+      listItem.innerHTML = `<img src="img/${ore.type.toLowerCase()}.webp" alt="${
+        ore.type
+      }"> x${oreData.count}`;
+
+      oreList.appendChild(listItem);
+    });
+
+    this.updateTotalOreCount();
+  }
+  updateTotalOreCount() {
+    const totalOreCount = Object.values(this.ores).reduce(
+      (sum, ore) => sum + ore.count,
+      0
+    );
+    const oreCountElem = document.getElementById("oreCount");
+    if (oreCountElem) {
+      oreCountElem.textContent = totalOreCount;
+    }
+  }
+  updateMarketDisplay() {
+    const marketList = document.getElementById("marketList");
+    marketList.innerHTML = "";
+
+    this.oreTypes.forEach((ore) => {
+      const listItem = document.createElement("li");
+
+      const oreName = document.createElement("span");
+      oreName.classList.add("ore-name");
+      oreName.innerHTML = `<img src="img/${ore.type.toLowerCase()}.webp" alt="${
+        ore.type
+      }" class="ore-image">`;
+      listItem.dataset.oreType = ore.type;
+      const orePrice = document.createElement("span");
+      orePrice.innerHTML = `<img src="img/donutMoney.webp" alt="Donut Money" class="donut-money-icon">
+                            ${this.formatNumber(ore.price)}`;
+
+      listItem.appendChild(oreName);
+      listItem.appendChild(orePrice);
+      marketList.appendChild(listItem);
+
+      setTimeout(
+        () => orePrice.classList.remove("green-text", "red-text"),
+        500
+      );
+    });
+  }
+  updateMarketPrices() {
+    this.oreTypes.forEach((ore) => {
+      const isPriceIncrease = Math.random() < 0.5;
+      const changeFactor = isPriceIncrease ? 0.13 : -0.04;
+
+      ore.price = Math.max(0, ore.price * (1 + changeFactor));
+    });
+
+    this.updateMarketDisplay();
+  }
+  startProductionCycle() {
+    setInterval(() => {
+      // İşçi üretim döngüsü
+      if (this.workerCycleRemainingTime > 0) {
+        this.workerCycleRemainingTime -= 1000; // Her saniye kalan süreyi azalt
+      } else {
+        this.generateOre(); // Cevher üret
+        this.updateMarketPrices();
+        this.workerCycleRemainingTime = this.workerProductionInterval; // Döngüyü sıfırla
+        this.orePurchaseLimit = 10;
+      }
+      const remainingChancesElem = document.getElementById("remainingChances");
+      if (remainingChancesElem) {
+        remainingChancesElem.textContent = `You can get a maximum of 10 ores every 1 minute. Remaining: ${this.orePurchaseLimit}`;
+      }
+      // Arayüzde kalan süreyi güncelle
+      const oreInfoElem = document.querySelector(".ore-generation-info");
+      if (oreInfoElem) {
+        oreInfoElem.textContent = `${
+          this.workers.length
+        } workers generating 5 ores per minute. Next in: ${Math.ceil(
+          this.workerCycleRemainingTime / 1000
+        )}s`;
+      }
+    }, 1000); // Her saniye bir kez çalıştır
+  }
+  setupMarketButtons() {
+    const buyBtn = document.getElementById("buyBtn");
+    const sellBtn = document.getElementById("sellBtn");
+
+    // Alım modunu ayarla
+    buyBtn.addEventListener("click", () => {
+      this.isBuying = true;
+      this.isSelling = false;
+      this.updateMarketButtonStyles();
+    });
+
+    // Satım modunu ayarla
+    sellBtn.addEventListener("click", () => {
+      this.isBuying = false;
+      this.isSelling = true;
+      this.updateMarketButtonStyles();
+    });
+
+    // Market listesine olay dinleyicisi ekle
+    document.getElementById("marketList").addEventListener("click", (event) => {
+      const listItem = event.target.closest("li"); // Olayın 'li' içinde olup olmadığını doğrulayın.
+      if (listItem) {
+        const oreType = listItem.getAttribute("data-ore-type");
+        this.handleMarketTransaction(oreType);
+      }
+    });
+  }
+  updateMarketButtonStyles() {
+    const buyBtn = document.getElementById("buyBtn");
+    const sellBtn = document.getElementById("sellBtn");
+
+    // Buton renklerini güncelle
+    buyBtn.classList.toggle("selected", this.isBuying);
+    sellBtn.classList.toggle("selected", this.isSelling);
+
+    // List itemlar için hover rengini güncelle
+    document.querySelectorAll("#marketList li").forEach((li) => {
+      li.classList.toggle("buy-hover", this.isBuying);
+      li.classList.toggle("sell-hover", this.isSelling);
+    });
+  }
+  handleMarketTransaction(oreType) {
+    const ore = this.oreTypes.find((o) => o.type === oreType);
+    if (!ore) return;
+
+    const orePrice = ore.price;
+
+    if (this.isBuying) {
+      if (this.donutCount >= orePrice && this.orePurchaseLimit > 0) {
+        // 10-item limit check
+        this.donutCount -= orePrice;
+        this.ores[oreType].count++;
+        this.orePurchaseLimit--;
+        console.log(this.orePurchaseLimit);
+        this.updateDisplay();
+        this.updateOreList();
+      } else if (this.orePurchaseLimit <= 0) {
+        alert("You have reached the maximum purchase limit!");
+      } else {
+        alert("Not enough donuts!");
+      }
+    } else if (this.isSelling) {
+      if (this.ores[oreType].count > 0) {
+        this.donutCount += orePrice;
+        this.ores[oreType].count--;
+        this.updateDisplay();
+        this.updateOreList();
+      } else {
+        alert("Not enough ore!");
+      }
+    }
+  }
+  setupModal() {
+    this.modal = document.getElementById("mine-panel");
+    this.footerContainer = document.getElementById("footer-container");
+
+    // mine.webp resmine tıklandığında paneli aç
+    this.showWorkersBtn = document.querySelector(
+      '.store-item[data-item="mine"] .item-img img[src="img/mine.webp"]'
+    );
+    if (this.showWorkersBtn) {
+      console.log("Mine image found");
+      this.showWorkersBtn.addEventListener("click", () => {
+        this.openModal();
+      });
+    } else {
+      console.log("Mine image not found");
+    }
+
+    // Paneli kapatmak için kapatma düğmesi
+    const closeButton = document.getElementById("close-mine-panel");
+    closeButton.addEventListener("click", () => {
+      this.closeModal();
+    });
+  }
+  openModal() {
+    // Footer-container'ı animasyonla göster
+    this.footerContainer.classList.add("visible");
+    this.footerContainer.classList.remove("hidden");
+    this.footerContainer.style.display = "block"; // Görünür yap
+    this.updateOreList(); // Diğer işlemleri güncelle
+  }
+  closeModal() {
+    // Footer-container'ı animasyonla gizle
+    this.footerContainer.classList.add("hidden");
+    this.footerContainer.classList.remove("visible");
+
+    // Animasyon tamamlandığında görünürlüğü kaldır
+    setTimeout(() => {
+      this.footerContainer.style.display = "none";
+    }, 500); // 500ms, CSS animasyon süresi ile eşleşmeli
+  }
   showInfoPanel(upgrade, itemName) {
     const infoPanel = document.getElementById("info-panel");
 
@@ -1089,6 +1423,7 @@ class Game {
       this.donutCount = 0;
       this.totalDonutsEarned = 0;
       this.totalPerSecond = 0;
+      this.totalClicks = 0;
       this.nextPrestigeThreshold *= 2;
 
       // Cursorları sıfırla
@@ -1151,7 +1486,6 @@ class Game {
     const randomIndex = Math.floor(Math.random() * this.bakeryNames.length);
     return this.bakeryNames[randomIndex];
   }
-
   updateBakeryName() {
     const bakeryNameElement = document.getElementById("bakery-name");
     if (bakeryNameElement) {
@@ -1159,7 +1493,6 @@ class Game {
       bakeryNameElement.textContent = this.currentBakeryName;
     }
   }
-
   createFallingDonut(x, y) {
     const fallingDonut = document.createElement("img");
     fallingDonut.src = "img/donutPixelArt.webp";
@@ -1188,17 +1521,14 @@ class Game {
       document.body.removeChild(fallingDonut);
     }, animationDuration * 1000);
   }
-
   getRandomAnimation() {
     const animations = ["bounceLeft", "bounceRight", "bounceUp"];
     const randomIndex = Math.floor(Math.random() * animations.length);
     return animations[randomIndex];
   }
-
   getRandomDistance() {
     return Math.floor(Math.random() * 20) + 10;
   }
-
   formatNumber(number, type = "count") {
     if (type === "perSecond") {
       // Eğer type 'perSecond' ise, 1 ondalık basamağa kadar göster
@@ -1222,7 +1552,6 @@ class Game {
       );
     }
   }
-
   updateTitleWithDonuts() {
     if (!this.hasDonutClicked) return;
 
@@ -1232,7 +1561,6 @@ class Game {
       document.title = `${donutCountText} - Donut Clicker`;
     }
   }
-
   showGameSaved() {
     const gameSavedElement = document.getElementById("game-saved");
     gameSavedElement.classList.add("show");
@@ -1241,7 +1569,6 @@ class Game {
       gameSavedElement.classList.remove("show");
     }, 2000);
   }
-
   updateStatsDisplay() {
     // Toplam donut sayısı
     document.getElementById("total-donuts").textContent = this.formatNumber(
@@ -1305,7 +1632,6 @@ class Game {
         document.getElementById("stats-menu").classList.add("hidden");
       });
   }
-
   setupInfoMenu() {
     const infoButton = document.getElementById("info-button");
     const informationMenu = document.getElementById("information-menu");
@@ -1328,7 +1654,6 @@ class Game {
       informationMenu.classList.add("hidden");
     });
   }
-
   saveGame() {
     const gameState = {
       items: this.items,
@@ -1340,64 +1665,47 @@ class Game {
       cursors: this.cursors,
       prestigeCount: this.prestigeCount,
       nextPrestigeThreshold: this.nextPrestigeThreshold,
+      ores: this.ores,
+      workers: this.workers,
+      oreTypes: this.oreTypes.map((ore) => ({
+        type: ore.type,
+        price: ore.price,
+      })),
+      gameVersion: this.currentVersion,
     };
     localStorage.setItem("gameState", JSON.stringify(gameState));
     this.showGameSaved();
   }
-
   loadGame() {
     const savedGame = localStorage.getItem("gameState");
     if (savedGame) {
       const gameState = JSON.parse(savedGame);
+      if (
+        !gameState.gameVersion ||
+        gameState.gameVersion < this.currentVersion
+      ) {
+        this.applyUpdates(gameState);
+      }
 
+      this.items = gameState.items || this.items;
+      this.upgrades = gameState.upgrades || this.upgrades;
       this.donutCount = gameState.donutCount || 0;
       this.accumulator = gameState.accumulator || 0;
-
-      for (let key in gameState.items) {
-        if (this.items[key]) {
-          this.items[key] = gameState.items[key];
-        }
-      }
-
-      for (let key in gameState.upgrades) {
-        if (this.upgrades[key]) {
-          this.upgrades[key] = gameState.upgrades[key];
-        }
-      }
-
       this.totalDonutsEarned = gameState.totalDonutsEarned || 0;
-      this.cursors = [];
-
-      if (gameState.cursors && gameState.cursors.length > 0) {
-        gameState.cursors.forEach((cursorData) => {
-          const cursor = document.createElement("img");
-          cursor.src = "img/cursorDonut.webp";
-          cursor.classList.add("cursor");
-          cursor.style.left = `${cursorData.x}px`;
-          cursor.style.top = `${cursorData.y}px`;
-          cursor.style.transform = `rotate(${
-            cursorData.angle * (180 / Math.PI) - 90
-          }deg)`;
-          document.getElementById("cursor-container").appendChild(cursor);
-
-          this.cursors.push({
-            element: cursor,
-            x: cursorData.x,
-            y: cursorData.y,
-            angle: cursorData.angle,
-          });
-        });
-      }
-
       this.prestigeCount = gameState.prestigeCount || 0;
       this.nextPrestigeThreshold = gameState.nextPrestigeThreshold || 10000000;
+      this.ores = gameState.ores || {};
+      this.workers = gameState.workers || [];
 
-      this.currentBakeryName =
-        gameState.currentBakeryName || this.getRandomBakeryName() + "'s Bakery";
-      const bakeryNameElement = document.getElementById("bakery-name");
-      if (bakeryNameElement) {
-        bakeryNameElement.textContent = this.currentBakeryName;
-      }
+      // Ore types yükleniyor ve fiyatlar güncelleniyor
+      this.oreTypes = this.oreTypes.map((ore) => {
+        const savedOre = gameState.oreTypes.find((o) => o.type === ore.type);
+        return savedOre ? { ...ore, price: savedOre.price } : ore;
+      });
+
+      this.updateTotalOreCount();
+      this.updateOreList();
+      this.updateMarketDisplay();
 
       this.updateDisplay();
       this.showUpgrades();
@@ -1414,6 +1722,74 @@ class Game {
       localStorage.removeItem("gameState");
       location.reload();
     }
+  }
+  applyUpdates(gameState) {
+    const upgradeCategories = [
+      "cursor",
+      "baker",
+      "farm",
+      "mine",
+      "factory",
+      "logisticCenter",
+      "nonItemUpgrades",
+    ];
+
+    // Upgrade kategorilerini güncelle
+    upgradeCategories.forEach((category) => {
+      if (!gameState.upgrades[category]) {
+        gameState.upgrades[category] = this.upgrades[category];
+      } else {
+        this.upgrades[category].forEach((upgrade, index) => {
+          if (
+            !gameState.upgrades[category][index] ||
+            gameState.upgrades[category][index].cost !== upgrade.cost
+          ) {
+            gameState.upgrades[category][index] = upgrade;
+          }
+        });
+      }
+    });
+
+    // Item verilerini güncelle
+    Object.keys(this.items).forEach((itemKey) => {
+      if (!gameState.items[itemKey]) {
+        gameState.items[itemKey] = this.items[itemKey];
+      } else {
+        const gameStateItem = gameState.items[itemKey];
+        const currentItem = this.items[itemKey];
+
+        if (gameStateItem.baseCost !== currentItem.baseCost) {
+          gameStateItem.baseCost = currentItem.baseCost;
+        }
+        if (gameStateItem.production !== currentItem.production) {
+          gameStateItem.production = currentItem.production;
+        }
+      }
+    });
+
+    // Ores verilerini güncelle
+    if (!gameState.ores) {
+      gameState.ores = this.ores;
+    } else {
+      Object.keys(this.ores).forEach((oreType) => {
+        if (!gameState.ores[oreType]) {
+          gameState.ores[oreType] = this.ores[oreType];
+        }
+      });
+    }
+
+    // Workers verilerini güncelle
+    if (!gameState.workers) {
+      gameState.workers = this.workers;
+    } else {
+      gameState.workers.forEach((worker, index) => {
+        if (!this.workers[index]) {
+          this.workers.push(worker);
+        }
+      });
+    }
+
+    this.saveGame();
   }
 }
 document.addEventListener("DOMContentLoaded", () => {
