@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.2.7";
+    this.currentVersion = "1.2.7b";
     this.bakeryNames = [
       "Sweet Crust",
       "Golden Dough",
@@ -77,7 +77,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 1,
-          img: "cursorUpgrade-2.webp?v=2",
+          img: "cursorUpgrade-2.webp",
           description:
             "Unleash a wave of efficiency, drowning inefficiency in a sea of productivity.",
         },
@@ -87,7 +87,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 15,
-          img: "cursorUpgrade-3.webp?v=2",
+          img: "cursorUpgrade-3.webp",
           description:
             "Ignite the donut cosmos with a touch that burns through production limits.",
         },
@@ -97,7 +97,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 30,
-          img: "cursorUpgrade-4.webp?v=2",
+          img: "cursorUpgrade-4.webp",
           description:
             "Reach deep into the void, pulling forth untapped donut-making power.",
         },
@@ -107,7 +107,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 50,
-          img: "cursorUpgrade-5.webp?v=2",
+          img: "cursorUpgrade-5.webp",
           description:
             "A gilded tool of infinite precision, sculpting perfect donuts with every click.",
         },
@@ -117,7 +117,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 100,
-          img: "cursorUpgrade-6.webp?v=2",
+          img: "cursorUpgrade-6.webp",
           description: "Careful though: you might fall in love…with a cursor",
         },
       ],
@@ -1876,6 +1876,11 @@ class Game {
           ) {
             gameState.upgrades[category][index] = upgrade;
           }
+          // Resim dosyasının yolunu güncelle
+          gameState.upgrades[category][index].img =
+            gameState.upgrades[category][index].img +
+            "?v=" +
+            this.currentVersion;
         });
       }
     });
@@ -1918,6 +1923,7 @@ class Game {
     gameState.gameVersion = this.currentVersion;
     localStorage.setItem("gameState", JSON.stringify(gameState));
   }
+
   resetGame() {
     const confirmation = confirm(
       "Are you sure you want to reset the game? All your progress will be deleted."
