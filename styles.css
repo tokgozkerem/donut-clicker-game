@@ -28,14 +28,29 @@ body {
 }
 
 #bakery-name {
-  position: relative;
-  bottom: 60px;
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #f8f3e7;
+  text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.2);
 }
-#donut-count,
+
+#donut-count {
+  font-size: 1.9em;
+  font-weight: 700;
+  margin: 10px 0;
+  color: #f8f3e7;
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+  user-select: none;
+}
 #per-second {
-  position: relative;
-  bottom: 50px;
+  font-size: 1.2em;
+  font-weight: 500;
+  color: #f8f3e7;
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.2);
+  user-select: none;
 }
+
 .donut-container {
   display: flex;
   flex-direction: column;
@@ -43,9 +58,41 @@ body {
   align-items: center;
   position: absolute;
   width: 100%;
-  margin-top: 230px;
+  margin-top: 160px;
   text-align: center;
 }
+
+#bakery-name:hover {
+  color: #808080; /* Highlight color when hovered */
+}
+
+#changeNameModal {
+  z-index: 10000;
+}
+
+#changeNameModal input {
+  padding: 6px 8px; /* İç boşlukları küçültüyoruz */
+  margin-top: 8px;
+  width: 100%;
+  font-size: 0.9rem; /* Yazı boyutunu küçültüyoruz */
+  border-radius: 4px;
+  border: 1px solid #aaa; /* Daha hafif bir kenarlık rengi */
+  background-color: #2a2a2a; /* Arka plan rengini koyulaştırarak uyum sağlıyoruz */
+  color: #f0e68c; /* Yazı rengini açık bir tonda yapıyoruz */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); /* İç gölge */
+  transition: border-color 0.2s, box-shadow 0.2s; /* Yumuşak geçiş efekti */
+}
+
+#changeNameModal input:focus {
+  border-color: #8b4513; /* Fokuslandığında kenarlık rengi değişimi */
+  outline: none;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 5px rgba(139, 69, 19, 0.5); /* Fokus efektinde gölge artışı */
+}
+
+#changeNameModal button:hover {
+  opacity: 0.9;
+}
+
 #section-right {
   position: absolute;
   top: 0;
@@ -56,7 +103,7 @@ body {
   background: #ffeab628;
   border-left: 10px solid #ffeab6;
   z-index: 25;
-  width: 30%;
+  width: 315px;
   max-width: 315px;
   min-width: 100px;
   box-sizing: border-box;
@@ -98,44 +145,58 @@ body {
   background: #ffeab628;
   border-right: 10px solid #ffeab6;
   z-index: 25;
-  width: 30%;
+  width: 300px;
   max-width: 315px;
   min-width: 100px;
   box-sizing: border-box;
 }
 /* Header Styles */
 #header-container {
-  position: relative;
-  width: 68%;
-  left: 16%;
+  position: absolute;
+  top: 0;
+  left: 300px;
+  right: 300px;
   text-align: center;
   border-bottom: 10px solid #ffeab6;
+  box-sizing: border-box;
 }
 
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 35%; /* Daha esnek bir genişlik */
   height: 153px;
   margin: 0 auto; /* Ortaya almak için */
-  padding: 10px 20px;
 }
 .headerImg {
-  position: absolute; /* Mutlak konumlandırma */
+  position: relative; /* Artık absolute değil */
+  width: 100%; /* Konteynerin genişliğini tamamen kaplar */
+  max-width: 255px; /* Maksimum genişlik */
+  height: auto; /* Yükseklik orantılı olarak ayarlanır */
   top: -25px; /* Üstten 0 piksel mesafede */
-  width: 200px;
-  height: 200px;
   left: 50%; /* Yatay olarak ortalar */
   transform: translateX(-50%); /* Tam olarak ortalamak için */
   z-index: 1; /* Diğer öğelerin arkasında kalmaması için */
 }
 
-.header-left,
 .header-right {
-  flex: 1; /* Butonlar sol ve sağda genişliğe yayılacak */
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Butonları ortalamak isterseniz */
+  margin-right: 30px;
+  gap: 10px;
+  right: 0;
 }
-
+.header-left {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Butonları ortalamak isterseniz */
+  margin-left: 30px;
+  gap: 10px;
+  left: 0;
+}
 .header-title {
   flex: 2; /* Başlık daha geniş bir alan kaplayacak */
   font-size: 36px;
@@ -149,14 +210,14 @@ body {
   font-size: 16px;
   border: none;
   border-radius: 8px;
-  background-color: #2c2c2c;
+  background-color: #26130a;
   color: white;
   cursor: pointer;
 }
 
 .header-left button:hover,
 .header-right button:hover {
-  background-color: #444444;
+  background-color: #562e1c;
 }
 
 .header-left {
@@ -193,17 +254,32 @@ body {
   transition: transform 0.2s ease-in-out;
   z-index: 1;
   pointer-events: auto;
+  margin-top: 43px;
+}
+#donut:hover {
+  transform: scale(1.03);
+}
+#donut:active {
+  transform: scale(0.97);
 }
 
 #cursor-container {
-  position: absolute;
+  position: relative;
+  animation: rotate 210s linear infinite; /* Dönüş süresi: 10 saniye */
   top: 50%;
   left: 50%;
   width: 13%;
   height: 13%;
   transform: translate(-60%, -60%);
   pointer-events: none;
-  pointer-events: none;
+}
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .cursor {
@@ -239,17 +315,13 @@ body {
 
 #cursor-container.desktop {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 60%;
+  left: 43%;
   width: 13%;
   height: 13%;
   transform: translate(-60%, -60%);
   pointer-events: none;
   pointer-events: none;
-}
-
-#donut:active {
-  transform: scale(0.95);
 }
 
 .info-panel {
@@ -388,6 +460,7 @@ body {
 .purchase-options button {
   width: 45px;
   height: 30px;
+  color: white;
   background-color: #2c2c2c;
   border: 2px solid #b8860b;
 }
@@ -605,10 +678,8 @@ body {
   transform: translateX(-50%);
 }
 
-/* Button Styling */
 button {
   padding: 5px;
-  color: white;
   border: none;
   cursor: pointer;
 }
@@ -735,40 +806,74 @@ button {
     opacity: 0;
   }
 }
-/* Modalın kendisi (gizli) */
+#prestigeModal {
+  z-index: 10000;
+}
 .modal {
-  display: none;
+  display: none; /* Başlangıçta gizli olacak */
   position: fixed;
-  z-index: 1000;
+  z-index: 1;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6); /* Arkaplan için yarı saydam siyah */
 }
 
-/* Modal içeriği */
+/* Modal içerik kutusu */
 .modal-content {
-  background-color: #2c2c2c;
-  color: white;
-  margin: 15% auto;
+  background-color: #333;
+  margin: 10% auto;
   padding: 20px;
-  border: 1px solid #a0522d;
-  width: 50%;
-  text-align: center;
-}
-.modal-content button {
-  background-color: #a0522d;
+  width: 300px;
   color: white;
-  border: none;
+  border: 2px solid #8b4513;
   border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  margin-left: 15px;
-  width: 50px;
+  text-align: center;
+  font-family: "Georgia", serif;
 }
-.modal-content p {
-  font-weight: normal;
+
+/* Modal başlığı */
+.modal-content h2 {
+  font-size: 18px;
+  color: #f0e68c;
+}
+
+/* Input ve buton ayarları */
+.modal-content input {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  box-sizing: border-box;
+  border: 1px solid #8b4513;
+  border-radius: 3px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-around;
+}
+
+.modal-buttons button {
+  padding: 5px 10px;
+  color: white;
+  background-color: #8b4513;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: "Georgia", serif;
+}
+
+.modal-buttons button:hover {
+  background-color: #a0522d;
+}
+
+.cancel {
+  background-color: #555;
+}
+
+.cancel:hover {
+  background-color: #777;
 }
 
 /* Kapatma butonu */
@@ -802,7 +907,9 @@ button {
   color: #2c2c2c;
 }
 
-#information-menu {
+#information-menu,
+#stats-menu,
+#settings-menu {
   position: absolute;
   top: 0;
   left: 0;
@@ -820,24 +927,7 @@ button {
   scrollbar-width: thin; /* Firefox için */
   scrollbar-color: #b8860b #2c2c2c; /* Firefox için */
 }
-#stats-menu {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 310px;
-  background-color: #2c2c2c;
-  color: white;
-  padding: 20px;
-  border: 2px solid #b8860b;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  box-sizing: border-box; /* Kenarlık ve padding dahil */
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-width: thin; /* Firefox için */
-  scrollbar-color: #b8860b #2c2c2c; /* Firefox için */
-}
+
 #stats-section p {
   font-weight: 800;
   color: lightgray;
@@ -864,6 +954,43 @@ button {
 
 #information-menu::-webkit-scrollbar-track {
   background: #2c2c2c;
+}
+#save-button {
+  background-color: #444;
+  color: #b8860b;
+  border: 1px solid #b8860b;
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#save-button:hover {
+  background-color: #555;
+  transform: scale(1.03);
+}
+
+#save-button:active {
+  background-color: #333;
+  transform: scale(0.97);
+}
+.save-container {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Buton ile metin arasında boşluk */
+}
+
+.save-text {
+  color: #b8860b; /* Altın rengi */
+  font-size: 14px;
+}
+
+.volume-info {
+  color: #ccc; /* Açık gri bilgi metni */
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 
 .menu-content {
@@ -986,7 +1113,6 @@ h3::after {
 
 .left-section,
 .right-section {
-  backdrop-filter: blur(10px);
   padding: 20px;
   border-radius: 10px;
 }
@@ -1378,8 +1504,8 @@ h3::after {
 
   #cursor-container {
     position: absolute;
-    top: 28%;
-    left: 50%;
+    top: 39%;
+    left: 44%;
     transform: translate(-50%, -50%);
     width: 40px; /* Varsayılan genişlik */
     height: 100px; /* Varsayılan yükseklik */
@@ -1498,8 +1624,8 @@ h3::after {
   }
   #header-container {
     position: relative;
-    width: 68%;
-    left: 8%;
+    width: 66%;
+    left: 15%;
     text-align: center;
     border-bottom: 10px solid #ffeab6;
   }
@@ -1535,6 +1661,34 @@ h3::after {
     flex-direction: column;
     gap: 20px;
   }
+  .header-left {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 55px;
+    gap: 10px;
+    left: 0;
+  }
+  .header-right {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 75px;
+    gap: 10px;
+    right: 0;
+  }
+  .header-left button,
+  .header-right button {
+    padding: 7px 9px;
+    font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #26130a;
+    color: white;
+    cursor: pointer;
+  }
 }
 @media only screen and (min-width: 768px) and (max-width: 1024px) and (min-height: 1024px) and (max-height: 1366px) {
   #footer-container {
@@ -1558,10 +1712,6 @@ h3::after {
     display: flex;
     flex-direction: row;
     margin-left: 40px;
-  }
-
-  .headerImg {
-    visibility: hidden;
   }
   .left-section,
   .right-section {

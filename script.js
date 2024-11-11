@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.2.6";
+    this.currentVersion = "1.2.7";
     this.bakeryNames = [
       "Sweet Crust",
       "Golden Dough",
@@ -96,20 +96,29 @@ class Game {
           cost: 50000,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "cursorUpgrade-4.webp",
           description:
             "Reach deep into the void, pulling forth untapped donut-making power.",
         },
         {
-          name: "Golden Cursor",
-          cost: 5000000,
+          name: "Donut Cursor",
+          cost: 500000,
           multiplier: 2,
           purchased: false,
           requirement: 50,
-          img: "cursorUpgrade-6.webp",
+          img: "cursorUpgrade-5.webp",
           description:
             "A gilded tool of infinite precision, sculpting perfect donuts with every click.",
+        },
+        {
+          name: "Ruby Cursor",
+          cost: 100000000,
+          multiplier: 2,
+          purchased: false,
+          requirement: 100,
+          img: "cursorUpgrade-6.webp",
+          description: "Careful though: you might fall in love…with a cursor",
         },
       ],
       baker: [
@@ -138,27 +147,27 @@ class Game {
           cost: 52500,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "bakerUpgrade-3.webp",
           description:
             "A flour conjurer whose delicate touch transforms ingredients into donut gold.",
         },
         {
           name: "Batteron",
-          cost: 525000,
+          cost: 5250000,
           multiplier: 2,
           purchased: false,
-          requirement: 35,
+          requirement: 50,
           img: "bakerUpgrade-4.webp",
           description:
             "An elemental baker, crafting cosmic donuts from primordial batter.",
         },
         {
           name: "Crèmeor",
-          cost: 5250000,
+          cost: 525000000,
           multiplier: 2,
           purchased: false,
-          requirement: 50,
+          requirement: 100,
           img: "bakerUpgrade-5.webp",
           description:
             "A mythical baker whose crème-filled creations are the stuff of legends.",
@@ -190,27 +199,27 @@ class Game {
           cost: 500000,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "farmUpgrade-3.webp",
           description:
             "An ancient grove, where the oldest trees bear the finest donut fruits.",
         },
         {
           name: "Ironroot Fields",
-          cost: 5000000,
+          cost: 50000000,
           multiplier: 2,
           purchased: false,
-          requirement: 35,
+          requirement: 50,
           img: "farmUpgrade-4.webp",
           description:
             "Fields with roots of iron, pulling forth the strongest crops for donut production.",
         },
         {
           name: "Magicland",
-          cost: 50000000,
+          cost: 5000000000,
           multiplier: 2,
           purchased: false,
-          requirement: 50,
+          requirement: 100,
           img: "farmUpgrade-5.webp",
           description:
             "A mystical realm where the land itself grows donut-making magic.",
@@ -219,7 +228,7 @@ class Game {
       mine: [
         {
           name: "Ironclad Plains",
-          cost: 25000,
+          cost: 160000,
           multiplier: 2,
           purchased: false,
           requirement: 1,
@@ -229,7 +238,7 @@ class Game {
         },
         {
           name: "Golden Veil",
-          cost: 125000,
+          cost: 800000,
           multiplier: 2,
           purchased: false,
           requirement: 15,
@@ -239,30 +248,30 @@ class Game {
         },
         {
           name: "Diamondspire",
-          cost: 1250000,
+          cost: 8000000,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "mineUpgrade-3.webp",
           description:
             "Towering spires of diamonds, feeding your production with unrivaled hardness and beauty.",
         },
         {
           name: "Emerald Hollow",
-          cost: 12500000,
+          cost: 800000000,
           multiplier: 2,
           purchased: false,
-          requirement: 35,
+          requirement: 50,
           img: "mineUpgrade-4.webp",
           description:
             "A deep cavern of shimmering emeralds, infusing your donuts with rare energy.",
         },
         {
           name: "Ruby Ascendant",
-          cost: 125000000,
+          cost: 80000000000,
           multiplier: 2,
           purchased: false,
-          requirement: 50,
+          requirement: 100,
           img: "mineUpgrade-5.webp",
           description:
             "A mine that ascends to the heavens, where rubies pulse with the heart of donut production.",
@@ -271,7 +280,7 @@ class Game {
       factory: [
         {
           name: "Ironclad Nexus",
-          cost: 825000,
+          cost: 1800000,
           multiplier: 2,
           purchased: false,
           requirement: 1,
@@ -281,7 +290,7 @@ class Game {
         },
         {
           name: "Aureum Heart",
-          cost: 4125000,
+          cost: 9000000,
           multiplier: 2,
           purchased: false,
           requirement: 15,
@@ -291,30 +300,30 @@ class Game {
         },
         {
           name: "Diamondflare Core",
-          cost: 41250000,
+          cost: 90000000,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "factoryUpgrade-3.webp",
           description:
             "A blazing core of diamond-powered energy, driving your factory to new heights.",
         },
         {
           name: "Emerald Vein",
-          cost: 412500000,
+          cost: 9000000000,
           multiplier: 2,
           purchased: false,
-          requirement: 35,
+          requirement: 50,
           img: "factoryUpgrade-4.webp",
           description:
             "Hidden deep in your factory lies an emerald vein, enhancing production with every pulse.",
         },
         {
           name: "Rubyflare Engine",
-          cost: 4125000000,
+          cost: 900000000000,
           multiplier: 2,
           purchased: false,
-          requirement: 50,
+          requirement: 100,
           img: "factoryUpgrade-5.webp",
           description:
             "An engine of pure rubyfire, propelling your donut output beyond the stars.",
@@ -323,7 +332,7 @@ class Game {
       logisticCenter: [
         {
           name: "Warehouse Whisperer",
-          cost: 9000000,
+          cost: 19000000,
           multiplier: 2,
           purchased: false,
           requirement: 1,
@@ -333,7 +342,7 @@ class Game {
         },
         {
           name: "Goldie Locks",
-          cost: 45000000,
+          cost: 95000000,
           multiplier: 2,
           purchased: false,
           requirement: 15,
@@ -343,30 +352,30 @@ class Game {
         },
         {
           name: "Diamond Dispatch",
-          cost: 450000000,
+          cost: 950000000,
           multiplier: 2,
           purchased: false,
-          requirement: 25,
+          requirement: 30,
           img: "logisticCenterUpgrade-3.webp",
           description:
             "Powered by a sparkly diamond core, this dispatch unit runs so efficiently it thinks it's the CEO of donut deliveries.",
         },
         {
           name: "Emerald Express",
-          cost: 4500000000,
+          cost: 9500000000,
           multiplier: 2,
           purchased: false,
-          requirement: 35,
+          requirement: 50,
           img: "logisticCenterUpgrade-4.webp",
           description:
             "This upgrade finds shortcuts, backroads, and donut-sized tunnels—who knew green could be so quick?",
         },
         {
           name: "Ruby Roadrunner",
-          cost: 45000000000,
+          cost: 9500000000000,
           multiplier: 2,
           purchased: false,
-          requirement: 50,
+          requirement: 100,
           img: "logisticCenterUpgrade-5.webp",
           description:
             "Fueled by the fastest ruby energy, this upgrade makes your donuts so quick that they deliver themselves.",
@@ -574,7 +583,7 @@ class Game {
     this.setupVisibilityChange();
     this.totalPerSecond = 0;
     this.updateTotalPerSecond(); // Başlangıçta hesapla
-
+    this.currentBakeryName = "";
     this.BUILDING_COST_MULTIPLIER = 1.15;
     this.PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT = 1.35;
     this.UPGRADE_COST_MULTIPLIER = 1.1;
@@ -600,6 +609,7 @@ class Game {
     setInterval(() => this.updateStatsDisplay(), 5000);
     setInterval(this.updateProduction.bind(this), 125);
     this.startProductionCycle();
+
     // Donut'a tıklama olayını bağla
     this.handleDonutClickBound = this.handleDonutClick.bind(this);
     this.donut.addEventListener("click", this.handleDonutClickBound);
@@ -620,8 +630,26 @@ class Game {
         this.buyItem(itemKey);
       });
     });
+
+    // Bakery name element click and modal button events
+    const bakeryNameElement = document.getElementById("bakery-name");
+    if (bakeryNameElement) {
+      bakeryNameElement.addEventListener(
+        "click",
+        this.openChangeNameModal.bind(this)
+      );
+    }
+    document
+      .getElementById("confirmButton")
+      .addEventListener("click", this.changeBakeryName.bind(this));
+    document
+      .getElementById("cancelButton")
+      .addEventListener("click", this.closeChangeNameModal.bind(this));
+
+    // Other setups
     this.setupInfoMenu();
     this.setupStatsMenu();
+    this.setupSettingsMenu();
   }
   updateDisplay() {
     if (!this.counter || !this.perSecondDisplay) {
@@ -907,11 +935,13 @@ class Game {
     for (let key in this.items) {
       totalPerSecond += this.items[key].count * this.items[key].production;
     }
+    console.log(totalPerSecond);
     return totalPerSecond;
   }
   addWorker() {
+    if (this.items.mine.count <= 0) return;
     this.workers.push({
-      productionRate: 5,
+      productionRate: 3,
     });
 
     const workerCountElem = document.getElementById("workerCount");
@@ -920,28 +950,32 @@ class Game {
     }
   }
   generateOre() {
-    // İşçilerin üretim döngüsü
-    this.workers.forEach(() => {
-      const randomNum = Math.random();
-      let cumulativeChance = 0;
+    if (this.items.mine.count <= 0) return;
 
-      for (let ore of this.oreTypes) {
-        cumulativeChance += ore.rarity;
-        if (randomNum < cumulativeChance) {
-          if (!this.ores[ore.type]) {
-            this.ores[ore.type] = { count: 0 };
+    // Each worker generates ore based on their production rate
+    this.workers.forEach((worker) => {
+      for (let i = 0; i < worker.productionRate; i++) {
+        const randomNum = Math.random();
+        let cumulativeChance = 0;
+
+        for (let ore of this.oreTypes) {
+          cumulativeChance += ore.rarity;
+          if (randomNum < cumulativeChance) {
+            if (!this.ores[ore.type]) {
+              this.ores[ore.type] = { count: 0 };
+            }
+            this.ores[ore.type].count++;
+            break;
           }
-          this.ores[ore.type].count++;
-          break;
         }
       }
     });
 
-    // Üretim güncelleme
     this.updateTotalOreCount();
     this.updateOreList();
   }
   updateOreList() {
+    if (this.items.mine.count <= 0) return;
     const oreList = document.getElementById("oreList");
     oreList.innerHTML = "";
 
@@ -970,6 +1004,7 @@ class Game {
     }
   }
   updateMarketDisplay() {
+    if (this.items.mine.count <= 0) return;
     const marketList = document.getElementById("marketList");
     marketList.innerHTML = "";
 
@@ -997,6 +1032,7 @@ class Game {
     });
   }
   updateMarketPrices() {
+    if (this.items.mine.count <= 0) return;
     this.oreTypes.forEach((ore) => {
       const isPriceIncrease = Math.random() < 0.5;
       const changeFactor = isPriceIncrease ? 0.13 : -0.04;
@@ -1008,29 +1044,33 @@ class Game {
   }
   startProductionCycle() {
     setInterval(() => {
-      // İşçi üretim döngüsü
-      if (this.workerCycleRemainingTime > 0) {
-        this.workerCycleRemainingTime -= 1000; // Her saniye kalan süreyi azalt
-      } else {
-        this.generateOre(); // Cevher üret
-        this.updateMarketPrices();
-        this.workerCycleRemainingTime = this.workerProductionInterval; // Döngüyü sıfırla
-        this.orePurchaseLimit = 10;
+      // Check if mine count is greater than 0 before running production
+      if (this.items.mine.count > 0) {
+        if (this.workerCycleRemainingTime > 0) {
+          this.workerCycleRemainingTime -= 1000; // Decrease time every second
+        } else {
+          this.generateOre(); // Generate ores
+          this.updateMarketPrices();
+          this.workerCycleRemainingTime = this.workerProductionInterval; // Reset cycle
+          this.orePurchaseLimit = 10;
+        }
+
+        const remainingChancesElem =
+          document.getElementById("remainingChances");
+        if (remainingChancesElem) {
+          remainingChancesElem.textContent = `You can get a maximum of 10 ores every 1 minute. Remaining: ${this.orePurchaseLimit}`;
+        }
+
+        const oreInfoElem = document.querySelector(".ore-generation-info");
+        if (oreInfoElem) {
+          oreInfoElem.textContent = `${
+            this.workers.length
+          } workers generating 3 ores per minute. Next in: ${Math.ceil(
+            this.workerCycleRemainingTime / 1000
+          )}s`;
+        }
       }
-      const remainingChancesElem = document.getElementById("remainingChances");
-      if (remainingChancesElem) {
-        remainingChancesElem.textContent = `You can get a maximum of 10 ores every 1 minute. Remaining: ${this.orePurchaseLimit}`;
-      }
-      // Arayüzde kalan süreyi güncelle
-      const oreInfoElem = document.querySelector(".ore-generation-info");
-      if (oreInfoElem) {
-        oreInfoElem.textContent = `${
-          this.workers.length
-        } workers generating 5 ores per minute. Next in: ${Math.ceil(
-          this.workerCycleRemainingTime / 1000
-        )}s`;
-      }
-    }, 1000); // Her saniye bir kez çalıştır
+    }, 1000); // Run every second
   }
   setupMarketButtons() {
     const buyBtn = document.getElementById("buyBtn");
@@ -1148,15 +1188,19 @@ class Game {
     const infoPanel = document.getElementById("info-panel");
 
     const formattedItemName = itemName
-      .replace(/([A-Z])/g, " $1") // Büyük harflerden önce boşluk koy
-      .split(" ") // Boşluklardan böl
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Her kelimenin ilk harfini büyüt
-      .join(" "); // Kelimeleri boşlukla birleştir
+      .replace(/([A-Z])/g, " $1")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
 
     const costColor = this.donutCount >= upgrade.cost ? "#6f6" : "red";
-
-    // Maliyeti formatla ('cost' türünde)
     const formattedCost = this.formatNumber(upgrade.cost, "cost");
+
+    // Eğer upgrade 'nonItemUpgrades' grubundaysa özel mesajı göster, değilse standart mesajı göster
+    const efficiencyText =
+      itemName === "nonItemUpgrades"
+        ? "Clicking gains +1% of your CpS"
+        : `${formattedItemName}s are <strong>twice</strong> as efficient`;
 
     infoPanel.innerHTML = `
       <div class="header">
@@ -1167,7 +1211,7 @@ class Game {
           ${formattedCost}
         </span>
       </div>
-      <p class='efficiency-text'>${formattedItemName}s are <strong>twice</strong> as efficient</p>
+      <p class='efficiency-text'>${efficiencyText}</p>
       <p class="description">"${upgrade.description}"</p>
     `;
 
@@ -1391,7 +1435,9 @@ class Game {
     }
 
     prestigePoints.textContent = `Prestige Points: ${this.prestigeCount}`;
-    nextPrestigeText.textContent = `Next Prestige at: ${this.nextPrestigeThreshold} donuts`;
+    nextPrestigeText.textContent = `Next Prestige at: ${this.formatNumber(
+      this.nextPrestigeThreshold
+    )} donuts`;
   }
   performPrestige() {
     if (this.totalDonutsEarned >= this.nextPrestigeThreshold) {
@@ -1482,17 +1528,6 @@ class Game {
     const randomIndex = Math.floor(Math.random() * this.clickSounds.length);
     this.clickSounds[randomIndex].play();
   }
-  getRandomBakeryName() {
-    const randomIndex = Math.floor(Math.random() * this.bakeryNames.length);
-    return this.bakeryNames[randomIndex];
-  }
-  updateBakeryName() {
-    const bakeryNameElement = document.getElementById("bakery-name");
-    if (bakeryNameElement) {
-      this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
-      bakeryNameElement.textContent = this.currentBakeryName;
-    }
-  }
   createFallingDonut(x, y) {
     const fallingDonut = document.createElement("img");
     fallingDonut.src = "img/donutPixelArt.webp";
@@ -1531,27 +1566,48 @@ class Game {
   }
   formatNumber(number, type = "count") {
     if (type === "perSecond") {
-      // Eğer type 'perSecond' ise, 1 ondalık basamağa kadar göster
-      return number.toFixed(1).replace(/\.0$/, ""); // Eğer 0.0 gibi bir sonuç varsa, ".0" kısmını kaldır
+      // Cursor için özel durum: sayı 1'den küçükse ondalık göster
+      if (number < 1) {
+        return number.toFixed(1); // Ondalık gösterimle 0.1 gibi bir çıktı sağlar
+      } else if (number < 1000) {
+        return Math.floor(number).toString();
+      } else if (number < 1000000) {
+        return Math.floor(number)
+          .toString()
+          .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Binlik ayraç olarak nokta kullan
+      } else if (number < 1000000000) {
+        return (number / 1000000).toFixed(3).replace(/\.?0+$/, "") + " million";
+      } else if (number < 1000000000000) {
+        return (
+          (number / 1000000000).toFixed(3).replace(/\.?0+$/, "") + " billion"
+        );
+      } else {
+        return (
+          (number / 1000000000000).toFixed(3).replace(/\.?0+$/, "") +
+          " trillion"
+        );
+      }
     }
 
     if (number < 1000) {
       return Math.floor(number).toString();
     } else if (number < 1000000) {
-      // Virgülden sonrası olmadan, binlik ayracı olarak nokta kullan
       return Math.floor(number)
         .toString()
-        .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Nokta ile binlik ayırıcı
     } else if (number < 1000000000) {
-      // Milyon cinsinden, 2 ondalık basamak, gereksiz sıfırları kaldır
-      return (number / 1000000).toFixed(2).replace(/\.?0+$/, "") + " million";
-    } else {
-      // Milyar cinsinden, 2 ondalık basamak
+      return (number / 1000000).toFixed(3).replace(/\.?0+$/, "") + " million";
+    } else if (number < 1000000000000) {
       return (
-        (number / 1000000000).toFixed(2).replace(/\.?0+$/, "") + " billion"
+        (number / 1000000000).toFixed(3).replace(/\.?0+$/, "") + " billion"
+      );
+    } else {
+      return (
+        (number / 1000000000000).toFixed(3).replace(/\.?0+$/, "") + " trillion"
       );
     }
   }
+
   updateTitleWithDonuts() {
     if (!this.hasDonutClicked) return;
 
@@ -1559,6 +1615,21 @@ class Game {
     let donutCountText = donutCountElement?.textContent.trim();
     if (donutCountText) {
       document.title = `${donutCountText} - Donut Clicker`;
+    }
+  }
+  getRandomBakeryName() {
+    const randomIndex = Math.floor(Math.random() * this.bakeryNames.length);
+    return this.bakeryNames[randomIndex];
+  }
+  updateBakeryName() {
+    const bakeryNameElement = document.getElementById("bakery-name");
+    if (bakeryNameElement) {
+      // Eğer önceden bir isim yoksa yeni bir random isim atanır
+      if (!this.currentBakeryName) {
+        this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
+        this.saveGame(); // Yeni bir isim atandığında kaydediyoruz
+      }
+      bakeryNameElement.textContent = this.currentBakeryName;
     }
   }
   showGameSaved() {
@@ -1603,32 +1674,33 @@ class Game {
       this.totalClicks
     );
   }
+  closeAllMenus(except = null) {
+    // Tüm menüleri kapat ama belirtilen menü hariç
+    const menus = ["stats-menu", "information-menu", "settings-menu"];
+    menus.forEach((menu) => {
+      if (menu !== except) {
+        document.getElementById(menu).classList.add("hidden");
+      }
+    });
+  }
   setupStatsMenu() {
-    // Stats menüsünü açma
-    document.getElementById("stats-button").addEventListener(
-      "click",
-      function () {
-        const statsMenu = document.getElementById("stats-menu");
-        const informationMenu = document.getElementById("information-menu");
+    document.getElementById("stats-button").addEventListener("click", () => {
+      const statsMenu = document.getElementById("stats-menu");
 
-        // Info menüsü açıkken Stats açılırsa, Info menüsünü kapat
-        if (!informationMenu.classList.contains("hidden")) {
-          informationMenu.classList.add("hidden");
-        }
+      // Eğer Stats menüsü açıksa sadece kapat
+      if (!statsMenu.classList.contains("hidden")) {
+        statsMenu.classList.add("hidden");
+      } else {
+        // Diğer menüleri kapat, sadece Stats menüsünü açık bırak
+        this.closeAllMenus("stats-menu");
+        statsMenu.classList.remove("hidden");
+        this.updateStatsDisplay();
+      }
+    });
 
-        // Stats menüsünü aç veya kapat
-        statsMenu.classList.toggle("hidden");
-
-        if (!statsMenu.classList.contains("hidden")) {
-          this.updateStatsDisplay(); // Stats ekranı açıldığında veriler güncellensin
-        }
-      }.bind(this)
-    ); // this'i doğru bağlamaya zorla
-
-    // Stats menüsünü kapatma
     document
       .getElementById("close-stats-menu")
-      .addEventListener("click", function () {
+      .addEventListener("click", () => {
         document.getElementById("stats-menu").classList.add("hidden");
       });
   }
@@ -1636,23 +1708,94 @@ class Game {
     const infoButton = document.getElementById("info-button");
     const informationMenu = document.getElementById("information-menu");
     const closeButton = document.getElementById("close-menu");
-    const statsMenu = document.getElementById("stats-menu");
 
-    // Info butonuna tıklandığında menüyü açıp kapat
     infoButton.addEventListener("click", () => {
-      // Stats menüsü açıkken Info açılırsa, Stats menüsünü kapat
-      if (!statsMenu.classList.contains("hidden")) {
-        statsMenu.classList.add("hidden");
+      // Eğer Info menüsü açıksa sadece kapat
+      if (!informationMenu.classList.contains("hidden")) {
+        informationMenu.classList.add("hidden");
+      } else {
+        // Diğer menüleri kapat, sadece Info menüsünü açık bırak
+        this.closeAllMenus("information-menu");
+        informationMenu.classList.remove("hidden");
       }
-
-      // Info menüsünü aç veya kapat
-      informationMenu.classList.toggle("hidden");
     });
 
-    // Kapat butonuna tıklandığında menüyü gizle
     closeButton.addEventListener("click", () => {
       informationMenu.classList.add("hidden");
     });
+  }
+  setupSettingsMenu() {
+    const settingsButton = document.getElementById("settings-button");
+    const settingsMenu = document.getElementById("settings-menu");
+    const closeSettingsButton = document.getElementById("close-settings-menu");
+    const saveButton = document.getElementById("save-button");
+    const volumeSlider = document.getElementById("volume-slider");
+
+    settingsButton.addEventListener("click", () => {
+      // Eğer Settings menüsü açıksa sadece kapat
+      if (!settingsMenu.classList.contains("hidden")) {
+        settingsMenu.classList.add("hidden");
+      } else {
+        // Diğer menüleri kapat, sadece Settings menüsünü açık bırak
+        this.closeAllMenus("settings-menu");
+        settingsMenu.classList.remove("hidden");
+      }
+    });
+
+    closeSettingsButton.addEventListener("click", () => {
+      settingsMenu.classList.add("hidden");
+    });
+
+    volumeSlider.addEventListener("input", (event) => {
+      const volume = event.target.value;
+      this.clickSounds.forEach((sound) => {
+        sound.volume = volume;
+      });
+    });
+
+    saveButton.addEventListener("click", () => {
+      this.saveGame();
+      settingsMenu.classList.add("hidden");
+    });
+  }
+  getRandomBakeryName() {
+    const randomIndex = Math.floor(Math.random() * this.bakeryNames.length);
+    return this.bakeryNames[randomIndex];
+  }
+  updateBakeryName() {
+    const bakeryNameElement = document.getElementById("bakery-name");
+
+    // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata (kaydetme)
+    let savedName = localStorage.getItem("bakeryName");
+    if (savedName) {
+      this.currentBakeryName = savedName;
+    } else {
+      this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
+    }
+
+    if (bakeryNameElement) {
+      bakeryNameElement.textContent = this.currentBakeryName;
+    }
+  }
+  openChangeNameModal() {
+    const modal = document.getElementById("changeNameModal");
+    modal.style.display = "block";
+  }
+  closeChangeNameModal() {
+    const modal = document.getElementById("changeNameModal");
+    modal.style.display = "none";
+  }
+  changeBakeryName() {
+    const newBakeryName = document.getElementById("newBakeryName").value.trim();
+    if (newBakeryName) {
+      this.currentBakeryName = newBakeryName + "'s Bakery";
+      document.getElementById("bakery-name").textContent =
+        this.currentBakeryName;
+
+      // Kullanıcı isim değiştirdiğinde yeni ismi kaydet
+      localStorage.setItem("bakeryName", this.currentBakeryName);
+      this.closeChangeNameModal();
+    }
   }
   saveGame() {
     const gameState = {
@@ -1673,6 +1816,7 @@ class Game {
       })),
       gameVersion: this.currentVersion,
     };
+    localStorage.setItem("bakeryName", this.currentBakeryName);
     localStorage.setItem("gameState", JSON.stringify(gameState));
     this.showGameSaved();
   }
@@ -1687,6 +1831,7 @@ class Game {
         this.applyUpdates(gameState);
       }
 
+      // Diğer oyun durumunu yükle
       this.items = gameState.items || this.items;
       this.upgrades = gameState.upgrades || this.upgrades;
       this.donutCount = gameState.donutCount || 0;
@@ -1697,21 +1842,25 @@ class Game {
       this.ores = gameState.ores || {};
       this.workers = gameState.workers || [];
 
-      // Ore types yükleniyor ve fiyatlar güncelleniyor
+      // Bakery ismini yükle veya yeni bir rastgele isim ata
+      this.currentBakeryName =
+        gameState.currentBakeryName ||
+        localStorage.getItem("bakeryName") ||
+        this.getRandomBakeryName() + "'s Bakery";
+      document.getElementById("bakery-name").textContent =
+        this.currentBakeryName;
+
+      // Ore türlerini ve diğer bilgileri güncelle
       this.oreTypes = this.oreTypes.map((ore) => {
         const savedOre = gameState.oreTypes.find((o) => o.type === ore.type);
         return savedOre ? { ...ore, price: savedOre.price } : ore;
       });
-
       this.updateTotalOreCount();
       this.updateOreList();
       this.updateMarketDisplay();
-
       this.updateDisplay();
       this.showUpgrades();
       this.updatePrestigeBar();
-    } else {
-      this.updateBakeryName();
     }
   }
   resetGame() {
@@ -1720,6 +1869,7 @@ class Game {
     );
     if (confirmation) {
       localStorage.removeItem("gameState");
+      localStorage.removeItem("bakeryName");
       location.reload();
     }
   }
