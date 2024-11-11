@@ -77,7 +77,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 1,
-          img: "cursorUpgrade-2.webp",
+          img: "cursorUpgrade-2.webp?v=2",
           description:
             "Unleash a wave of efficiency, drowning inefficiency in a sea of productivity.",
         },
@@ -87,7 +87,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 15,
-          img: "cursorUpgrade-3.webp",
+          img: "cursorUpgrade-3.webp?v=2",
           description:
             "Ignite the donut cosmos with a touch that burns through production limits.",
         },
@@ -97,7 +97,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 30,
-          img: "cursorUpgrade-4.webp",
+          img: "cursorUpgrade-4.webp?v=2",
           description:
             "Reach deep into the void, pulling forth untapped donut-making power.",
         },
@@ -107,7 +107,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 50,
-          img: "cursorUpgrade-5.webp",
+          img: "cursorUpgrade-5.webp?v=2",
           description:
             "A gilded tool of infinite precision, sculpting perfect donuts with every click.",
         },
@@ -117,7 +117,7 @@ class Game {
           multiplier: 2,
           purchased: false,
           requirement: 100,
-          img: "cursorUpgrade-6.webp",
+          img: "cursorUpgrade-6.webp?v=2",
           description: "Careful though: you might fall in love…with a cursor",
         },
       ],
@@ -810,7 +810,6 @@ class Game {
   buyItem(itemKey) {
     const item = this.items[itemKey];
     if (this.donutCount >= Math.ceil(item.baseCost)) {
-      console.log("Buying item:", itemKey);
       this.donutCount -= item.baseCost;
       item.count++;
       item.baseCost = item.baseCost * item.costMultiplier;
@@ -935,7 +934,6 @@ class Game {
     for (let key in this.items) {
       totalPerSecond += this.items[key].count * this.items[key].production;
     }
-    console.log(totalPerSecond);
     return totalPerSecond;
   }
   addWorker() {
@@ -1125,7 +1123,6 @@ class Game {
         this.donutCount -= orePrice;
         this.ores[oreType].count++;
         this.orePurchaseLimit--;
-        console.log(this.orePurchaseLimit);
         this.updateDisplay();
         this.updateOreList();
       } else if (this.orePurchaseLimit <= 0) {
@@ -1153,7 +1150,6 @@ class Game {
       '.store-item[data-item="mine"] .item-img img[src="img/mine.webp"]'
     );
     if (this.showWorkersBtn) {
-      console.log("Mine image found");
       this.showWorkersBtn.addEventListener("click", () => {
         this.openModal();
       });
@@ -1826,12 +1822,12 @@ class Game {
       const gameState = JSON.parse(savedGame);
       if (
         !gameState.gameVersion ||
-        gameState.gameVersion < this.currentVersion
+        parseFloat(gameState.gameVersion) < parseFloat(this.currentVersion)
       ) {
         this.applyUpdates(gameState);
       }
 
-      // Diğer oyun durumunu yükle
+      // Güncellenmiş `gameState` verilerini yüklüyoruz
       this.items = gameState.items || this.items;
       this.upgrades = gameState.upgrades || this.upgrades;
       this.donutCount = gameState.donutCount || 0;
@@ -1841,36 +1837,20 @@ class Game {
       this.nextPrestigeThreshold = gameState.nextPrestigeThreshold || 10000000;
       this.ores = gameState.ores || {};
       this.workers = gameState.workers || [];
-
-      // Bakery ismini yükle veya yeni bir rastgele isim ata
       this.currentBakeryName =
         gameState.currentBakeryName ||
         localStorage.getItem("bakeryName") ||
         this.getRandomBakeryName() + "'s Bakery";
+
+      // Ekranı güncelle
       document.getElementById("bakery-name").textContent =
         this.currentBakeryName;
-
-      // Ore türlerini ve diğer bilgileri güncelle
-      this.oreTypes = this.oreTypes.map((ore) => {
-        const savedOre = gameState.oreTypes.find((o) => o.type === ore.type);
-        return savedOre ? { ...ore, price: savedOre.price } : ore;
-      });
       this.updateTotalOreCount();
       this.updateOreList();
       this.updateMarketDisplay();
       this.updateDisplay();
       this.showUpgrades();
       this.updatePrestigeBar();
-    }
-  }
-  resetGame() {
-    const confirmation = confirm(
-      "Are you sure you want to reset the game? All your progress will be deleted."
-    );
-    if (confirmation) {
-      localStorage.removeItem("gameState");
-      localStorage.removeItem("bakeryName");
-      location.reload();
     }
   }
   applyUpdates(gameState) {
@@ -1907,13 +1887,9 @@ class Game {
       } else {
         const gameStateItem = gameState.items[itemKey];
         const currentItem = this.items[itemKey];
-
-        if (gameStateItem.baseCost !== currentItem.baseCost) {
-          gameStateItem.baseCost = currentItem.baseCost;
-        }
-        if (gameStateItem.production !== currentItem.production) {
-          gameStateItem.production = currentItem.production;
-        }
+        gameStateItem.baseCost = currentItem.baseCost || gameStateItem.baseCost;
+        gameStateItem.production =
+          currentItem.production || gameStateItem.production;
       }
     });
 
@@ -1939,7 +1915,18 @@ class Game {
       });
     }
 
-    this.saveGame();
+    gameState.gameVersion = this.currentVersion;
+    localStorage.setItem("gameState", JSON.stringify(gameState));
+  }
+  resetGame() {
+    const confirmation = confirm(
+      "Are you sure you want to reset the game? All your progress will be deleted."
+    );
+    if (confirmation) {
+      localStorage.removeItem("gameState");
+      localStorage.removeItem("bakeryName");
+      location.reload();
+    }
   }
 }
 document.addEventListener("DOMContentLoaded", () => {
