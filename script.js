@@ -1,57 +1,47 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.2.7b";
+    this.currentVersion = "1.2.8";
     this.bakeryNames = [
-      "Sweet Crust",
-      "Golden Dough",
-      "Crumble & Whisk",
-      "Hearthside Delights",
-      "Flour & Frost",
-      "The Cookie Cradle",
-      "Velvet Slice",
-      "Whisk & Roll",
-      "Dreamy Dough",
-      "Sugar Leaf",
-      "Buttercream Bliss",
-      "Sunrise Sweets",
-      "Poppyseed Pastries",
-      "Honeycomb Bakehouse",
-      "Frost & Glaze",
-      "Toasted Almond",
-      "The Rolling Pin",
-      "Heavenly Crumbs",
-      "Cinnamon Cloud",
-      "Sugar Kneads",
-      "Whisked Wonders",
-      "Golden Grain",
-      "Frosted Hearth",
-      "Moonlight Muffins",
-      "Brioche & Bliss",
-      "Nutmeg Nest",
-      "The Dough Whisperer",
-      "Caramel Swirl",
-      "Vanilla Bean Delights",
-      "Ovenly Treats",
-      "Sprinkled Joy",
-      "Cozy Loaf",
-      "Puff & Crust",
-      "Butter & Spice",
-      "The Floury Tale",
-      "Dreamy Crust",
-      "Velvet Whisk",
-      "Almond Blossom",
-      "Cloud Pastries",
-      "Sweet Oven",
-      "Croissant Corner",
-      "Flour & Feather",
-      "The Sugar Tapestry",
-      "Petit Patisserie Delights",
-      "Golden Oven Sweets",
-      "Maple Crust",
-      "Twisted Treats",
-      "Whisk & Crumb",
-      "Cinnamon Whirl",
-      "Buttercup Bakes",
+      "Snowfall Crust",
+      "Frosted Pines",
+      "Holly Crust",
+      "Cinnamon Chalet",
+      "Sugarplum Haven",
+      "Ginger Whisk",
+      "Yule Hearth",
+      "Peppermint Twist",
+      "Nutcracker Sweets",
+      "Frost & Spice",
+      "Winter Whisk",
+      "Candy Cane Crust",
+      "Mistletoe Crumbs",
+      "Northern Crust",
+      "Icicle Bakes",
+      "Golden Fir",
+      "Twinkling Treats",
+      "Aurora Crust",
+      "Snowglobe Delights",
+      "Evergreen Sweets",
+      "Winter's Crust",
+      "Snowdrift Confections",
+      "Jolly Crumbs",
+      "Cranberry Twist",
+      "Frostfire Treats",
+      "Silver Sprinkles",
+      "Starlight Sweets",
+      "Cozy Crust",
+      "Pinecone Pastries",
+      "Twinkle Tarts",
+      "Ginger Glaze",
+      "Velvet Snow",
+      "Holiday Crust",
+      "Sugar Sleigh",
+      "Noel Delights",
+      "Frosty Whisk",
+      "Candlelight Crust",
+      "Winterberry Sweets",
+      "Bells & Butter",
+      "Mulled Spice Crust",
     ];
     this.clickSounds = [
       new Audio("sounds/click1.mp3"),
@@ -552,6 +542,33 @@ class Game {
     this.totalDonutsEarned = 0;
     this.totalClicks = 0;
     this.lastUpdateTime = Date.now();
+    this.snowContainer = null;
+    this.isSnowing = true;
+    this.initSnowEffect();
+    this.initControls();
+    this.productionMultiplier = 1;
+    this.christmasBoxes = [
+      {
+        type: "small",
+        image: "small-box.webp",
+        rewardMultiplier: 1,
+        duration: 5000, // 5 saniye görünür
+      },
+      {
+        type: "medium",
+        image: "medium-box.webp",
+        rewardMultiplier: 3,
+        duration: 7000, // 7 saniye görünür
+      },
+      {
+        type: "large",
+        image: "large-box.webp",
+        rewardMultiplier: 5,
+        duration: 10000, // 10 saniye görünür
+      },
+    ];
+    this.activeBox = null;
+    this.boxSpawnInterval = null;
     this.ores = {
       Copper: { count: 0 },
       Iron: { count: 0 },
@@ -564,6 +581,11 @@ class Game {
       { type: "Gold", rarity: 0.075, price: this.items.mine.baseCost * 0.05 },
       { type: "Diamond", rarity: 0.015, price: this.items.mine.baseCost * 0.1 },
     ];
+    this.quests = [
+      { id: 1, name: "Bake 100 Donuts", completed: false, reward: 50 },
+      { id: 2, name: "Hire 5 Bakers", completed: false, reward: 100 },
+      { id: 3, name: "Collect 10 Gold Ores", completed: false, reward: 200 },
+    ];
     this.workerProductionInterval = 60000; // 60 saniyelik genel üretim döngüsü
     this.workerCycleRemainingTime = this.workerProductionInterval; // Döngü süresi takibi için
     this.orePurchaseLimit = 10;
@@ -573,7 +595,7 @@ class Game {
     this.isSelling = false; // Şu an satım mı yapılıyor
     this.setupMarketButtons();
     this.currentCursorIndex = 0;
-    this.updateInterval = 125;
+    this.updateInterval = 550;
     this.donut = document.getElementById("donut");
     this.counter = document.getElementById("donut-count");
     this.perSecondDisplay = document.getElementById("per-second");
@@ -602,7 +624,8 @@ class Game {
   init() {
     this.loadGame();
     this.updateBakeryName();
-
+    this.initSnowEffect();
+    this.startChristmasBoxes();
     // Zamanlayıcılar
     setInterval(this.saveGame.bind(this), 180000); // 3 dakika
     setInterval(this.updateTitleWithDonuts.bind(this), 1000); // Başlığı her 1 saniyede bir güncelle
@@ -663,10 +686,11 @@ class Game {
     )} donuts`;
 
     // Saniyedeki üretimi formatla
-    this.perSecondDisplay.textContent = `per second: ${this.formatNumber(
-      this.calculatePerSecond(),
+    const formattedPerSecond = this.formatNumber(
+      this.totalPerSecond,
       "perSecond"
-    )}`;
+    );
+    this.perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
 
     for (let key in this.items) {
       const costElem = document.getElementById(`${key}Cost`);
@@ -860,11 +884,13 @@ class Game {
     }
   }
   updateTotalPerSecond() {
-    this.totalPerSecond = 0;
+    let basePerSecond = 0;
     for (let key in this.items) {
-      this.totalPerSecond += this.items[key].count * this.items[key].production;
+      basePerSecond += this.items[key].count * this.items[key].production;
     }
+    this.totalPerSecond = basePerSecond * this.productionMultiplier; // Çarpan uygula
   }
+
   updateProduction() {
     const currentTime = Date.now();
     const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
@@ -884,6 +910,7 @@ class Game {
     }
 
     this.updatePrestigeBar();
+    this.updateTotalPerSecond();
     this.updateDisplay(); // Üretim sonrası ekranı güncelle
   }
   calculateClickValue() {
@@ -903,6 +930,13 @@ class Game {
     });
 
     return clickValue + perSecondBoost;
+  }
+  calculatePerSecond() {
+    let totalPerSecond = 0;
+    for (let key in this.items) {
+      totalPerSecond += this.items[key].count * this.items[key].production;
+    }
+    return totalPerSecond;
   }
   handleDonutClick(event) {
     this.hasDonutClicked = true; // İlk tıklamada true olur
@@ -928,13 +962,6 @@ class Game {
     this.updateDisplay();
 
     this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
-  }
-  calculatePerSecond() {
-    let totalPerSecond = 0;
-    for (let key in this.items) {
-      totalPerSecond += this.items[key].count * this.items[key].production;
-    }
-    return totalPerSecond;
   }
   addWorker() {
     if (this.items.mine.count <= 0) return;
@@ -1164,11 +1191,13 @@ class Game {
     });
   }
   openModal() {
-    // Footer-container'ı animasyonla göster
-    this.footerContainer.classList.add("visible");
-    this.footerContainer.classList.remove("hidden");
-    this.footerContainer.style.display = "block"; // Görünür yap
-    this.updateOreList(); // Diğer işlemleri güncelle
+    if (this.items.mine.count > 0) {
+      // Footer-container'ı animasyonla göster
+      this.footerContainer.classList.add("visible");
+      this.footerContainer.classList.remove("hidden");
+      this.footerContainer.style.display = "block"; // Görünür yap
+      this.updateOreList(); // Diğer işlemleri güncelle
+    }
   }
   closeModal() {
     // Footer-container'ı animasyonla gizle
@@ -1195,7 +1224,7 @@ class Game {
     // Eğer upgrade 'nonItemUpgrades' grubundaysa özel mesajı göster, değilse standart mesajı göster
     const efficiencyText =
       itemName === "nonItemUpgrades"
-        ? "Clicking gains +1% of your CpS"
+        ? "Clicking gains +1% of your DpS"
         : `${formattedItemName}s are <strong>twice</strong> as efficient`;
 
     infoPanel.innerHTML = `
@@ -1253,15 +1282,16 @@ class Game {
 
       // Diğer özellikleri güncelle
       document.getElementById("item-info-feature").innerHTML = `
-        Each <strong>${item.name}</strong> produces <strong>${this.formatNumber(
-        item.production,
-        "perSecond"
-      )} donuts</strong> per second<br>
+        Each <strong>${item.name}</strong> produces <strong>${
+        itemKey === "cursor"
+          ? this.formatNumber(item.production, "perSecond")
+          : this.formatNumber(item.production, "count")
+      } donuts</strong> per second<br>
         ${this.formatNumber(item.count, "count")} <strong>${
         item.name + "(s)"
       }</strong> producing <strong>${this.formatNumber(
         item.count * item.production,
-        "perSecond"
+        "count"
       )} donuts</strong> per second<br>
         Total produced: ${this.formatNumber(item.totalProduced, "count")}
       `;
@@ -1562,29 +1592,53 @@ class Game {
   }
   formatNumber(number, type = "count") {
     if (type === "perSecond") {
-      // Cursor için özel durum: sayı 1'den küçükse ondalık göster
-      if (number < 1) {
-        return number.toFixed(1); // Ondalık gösterimle 0.1 gibi bir çıktı sağlar
-      } else if (number < 1000) {
-        return Math.floor(number).toString();
+      // Her zaman ondalık gösterim kullan
+      if (number < 1000) {
+        return number.toFixed(1).replace(".", ","); // 1.0'ı 1,0'a çevir
       } else if (number < 1000000) {
-        return Math.floor(number)
-          .toString()
-          .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Binlik ayraç olarak nokta kullan
+        return number
+          .toFixed(1)
+          .replace(".", ",")
+          .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Binlik ayraç olarak nokta, ondalık ayraç olarak virgül kullan
       } else if (number < 1000000000) {
-        return (number / 1000000).toFixed(3).replace(/\.?0+$/, "") + " million";
+        return (
+          (number / 1000000)
+            .toFixed(3)
+            .replace(".", ",")
+            .replace(/\.?0+$/, "") + " million"
+        );
       } else if (number < 1000000000000) {
         return (
-          (number / 1000000000).toFixed(3).replace(/\.?0+$/, "") + " billion"
+          (number / 1000000000)
+            .toFixed(3)
+            .replace(".", ",")
+            .replace(/\.?0+$/, "") + " billion"
+        );
+      } else if (number < 1000000000000000) {
+        return (
+          (number / 1000000000000)
+            .toFixed(3)
+            .replace(".", ",")
+            .replace(/\.?0+$/, "") + " trillion"
+        );
+      } else if (number < 1000000000000000000) {
+        return (
+          (number / 1000000000000000)
+            .toFixed(3)
+            .replace(".", ",")
+            .replace(/\.?0+$/, "") + " quadrillion"
         );
       } else {
         return (
-          (number / 1000000000000).toFixed(3).replace(/\.?0+$/, "") +
-          " trillion"
+          (number / 1000000000000000000)
+            .toFixed(3)
+            .replace(".", ",")
+            .replace(/\.?0+$/, "") + " quintillion"
         );
       }
     }
 
+    // Diğer tipler için mevcut davranışı koru
     if (number < 1000) {
       return Math.floor(number).toString();
     } else if (number < 1000000) {
@@ -1597,13 +1651,22 @@ class Game {
       return (
         (number / 1000000000).toFixed(3).replace(/\.?0+$/, "") + " billion"
       );
-    } else {
+    } else if (number < 1000000000000000) {
       return (
         (number / 1000000000000).toFixed(3).replace(/\.?0+$/, "") + " trillion"
       );
+    } else if (number < 1000000000000000000) {
+      return (
+        (number / 1000000000000000).toFixed(3).replace(/\.?0+$/, "") +
+        " quadrillion"
+      );
+    } else {
+      return (
+        (number / 1000000000000000000).toFixed(3).replace(/\.?0+$/, "") +
+        " quintillion"
+      );
     }
   }
-
   updateTitleWithDonuts() {
     if (!this.hasDonutClicked) return;
 
@@ -1793,6 +1856,255 @@ class Game {
       this.closeChangeNameModal();
     }
   }
+
+  initSnowEffect() {
+    // Kar efektine özel konteyner oluştur
+    this.snowContainer = document.createElement("div");
+    this.snowContainer.id = "snow-container";
+    document.body.appendChild(this.snowContainer);
+
+    // Kar efektine stil ekle
+    const style = document.createElement("style");
+    style.textContent = `
+        #snow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 10px;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Animasyonu başlat
+    this.setupVisibilityChange();
+    this.snowingLoop();
+  }
+  snowingLoop() {
+    const maxSnowflakes = Math.min(this.totalPerSecond * 5, 600);
+
+    // Mevcut kar tanesi sayısını kontrol et
+    const currentSnowflakes = this.snowContainer.childElementCount;
+
+    if (this.isSnowing && currentSnowflakes < maxSnowflakes) {
+      const flakesToAdd = Math.min(maxSnowflakes - currentSnowflakes, 5); // Aynı anda 5 taneden fazla ekleme
+
+      for (let i = 0; i < flakesToAdd; i++) {
+        this.createSnowflake();
+      }
+    }
+
+    // Döngüyü devam ettir
+    if (this.isSnowing) {
+      requestAnimationFrame(() => this.snowingLoop());
+    }
+  }
+  createSnowflake() {
+    if (this.totalPerSecond === 0) return; // Hiç kar tanesi oluşturma
+
+    const snowflake = document.createElement("div");
+    snowflake.classList.add("snowflake");
+    snowflake.textContent = "❄";
+
+    // Rastgele konum, boyut ve hız
+    const snowflakeSize = Math.random() * 10 + 10 + "px";
+    const snowflakePosition = Math.random() * 100 + "vw";
+    const fallDuration = Math.random() * 3 + 2 + "s";
+
+    snowflake.style.left = snowflakePosition;
+    snowflake.style.fontSize = snowflakeSize;
+    snowflake.style.animationDuration = fallDuration;
+
+    this.snowContainer.appendChild(snowflake);
+
+    // Kar tanesi düşüş tamamlanınca kaldır
+    setTimeout(() => {
+      snowflake.remove();
+    }, parseFloat(fallDuration) * 1000);
+  }
+  stopSnowEffect() {
+    this.isSnowing = false; // Kar yağışını durdur
+  }
+  startSnowEffect() {
+    if (!this.isSnowing) {
+      this.isSnowing = true; // Kar yağışını tekrar başlat
+      this.snowingLoop(); // Döngüyü yeniden başlat
+    }
+  }
+  initControls() {
+    const toggleButton = document.getElementById("toggle-snow-button");
+    if (toggleButton) {
+      toggleButton.addEventListener("click", () => {
+        if (this.isSnowing) {
+          this.stopSnowEffect();
+          toggleButton.textContent = "Start Snow";
+        } else {
+          this.startSnowEffect();
+          toggleButton.textContent = "Stop Snow";
+        }
+      });
+    }
+  }
+  spawnChristmasBox() {
+    if (this.activeBox) return; // Zaten aktif kutu varsa, başka bir kutu oluşturma
+
+    const randomBox =
+      this.christmasBoxes[
+        Math.floor(Math.random() * this.christmasBoxes.length)
+      ];
+
+    const boxElement = document.createElement("img");
+    boxElement.src = `img/${randomBox.image}`;
+    boxElement.classList.add("christmas-box", randomBox.type);
+    boxElement.style.position = "absolute";
+    boxElement.style.left = `${Math.random() * 80 + 10}%`; // Between 10% and 90%
+    boxElement.style.top = `${Math.random() * 70 + 10}%`; // Between 10% and 80%
+
+    document.body.appendChild(boxElement);
+    this.activeBox = { element: boxElement, data: randomBox };
+
+    // Kutuyu zamanlayıcı ile kaldır
+    setTimeout(() => this.removeActiveBox(), randomBox.duration);
+
+    // Kutunun tıklama olayını ayarla
+    boxElement.addEventListener("click", () => this.handleBoxClick(randomBox));
+  }
+  removeActiveBox() {
+    if (this.activeBox) {
+      if (this.activeBox.element.parentNode) {
+        document.body.removeChild(this.activeBox.element);
+      }
+      this.activeBox = null;
+    }
+  }
+  handleBoxClick(boxData) {
+    if (!this.activeBox || this.activeBox.data !== boxData) return;
+
+    const randomBonus = Math.random();
+    let rewardText = "";
+    let duration = 0;
+
+    if (randomBonus < 0.5) {
+      // %50 şansla donut ödülü
+      const donutsAdded = Math.floor(this.donutCount * (0.5 + Math.random()));
+      this.donutCount += donutsAdded;
+      this.totalDonutsEarned += donutsAdded;
+      rewardText = `+${donutsAdded} donuts!`;
+      duration = 8000;
+    } else if (randomBonus < 0.8) {
+      // %30 şansla üretim çarpanı
+      const multiplier = 1 + boxData.rewardMultiplier;
+      duration = 30000;
+      this.applyProductionMultiplier(multiplier, duration);
+      rewardText = `Production boosted by ${multiplier}x for ${
+        duration / 1000
+      } seconds!`;
+    } else {
+      // %20 şansla şanslı ödül
+      const luckyReward = Math.max(
+        Math.floor(Math.random() * (this.donutCount * 0.1)),
+        500 // Minimum 500 donut
+      );
+      this.donutCount += luckyReward;
+      this.totalDonutsEarned += luckyReward;
+      rewardText = `+${luckyReward} bonus donuts!`;
+      duration = 8000;
+    }
+
+    // Ödül ve mesajları göster
+    const rewardElement = document.createElement("div");
+    rewardElement.className = "reward-display";
+    rewardElement.innerHTML = `
+        <img src="img/${boxData.image}" alt="Reward" class="reward-image" />
+        <div class="reward-timer-bar">
+            <div class="timer-fill"></div>
+        </div>
+    `;
+    rewardElement.style.setProperty("--duration", `${duration}ms`);
+    document.body.appendChild(rewardElement);
+
+    const rewardMessage = document.createElement("div");
+    rewardMessage.className = "reward-message";
+    rewardMessage.textContent = rewardText;
+
+    const boxRect = this.activeBox.element.getBoundingClientRect();
+    rewardMessage.style.left = `${boxRect.left + boxRect.width / 2}px`;
+    rewardMessage.style.top = `${boxRect.top}px`;
+
+    document.body.appendChild(rewardMessage);
+    setTimeout(() => document.body.removeChild(rewardMessage), 5000);
+
+    rewardElement.addEventListener("mouseenter", () =>
+      this.showRewardInfo(rewardElement, rewardText)
+    );
+    rewardElement.addEventListener("mouseleave", () => this.hideRewardInfo());
+    setTimeout(() => {
+      document.body.removeChild(rewardElement);
+    }, duration);
+
+    // Aktif kutuyu kaldır
+    this.removeActiveBox();
+  }
+  showRewardInfo(element, rewardText) {
+    const infoPanel = document.createElement("div");
+    infoPanel.className = "reward-info-panel";
+    infoPanel.innerHTML = `
+        <p>${rewardText}</p>
+    `;
+    element.appendChild(infoPanel);
+  }
+  hideRewardInfo() {
+    clearInterval(this.infoInterval);
+    const panel = document.querySelector(".reward-info-panel");
+    if (panel) panel.remove();
+  }
+  applyProductionMultiplier(multiplier, duration) {
+    this.productionMultiplier *= multiplier; // Çarpanı uygula
+    this.updateTotalPerSecond();
+    this.updateDisplay();
+
+    setTimeout(() => {
+      this.productionMultiplier /= multiplier; // Çarpanı sıfırla
+      this.updateTotalPerSecond();
+      this.updateDisplay();
+    }, duration);
+  }
+  startChristmasBoxes() {
+    const spawnRandomBox = () => {
+      this.spawnChristmasBox();
+
+      const nextSpawnTime =
+        Math.random() * (15 - 10) * 60 * 1000 + 10 * 60 * 1000;
+      this.boxSpawnTimeout = setTimeout(spawnRandomBox, nextSpawnTime);
+    };
+
+    // İlk kutuyu hemen üretmek yerine 10-15 dakika sonra üret
+    const initialDelay = Math.random() * (15 - 10) * 60 * 1000 + 10 * 60 * 1000;
+    this.boxSpawnTimeout = setTimeout(spawnRandomBox, initialDelay);
+  }
+
   saveGame() {
     const gameState = {
       items: this.items,

@@ -13,7 +13,7 @@
       content="donut clicker, idle game, clicker game, factory building, donut factory, upgrades, idle clicker, incremental game, donut game, best clicker games 2024"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=2">
+    <link rel="stylesheet" href="styles.css?v=3" />
     <link rel="icon" href="img/donutPixelArt.ico" type="image/x-icon" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,7 +29,7 @@
     ></script>
   </head>
   <body>
-    <div class="game-container">
+    <div id="game-container">
       <div id="info-panel" class="info-panel">
         <h4 id="info-name"></h4>
         <p id="info-cost"></p>
@@ -82,8 +82,7 @@
                   <div id="prestigeBarFill"></div>
                 </div>
                 <p id="prestigePoints">Prestige Points: 0</p>
-                <p id="nextPrestigeThreshold">
-                </p>
+                <p id="nextPrestigeThreshold"></p>
               </div>
             </div>
 
@@ -98,18 +97,21 @@
                 </p>
               </div>
             </div>
-            <amp-ad width="100vw" height="320"
-                type="adsense"
-                data-ad-client="ca-pub-2794552984734673"
-                data-ad-slot="6843294929"
-                data-auto-format="rspv"
-                data-full-width="">
-                <div overflow=""></div>
+            <amp-ad
+              width="100vw"
+              height="320"
+              type="adsense"
+              data-ad-client="ca-pub-2794552984734673"
+              data-ad-slot="6843294929"
+              data-auto-format="rspv"
+              data-full-width=""
+            >
+              <div overflow=""></div>
             </amp-ad>
           </div>
         </div>
       </div>
-      
+
       <!-- Header -->
       <div id="header-container">
         <div class="header-content">
@@ -117,7 +119,7 @@
             <button id="info-button">Info</button>
           </div>
 
-          <img src="img/donutSign1.webp" alt="Donut Sign" class="headerImg" />
+          <img src="img/tabela.png" alt="Donut Sign" class="headerImg" />
 
           <!-- <h1 class="header-title">Donut Clicker</h1> -->
 
@@ -131,21 +133,30 @@
         <div class="menu-content">
           <span id="close-settings-menu" class="close-btn">&times;</span>
           <h2>Settings</h2>
-          
+
           <div class="save-container">
             <button id="save-button">Save</button>
             <span class="save-text">Save Manually</span>
           </div>
-      
+
           <div class="volume-control">
             <p class="volume-info">Adjust click sound volume here</p>
             <label for="volume-slider">Volume:</label>
-            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.1">
+            <input
+              type="range"
+              id="volume-slider"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.1"
+            />
+          </div>
+          <div class="snow-control">
+            <button id="toggle-snow-button">Stop Snow</button>
           </div>
         </div>
       </div>
-      
-      
+
       <div id="stats-menu" class="hidden">
         <div class="menu-content">
           <span id="close-stats-menu" class="close-btn">&times;</span>
@@ -157,7 +168,7 @@
             <p>
               Total Donuts:
               <img
-                src="img/donut5.webp"
+                src="img/donut.webp"
                 alt="Donut"
                 style="width: 10px; height: 10px"
               />
@@ -166,7 +177,7 @@
             <p>
               Donuts Produced:
               <img
-                src="img/donut5.webp"
+                src="img/donut.webp"
                 alt="Donut"
                 style="width: 10px; height: 10px"
               />
@@ -189,43 +200,92 @@
           <!-- About Section -->
           <section id="about-section">
             <h3>About</h3>
-            <p class="about-text">Donut Clicker is developed by ktz and doa.</p>
             <p class="about-text">
-              In this section, you can learn about the latest updates and
-              announcements related to the game.
+              Hi there! Donut Clicker is lovingly crafted by ktz and doa.
+            </p>
+            <p class="about-text-2">
+              Here, you’ll find the latest updates and news about the game.
+            </p>
+            <p class="about-text">
+              Got a question, found a bug, or just want to say hi? Feel free to
+              reach out at <b>ktz@donutclicker.net</b>. We'd love to hear from
+              you!
             </p>
           </section>
 
           <!-- Updates Section -->
           <section id="updates-section">
             <h3>Updates</h3>
+            <!-- Big Update -->
+            <div class="update big-update">
+              <h4 class="big-update-title">Big Update: Version 1.2.8 🎄</h4>
+              <ul class="big-update-text">
+                <li>❄️ A temporary Christmas theme has been added!</li>
+                <li>
+                  ☃️ Snowfall now increases based on your production rate. You
+                  can enable or disable it in the Settings menu.
+                </li>
+                <li>
+                  🎨 Store item images have been updated with a festive winter
+                  theme.
+                </li>
+                <li>
+                  🔄 Quest, combo, and prestige icons have also been redesigned
+                  to match the Christmas spirit.
+                </li>
+                <li>
+                  🍩 The big donut image has been replaced with a special
+                  holiday version.
+                </li>
+                <li>
+                  🎁 A Christmas Box has been added, offering surprise rewards
+                  every 10 to 15 minutes. Be quick and attentive to catch it!
+                </li>
+                <li>
+                  📐 UI improvements have been made for a better experience.
+                </li>
+                <li>🐞 Several bugs have been fixed to enhance stability.</li>
+              </ul>
+              <p>Enjoy the holiday season and happy clicking! 🎄🍩</p>
+            </div>
+
             <!-- Small Update -->
             <div class="update small-update">
               <h4 class="small-update-title">Small Update: Version 1.2.7</h4>
               <ul class="small-update-text">
-                  <li>Cursor upgrade images replaced with new ones!</li>
-                  <li>Cursors now orbit around the donut! </li>
-                  <li>Upgrade prices have been rebalanced! </li>
-                  <li>Ore production reduced to 3 for a more balanced experience!</li>
-                  <li>Bakery name can now be customized!</li>
-                  <li>Sound on/off toggle added!</li>
-                  <li>Manual save option now available—save your progress anytime! </li>
+                <li>Cursor upgrade images replaced with new ones!</li>
+                <li>Cursors now orbit around the donut!</li>
+                <li>Upgrade prices have been rebalanced!</li>
+                <li>
+                  Ore production reduced to 3 for a more balanced experience!
+                </li>
+                <li>Bakery name can now be customized!</li>
+                <li>Sound on/off toggle added!</li>
+                <li>
+                  Manual save option now available—save your progress anytime!
+                </li>
               </ul>
-          </div>
+            </div>
             <!-- Big Update -->
             <div class="update big-update">
               <h4 class="big-update-title">Big Update: Version 1.2.6</h4>
               <ul class="big-update-text">
                 <li>New click-based upgrades added.</li>
-                <li>New mine panel added after purchasing a mine (open by clicking on the mine image).</li>
+                <li>
+                  New mine panel added after purchasing a mine (open by clicking
+                  on the mine image).
+                </li>
                 <li>New worker & ore system introduced.</li>
-                <li>Market specifically for ores added, refreshing regularly (more to come!).</li>
+                <li>
+                  Market specifically for ores added, refreshing regularly (more
+                  to come!).
+                </li>
                 <li>Performance improvements made.</li>
                 <li>Various bug and UI issues fixed.</li>
                 <li>Changes to prestige points implemented.</li>
               </ul>
             </div>
-          
+
             <!-- Big Update -->
             <div class="update big-update">
               <h4 class="big-update-title">Big Update: Version 1.2.5</h4>
@@ -251,73 +311,88 @@
       <div id="footer-container">
         <div id="mine-panel" class="footer-panel hidden">
           <span id="close-mine-panel" class="close-btn">&times;</span>
-          
+
           <div class="mine-content">
             <div class="left-section">
               <div class="mine-content-header">
-              <img
-                id="item-info-image"
-                src="img/mine.webp"
-                alt="item image"
-                class="item-image"
-              />
-              <div id="item-info-text"<h4 id="item-info-name">Mine</h4>
-                <p id="item-info-owned">
-                  Worker: <span id="workerCount">0</span>
-                </p>
-                <h4 id="item-info-name">Ores</h4>
-                <p id="item-info-owned">
-                  Total Ore: <span id="oreCount">0</span>
+                <img
+                  id="item-info-image"
+                  src="img/mine.webp"
+                  alt="item image"
+                  class="item-image"
+                />
+                <div id="item-info-text">
+                  <h4 id="item-info-name">Mine</h4>
+                  <p id="item-info-owned">
+                    Worker: <span id="workerCount">0</span>
+                  </p>
+                  <h4 id="item-info-name">Ores</h4>
+                  <p id="item-info-owned">
+                    Total Ore: <span id="oreCount">0</span>
+                  </p>
+                </div>
+              </div>
+
+              <div class="ore-container">
+                <ul id="oreList"></ul>
+                <p
+                  class="ore-generation-info"
+                  style="
+                    font-size: 0.65em;
+                    opacity: 0.7;
+                    margin-top: 5px;
+                    text-align: left;
+                  "
+                >
+                  (1 ore is generated every minute)
                 </p>
               </div>
             </div>
-            
-            <div class="ore-container">
-              <ul id="oreList"></ul>
-              <p class="ore-generation-info" style="font-size: 0.65em; opacity: 0.7; margin-top: 5px; text-align: left;">
-                (1 ore is generated every minute)
-            </p>
-            </div>
-          </div>
-            
+
             <div class="right-section">
               <h4>Market</h4>
               <div class="market-container">
-                <p id="remainingChances">You can get a maximum of 10 ores every 1 minute. Remaining: 10</p>
-                  <ul id="marketList">
-                      <!-- Ore fiyatları burada listelenecek -->
-                  </ul>
-                  <button id="buyBtn" class="market-btn">Buy</button>
-                  <button id="sellBtn" class="market-btn">Sell</button>
+                <p id="remainingChances">
+                  You can get a maximum of 10 ores every 1 minute. Remaining: 10
+                </p>
+                <ul id="marketList">
+                  <!-- Ore fiyatları burada listelenecek -->
+                </ul>
+                <button id="buyBtn" class="market-btn">Buy</button>
+                <button id="sellBtn" class="market-btn">Sell</button>
               </div>
-            </div>          
+            </div>
           </div>
         </div>
       </div>
 
-      
       <!-- Donut Kısmı -->
       <div class="donut-container">
         <p id="bakery-name"></p>
         <p id="donut-count">0 donuts</p>
         <p id="per-second">per second: 0</p>
         <div class="donut-wrapper">
-          <img src="img/donut.webp" alt="Donut" id="donut" />
+          <img src="img/donutNew.webp" alt="Donut" id="donut" />
           <div id="cursor-container"></div>
           <!-- Cursorlar bu alana eklenecek -->
         </div>
       </div>
       <div id="changeNameModal" class="modal">
         <div class="modal-content">
-            <p>How would you like to change the name of your bakery?</p>
-            <input type="text" id="newBakeryName" placeholder="Enter new name..." autocomplete="off">
-            <div class="modal-buttons">
-                <button id="confirmButton">Confirm</button>
-                <button id="cancelButton" class="cancel">Cancel</button>
-            </div>
+          <p>How would you like to change the name of your bakery?</p>
+          <input
+            type="text"
+            id="newBakeryName"
+            placeholder="Enter new name..."
+            autocomplete="off"
+          />
+          <div class="modal-buttons">
+            <button id="confirmButton">Confirm</button>
+            <button id="cancelButton" class="cancel">Cancel</button>
+          </div>
         </div>
-    </div>
-    
+      </div>
+
       <!-- Store Bölümü -->
       <div id="section-right">
         <div class="store">
@@ -548,7 +623,7 @@
         </div>
       </div>
     </div>
-    <!-- Prestige modal -->
+
     <!-- Prestige modal -->
     <div id="prestigeModal" class="modal">
       <div class="modal-content">
@@ -565,12 +640,14 @@
     <div id="game-saved">Game Saved!</div>
 
     <button id="reset-button">Reset</button>
+    <div id="snow-container"></div>
+    <div id="christmax-box"></div>
     <a
       href="https://buymeacoffee.com/donutclickernet"
       id="buy-me-a-donut"
       target="_blank"
       >☕ Buy me a coffee!</a
     >
-    <script src="script.js?v=1.2.7b"></script>
+    <script src="script.js?v=1.2.8"></script>
   </body>
 </html>

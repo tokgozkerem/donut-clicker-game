@@ -52,13 +52,11 @@ body {
 }
 
 .donut-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   position: absolute;
-  width: 100%;
-  margin-top: 160px;
+  top: 250px;
+  left: 300px;
+  right: 315px;
+  height: 85%;
   text-align: center;
 }
 
@@ -166,17 +164,17 @@ body {
   justify-content: space-between;
   align-items: center;
   height: 153px;
-  margin: 0 auto; /* Ortaya almak için */
+  margin: 0 auto;
 }
 .headerImg {
-  position: relative; /* Artık absolute değil */
-  width: 100%; /* Konteynerin genişliğini tamamen kaplar */
-  max-width: 255px; /* Maksimum genişlik */
-  height: auto; /* Yükseklik orantılı olarak ayarlanır */
-  top: -25px; /* Üstten 0 piksel mesafede */
-  left: 50%; /* Yatay olarak ortalar */
-  transform: translateX(-50%); /* Tam olarak ortalamak için */
-  z-index: 1; /* Diğer öğelerin arkasında kalmaması için */
+  position: relative;
+  width: 100%;
+  max-width: 335px;
+  height: auto;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .header-right {
@@ -257,7 +255,7 @@ body {
   margin-top: 43px;
 }
 #donut:hover {
-  transform: scale(1.03);
+  transform: scale(1.09);
 }
 #donut:active {
   transform: scale(0.97);
@@ -557,6 +555,7 @@ body {
   overflow: hidden;
   width: auto;
 }
+
 .store-item:hover {
   background-color: #b9a18d;
   user-select: none;
@@ -646,8 +645,8 @@ body {
 
 .page-img img {
   object-fit: cover;
-  width: 100%;
-  height: 100%;
+  width: 90%;
+  height: 90%;
 }
 
 .page-info {
@@ -1013,12 +1012,20 @@ button {
   margin: 10px 0;
   padding: 10px;
   border-left: 4px solid #ccc;
+  font-weight: 150;
 }
 
 .big-update {
   border-color: #4caf50; /* Green for big updates */
 }
 
+.update p {
+  font-size: 12px;
+}
+.about-text-2 {
+  font-size: 12px;
+  font-weight: 100;
+}
 .small-update {
   border-color: #ff9800; /* Orange for small updates */
 }
@@ -1028,7 +1035,7 @@ button {
   color: #8be98e;
 }
 .big-update-text {
-  font-size: 13px;
+  font-size: 11px;
 }
 .small-update-title {
   color: #fdc167;
@@ -1051,11 +1058,25 @@ h3::after {
   height: 1px;
   margin: 6px 0; /* Üst ve alt boşluk */
 }
+.about-text-2::after {
+  content: "";
+  display: block;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.66),
+    rgba(255, 255, 255, 0.33),
+    rgba(255, 255, 255, 0.11),
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0)
+  );
+  height: 1px;
+  margin: 6px 0; /* Üst ve alt boşluk */
+}
 #footer-container {
   position: fixed;
   bottom: 0;
   width: 66%;
-  left: 16.4%;
+  left: 16%;
   text-align: center;
   backdrop-filter: blur(10px); /* Cam efekti */
   background: rgba(255, 234, 182, 0.2); /* Yarı şeffaf cam arka plan */
@@ -1359,6 +1380,196 @@ h3::after {
   bottom: 20px; /* Ekranın altından 20px yukarı */
   opacity: 1;
 }
+/* Kar Taneleri Konteyneri */
+#snow-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Tıklamaları engeller */
+  overflow: hidden; /* Taşan kar tanelerini gizler */
+  z-index: 9999; /* En üstte tutar */
+}
+
+/* Kar Tanesi */
+.snowflake {
+  position: absolute;
+  top: -10%; /* Başlangıç noktası */
+  color: white; /* Kar rengi */
+  font-size: 10px; /* Varsayılan boyut */
+  animation: fall linear infinite, sway ease-in-out infinite;
+  opacity: 0.8; /* Hafif şeffaflık */
+}
+.christmas-box {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  transition: transform 0.3s;
+  z-index: 155555;
+}
+
+.christmas-box:hover {
+  transform: scale(1.2);
+}
+
+.christmas-box.small {
+  width: 50px;
+  height: 50px;
+}
+
+.christmas-box.medium {
+  width: 70px;
+  height: 70px;
+}
+
+.christmas-box.large {
+  width: 90px;
+  height: 90px;
+}
+
+.reward-message {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  animation: fade-out 5s ease-out forwards;
+  z-index: 155554;
+}
+
+.reward-display {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.reward-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+}
+
+.reward-timer-bar {
+  position: relative;
+  width: 100px;
+  height: 10px;
+  background: #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.timer-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background: #4caf50;
+  animation: fillProgress var(--duration) linear forwards;
+}
+
+@keyframes fillProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.reward-info-panel {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  padding: 10px;
+  border: 2px solid #888;
+  width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  font-family: Arial, sans-serif;
+  color: #fff;
+  font-weight: normal;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.snow-control {
+  margin-top: 20px;
+  text-align: center;
+}
+
+#toggle-snow-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#toggle-snow-button:hover {
+  background-color: #0056b3;
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Düşme Animasyonu */
+@keyframes fall {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(110vh); /* Ekranın dışına düşer */
+  }
+}
+
+/* Yana Savrulma Animasyonu */
+@keyframes sway {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(20px); /* Sağa kayma */
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
 
 @keyframes pulse {
   0% {
@@ -1475,6 +1686,15 @@ h3::after {
     width: 125px;
     font-size: 12px;
     left: 33%;
+    height: 55%;
+  }
+  #donut-count {
+    font-size: 1em;
+    font-weight: 700;
+    margin: 10px 0;
+    color: #f8f3e7;
+    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    user-select: none;
   }
   .page-info {
     margin-left: 0px;
