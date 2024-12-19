@@ -1856,7 +1856,6 @@ class Game {
       this.closeChangeNameModal();
     }
   }
-
   initSnowEffect() {
     // Kar efektine özel konteyner oluştur
     this.snowContainer = document.createElement("div");
@@ -1985,8 +1984,11 @@ class Game {
     document.body.appendChild(boxElement);
     this.activeBox = { element: boxElement, data: randomBox };
 
-    // Kutuyu zamanlayıcı ile kaldır
-    setTimeout(() => this.removeActiveBox(), randomBox.duration);
+    setTimeout(() => {
+      if (this.activeBox?.element === boxElement) {
+        this.removeActiveBox();
+      }
+    }, 15000); // 15 saniye
 
     // Kutunun tıklama olayını ayarla
     boxElement.addEventListener("click", () => this.handleBoxClick(randomBox));
