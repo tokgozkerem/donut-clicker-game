@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.2.8";
+    this.currentVersion = "1.2.9";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -581,11 +581,7 @@ class Game {
       { type: "Gold", rarity: 0.075, price: this.items.mine.baseCost * 0.05 },
       { type: "Diamond", rarity: 0.015, price: this.items.mine.baseCost * 0.1 },
     ];
-    this.quests = [
-      { id: 1, name: "Bake 100 Donuts", completed: false, reward: 50 },
-      { id: 2, name: "Hire 5 Bakers", completed: false, reward: 100 },
-      { id: 3, name: "Collect 10 Gold Ores", completed: false, reward: 200 },
-    ];
+
     this.workerProductionInterval = 60000; // 60 saniyelik genel üretim döngüsü
     this.workerCycleRemainingTime = this.workerProductionInterval; // Döngü süresi takibi için
     this.orePurchaseLimit = 10;
@@ -620,6 +616,245 @@ class Game {
     this.clickSounds.forEach((sound) => {
       sound.volume = 0.1;
     });
+
+    // Quest sistemi için yeni özellikler
+    this.quests = {
+      donutMaster: {
+        id: "donutMaster",
+        title: "Donut Master",
+        description: "Produce 1,000 donuts",
+        target: 1000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "production",
+        reward: {
+          type: "donuts",
+          amount: 500,
+        },
+      },
+      clickMaster: {
+        id: "clickMaster",
+        title: "Click Master",
+        description: "Click 100 times",
+        target: 100,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "clicks",
+        reward: {
+          type: "multiplier",
+          amount: 1.5,
+          duration: 30000,
+        },
+      },
+      bakerApprentice: {
+        id: "bakerApprentice",
+        title: "Baker Apprentice",
+        description: "Buy 5 Bakers",
+        target: 5,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "baker",
+        reward: {
+          type: "donuts",
+          amount: 1000,
+        },
+      },
+      donutMillionaire: {
+        id: "donutMillionaire",
+        title: "Donut Millionaire",
+        description: "Produce 1,000,000 donuts",
+        target: 1000000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "production",
+        reward: {
+          type: "multiplier",
+          amount: 2,
+          duration: 60000,
+        },
+      },
+      clickingFrenzy: {
+        id: "clickingFrenzy",
+        title: "Clicking Frenzy",
+        description: "Click 1,000 times",
+        target: 1000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "clicks",
+        reward: {
+          type: "donuts",
+          amount: 5000,
+        },
+      },
+      farmEmpire: {
+        id: "farmEmpire",
+        title: "Farm Empire",
+        description: "Own 10 Farms",
+        target: 10,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "farm",
+        reward: {
+          type: "multiplier",
+          amount: 1.75,
+          duration: 45000,
+        },
+      },
+      industrialRevolution: {
+        id: "industrialRevolution",
+        title: "Industrial Revolution",
+        description: "Own 15 Factories",
+        target: 15,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "factory",
+        reward: {
+          type: "donuts",
+          amount: 10000,
+        },
+      },
+      logisticsKing: {
+        id: "logisticsKing",
+        title: "Logistics King",
+        description: "Own 5 Logistic Centers",
+        target: 5,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "logisticCenter",
+        reward: {
+          type: "multiplier",
+          amount: 2.5,
+          duration: 40000,
+        },
+      },
+      miningTycoon: {
+        id: "miningTycoon",
+        title: "Mining Tycoon",
+        description: "Own 20 Mines",
+        target: 20,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "mine",
+        reward: {
+          type: "donuts",
+          amount: 25000,
+        },
+      },
+      clickBillionaire: {
+        id: "clickBillionaire",
+        title: "Click Billionaire",
+        description: "Click 10,000 times",
+        target: 10000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "clicks",
+        reward: {
+          type: "multiplier",
+          amount: 3,
+          duration: 90000,
+        },
+      },
+      donutBillionaire: {
+        id: "donutBillionaire",
+        title: "Donut Billionaire",
+        description: "Produce 1,000,000,000 donuts",
+        target: 1000000000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "production",
+        reward: {
+          type: "donuts",
+          amount: 100000,
+        },
+      },
+      cursorLegend: {
+        id: "cursorLegend",
+        title: "Cursor Legend",
+        description: "Own 50 Cursors",
+        target: 50,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "cursor",
+        reward: {
+          type: "multiplier",
+          amount: 2,
+          duration: 120000,
+        },
+      },
+      bakerEmpire: {
+        id: "bakerEmpire",
+        title: "Baker Empire",
+        description: "Own 25 Bakers",
+        target: 25,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "building",
+        buildingType: "baker",
+        reward: {
+          type: "donuts",
+          amount: 50000,
+        },
+      },
+      clickingLegend: {
+        id: "clickingLegend",
+        title: "Clicking Legend",
+        description: "Click 100,000 times",
+        target: 100000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "clicks",
+        reward: {
+          type: "multiplier",
+          amount: 5,
+          duration: 180000,
+        },
+      },
+      donutTrillionaire: {
+        id: "donutTrillionaire",
+        title: "Donut Trillionaire",
+        description: "Produce 1,000,000,000,000 donuts",
+        target: 1000000000000,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        type: "production",
+        reward: {
+          type: "donuts",
+          amount: 1000000,
+        },
+      },
+    };
+
+    // Quest sistemini başlat
+    this.setupQuestSystem();
+
+    // Quest menüsünün başlangıç durumu
+    this.questsMenu = document.getElementById("quests-menu");
+    this.questsMenu.classList.add("hidden");
+
+    // Multiplier sistemi için gerekli özellikler
+    this.activeMultipliers = []; // Array'i burada tanımla
+    this.productionMultiplier = 1;
   }
   init() {
     this.loadGame();
@@ -744,6 +979,90 @@ class Game {
     }
     // Upgrade'lerin durumunu dinamik olarak güncelle
     this.showUpgrades();
+
+    // Aktif multiplier göstergesini güncelle
+    this.updateActiveMultiplierDisplay();
+  }
+  updateTotalPerSecond() {
+    let basePerSecond = 0;
+    for (let key in this.items) {
+      basePerSecond += this.items[key].count * this.items[key].production;
+    }
+    this.totalPerSecond = basePerSecond * this.productionMultiplier; // Çarpan uygula
+  }
+  updateProduction() {
+    const currentTime = Date.now();
+    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
+    this.lastUpdateTime = currentTime;
+
+    // Depolanmış totalPerSecond kullanarak hesaplama
+    const donutsProduced = this.totalPerSecond * deltaTime;
+    this.donutCount += donutsProduced;
+    this.totalDonutsEarned += donutsProduced;
+
+    // Her item'in toplam üretimini de artır
+    for (let key in this.items) {
+      if (this.items[key].count > 0) {
+        this.items[key].totalProduced +=
+          this.items[key].count * this.items[key].production * deltaTime;
+      }
+    }
+
+    this.updatePrestigeBar();
+    this.updateTotalPerSecond();
+    this.checkQuestProgress();
+    this.updateDisplay(); // Üretim sonrası ekranı güncelle
+  }
+  calculateClickValue() {
+    let clickValue = 1; //click value
+
+    // Tüm cursor upgrade'lerini kontrol et
+    this.upgrades.cursor.forEach((upgrade) => {
+      if (upgrade.purchased) {
+        clickValue *= upgrade.multiplier;
+      }
+    });
+    let perSecondBoost = 0;
+    this.upgrades.nonItemUpgrades.forEach((upgrade) => {
+      if (upgrade.purchased) {
+        perSecondBoost += this.calculatePerSecond() * 0.01;
+      }
+    });
+
+    return clickValue + perSecondBoost;
+  }
+  calculatePerSecond() {
+    let totalPerSecond = 0;
+    for (let key in this.items) {
+      totalPerSecond += this.items[key].count * this.items[key].production;
+    }
+    return totalPerSecond;
+  }
+  handleDonutClick(event) {
+    this.hasDonutClicked = true; // İlk tıklamada true olur
+    this.totalClicks++;
+
+    const clickValue = this.calculateClickValue(); // Click value'yi hesapla
+
+    this.donutCount += clickValue;
+    this.totalDonutsEarned += clickValue;
+    this.lastClickValue = clickValue;
+
+    // Görsel ve ses efektlerini çalıştır
+    const plusOne = document.createElement("div");
+    plusOne.className = "plus-one";
+    plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
+    plusOne.style.left = `${event.clientX}px`;
+    plusOne.style.top = `${event.clientY}px`;
+
+    document.body.appendChild(plusOne);
+    setTimeout(() => document.body.removeChild(plusOne), 1000);
+    this.createFallingDonut(event.clientX, event.clientY);
+    this.playRandomClickSound();
+    this.checkQuestProgress(); // Her tıklamadan sonra görevleri kontrol et
+    this.updateDisplay();
+
+    this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
   }
   showUpgrades() {
     const upgradeList = document.getElementById("upgrade-list");
@@ -848,6 +1167,7 @@ class Game {
       }
 
       this.updateTotalPerSecond();
+      this.checkQuestProgress(); // Her item alımından sonra görevleri kontrol et
       this.updateDisplay();
       this.showUpgrades();
     }
@@ -882,86 +1202,6 @@ class Game {
       this.updateDisplay();
       this.showUpgrades();
     }
-  }
-  updateTotalPerSecond() {
-    let basePerSecond = 0;
-    for (let key in this.items) {
-      basePerSecond += this.items[key].count * this.items[key].production;
-    }
-    this.totalPerSecond = basePerSecond * this.productionMultiplier; // Çarpan uygula
-  }
-
-  updateProduction() {
-    const currentTime = Date.now();
-    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
-    this.lastUpdateTime = currentTime;
-
-    // Depolanmış totalPerSecond kullanarak hesaplama
-    const donutsProduced = this.totalPerSecond * deltaTime;
-    this.donutCount += donutsProduced;
-    this.totalDonutsEarned += donutsProduced;
-
-    // Her item'in toplam üretimini de artır
-    for (let key in this.items) {
-      if (this.items[key].count > 0) {
-        this.items[key].totalProduced +=
-          this.items[key].count * this.items[key].production * deltaTime;
-      }
-    }
-
-    this.updatePrestigeBar();
-    this.updateTotalPerSecond();
-    this.updateDisplay(); // Üretim sonrası ekranı güncelle
-  }
-  calculateClickValue() {
-    let clickValue = 1; //click value
-
-    // Tüm cursor upgrade'lerini kontrol et
-    this.upgrades.cursor.forEach((upgrade) => {
-      if (upgrade.purchased) {
-        clickValue *= upgrade.multiplier;
-      }
-    });
-    let perSecondBoost = 0;
-    this.upgrades.nonItemUpgrades.forEach((upgrade) => {
-      if (upgrade.purchased) {
-        perSecondBoost += this.calculatePerSecond() * 0.01;
-      }
-    });
-
-    return clickValue + perSecondBoost;
-  }
-  calculatePerSecond() {
-    let totalPerSecond = 0;
-    for (let key in this.items) {
-      totalPerSecond += this.items[key].count * this.items[key].production;
-    }
-    return totalPerSecond;
-  }
-  handleDonutClick(event) {
-    this.hasDonutClicked = true; // İlk tıklamada true olur
-    this.totalClicks++;
-
-    const clickValue = this.calculateClickValue(); // Click value'yi hesapla
-
-    this.donutCount += clickValue;
-    this.totalDonutsEarned += clickValue;
-    this.lastClickValue = clickValue;
-
-    // Görsel ve ses efektlerini çalıştır
-    const plusOne = document.createElement("div");
-    plusOne.className = "plus-one";
-    plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
-    plusOne.style.left = `${event.clientX}px`;
-    plusOne.style.top = `${event.clientY}px`;
-
-    document.body.appendChild(plusOne);
-    setTimeout(() => document.body.removeChild(plusOne), 1000);
-    this.createFallingDonut(event.clientX, event.clientY);
-    this.playRandomClickSound();
-    this.updateDisplay();
-
-    this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
   }
   addWorker() {
     if (this.items.mine.count <= 0) return;
@@ -1556,7 +1796,17 @@ class Game {
   }
   createFallingDonut(x, y) {
     const fallingDonut = document.createElement("img");
-    fallingDonut.src = "img/donutPixelArt.webp";
+
+    // Rastgele bir görsel seç
+    const images = [
+      "donutPixelArt.webp",
+      "christmasGift.webp",
+      "christmasCookie.webp",
+      "christmasRed.webp",
+    ];
+    const randomImage = images[Math.floor(Math.random() * images.length)];
+    fallingDonut.src = `img/${randomImage}`;
+
     fallingDonut.classList.add("falling-donut");
 
     fallingDonut.style.left = `${x}px`;
@@ -1683,7 +1933,7 @@ class Game {
   updateBakeryName() {
     const bakeryNameElement = document.getElementById("bakery-name");
     if (bakeryNameElement) {
-      // Eğer önceden bir isim yoksa yeni bir random isim atanır
+      // E��er önceden bir isim yoksa yeni bir random isim atanır
       if (!this.currentBakeryName) {
         this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
         this.saveGame(); // Yeni bir isim atandığında kaydediyoruz
@@ -1857,12 +2107,17 @@ class Game {
     }
   }
   initSnowEffect() {
-    // Kar efektine özel konteyner oluştur
+    // Eğer önceki kar efekti varsa temizle
+    if (this.snowContainer) {
+      this.snowContainer.remove();
+    }
+
+    // Yeni kar container'ı oluştur
     this.snowContainer = document.createElement("div");
     this.snowContainer.id = "snow-container";
     document.body.appendChild(this.snowContainer);
 
-    // Kar efektine stil ekle
+    // Style tanımlamaları
     const style = document.createElement("style");
     style.textContent = `
         #snow-container {
@@ -1878,78 +2133,106 @@ class Game {
 
         .snowflake {
             position: absolute;
-            top: -10px;
-            color: white;
-            font-size: 10px;
-            animation: fall linear infinite;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: fall-and-sway var(--fall-duration) linear forwards;
+            width: var(--size);
+            height: var(--size);
+            box-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
         }
 
-        @keyframes fall {
-            0% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh);
-                opacity: 0;
-            }
+        @keyframes fall-and-sway {
+            0% { transform: translate(0, -10px) rotate(0deg); opacity: 0; }
+            2% { opacity: 0.8; }
+            45% { transform: translate(var(--sway-distance), 45vh) rotate(var(--rotation)); opacity: 0.9; }
+            100% { transform: translate(calc(var(--sway-distance) * 2), calc(100vh + 20px)) rotate(calc(var(--rotation) * 2)); opacity: 0; }
         }
     `;
-    document.head.appendChild(style);
 
-    // Animasyonu başlat
-    this.setupVisibilityChange();
-    this.snowingLoop();
+    // Style elementini ekle
+    if (!document.getElementById("snow-style")) {
+      style.id = "snow-style";
+      document.head.appendChild(style);
+    }
+
+    // Temel değişkenleri ayarla
+    this.isSnowing = true;
+    this.snowflakePool = new Set();
+    this.frameCount = 0;
+    this.lastTime = performance.now();
+    this.snowflakeTemplate = document.createElement("div");
+    this.snowflakeTemplate.className = "snowflake";
+
+    // Kar yağışını başlat
+    this.boundSnowingLoop = this.snowingLoop.bind(this);
+    requestAnimationFrame(this.boundSnowingLoop);
   }
-  snowingLoop() {
-    const maxSnowflakes = Math.min(this.totalPerSecond * 5, 600);
 
-    // Mevcut kar tanesi sayısını kontrol et
-    const currentSnowflakes = this.snowContainer.childElementCount;
+  snowingLoop(timestamp) {
+    if (!this.isSnowing) return;
 
-    if (this.isSnowing && currentSnowflakes < maxSnowflakes) {
-      const flakesToAdd = Math.min(maxSnowflakes - currentSnowflakes, 5); // Aynı anda 5 taneden fazla ekleme
+    const deltaTime = timestamp - this.lastTime;
+    this.lastTime = timestamp;
+    this.frameCount++;
 
-      for (let i = 0; i < flakesToAdd; i++) {
-        this.createSnowflake();
+    // Her frame'de kar tanesi ekle
+    const maxSnowflakes = Math.min(500, window.innerWidth / 2);
+    const currentSnowflakes = this.snowflakePool.size;
+
+    if (currentSnowflakes < maxSnowflakes) {
+      const batchSize = Math.min(3, maxSnowflakes - currentSnowflakes);
+
+      for (let i = 0; i < batchSize; i++) {
+        const snowflake = this.createSnowflake();
+        this.snowContainer.appendChild(snowflake);
       }
     }
 
-    // Döngüyü devam ettir
-    if (this.isSnowing) {
-      requestAnimationFrame(() => this.snowingLoop());
+    requestAnimationFrame(this.boundSnowingLoop);
+  }
+
+  createSnowflake() {
+    const snowflake = this.snowflakeTemplate.cloneNode(true);
+
+    // Kar tanesi özellikleri
+    const size =
+      Math.random() < 0.7 ? 2 + Math.random() * 2 : 4 + Math.random() * 3;
+    const fallDuration = 3 + Math.random() * 2;
+    const swayDistance = Math.random() * 30 - 15;
+
+    snowflake.style.cssText = `
+        --size: ${size}px;
+        --fall-duration: ${fallDuration}s;
+        --sway-distance: ${swayDistance}vw;
+        --rotation: ${Math.random() * 360}deg;
+        left: ${Math.random() * 100}vw;
+    `;
+
+    this.snowflakePool.add(snowflake);
+
+    // Cleanup
+    setTimeout(() => {
+      if (snowflake.parentNode === this.snowContainer) {
+        snowflake.remove();
+        this.snowflakePool.delete(snowflake);
+      }
+    }, fallDuration * 1000);
+
+    return snowflake;
+  }
+
+  stopSnowEffect() {
+    this.isSnowing = false;
+    if (this.snowContainer) {
+      this.snowflakePool.forEach((snowflake) => snowflake.remove());
+      this.snowflakePool.clear();
     }
   }
-  createSnowflake() {
-    if (this.totalPerSecond === 0) return; // Hiç kar tanesi oluşturma
 
-    const snowflake = document.createElement("div");
-    snowflake.classList.add("snowflake");
-    snowflake.textContent = "❄";
-
-    // Rastgele konum, boyut ve hız
-    const snowflakeSize = Math.random() * 10 + 10 + "px";
-    const snowflakePosition = Math.random() * 100 + "vw";
-    const fallDuration = Math.random() * 3 + 2 + "s";
-
-    snowflake.style.left = snowflakePosition;
-    snowflake.style.fontSize = snowflakeSize;
-    snowflake.style.animationDuration = fallDuration;
-
-    this.snowContainer.appendChild(snowflake);
-
-    // Kar tanesi düşüş tamamlanınca kaldır
-    setTimeout(() => {
-      snowflake.remove();
-    }, parseFloat(fallDuration) * 1000);
-  }
-  stopSnowEffect() {
-    this.isSnowing = false; // Kar yağışını durdur
-  }
   startSnowEffect() {
     if (!this.isSnowing) {
-      this.isSnowing = true; // Kar yağışını tekrar başlat
-      this.snowingLoop(); // Döngüyü yeniden başlat
+      this.initSnowEffect();
     }
   }
   initControls() {
@@ -2106,7 +2389,6 @@ class Game {
     const initialDelay = Math.random() * (15 - 10) * 60 * 1000 + 10 * 60 * 1000;
     this.boxSpawnTimeout = setTimeout(spawnRandomBox, initialDelay);
   }
-
   saveGame() {
     const gameState = {
       items: this.items,
@@ -2124,6 +2406,8 @@ class Game {
         type: ore.type,
         price: ore.price,
       })),
+      quests: this.quests,
+      activeMultipliers: this.activeMultipliers,
       gameVersion: this.currentVersion,
     };
     localStorage.setItem("bakeryName", this.currentBakeryName);
@@ -2155,6 +2439,25 @@ class Game {
         gameState.currentBakeryName ||
         localStorage.getItem("bakeryName") ||
         this.getRandomBakeryName() + "'s Bakery";
+      if (gameState.quests) {
+        Object.keys(this.quests).forEach((questId) => {
+          if (gameState.quests[questId]) {
+            this.quests[questId].progress =
+              gameState.quests[questId].progress || 0;
+            this.quests[questId].completed =
+              gameState.quests[questId].completed || false;
+            this.quests[questId].claimed =
+              gameState.quests[questId].claimed || false;
+          }
+        });
+      }
+      // Aktif multiplier'ları yükle
+      if (gameState.activeMultipliers) {
+        this.activeMultipliers = gameState.activeMultipliers.filter(
+          (m) => m.endTime > Date.now()
+        );
+        this.updateProductionMultiplier();
+      }
 
       // Ekranı güncelle
       document.getElementById("bakery-name").textContent =
@@ -2162,6 +2465,7 @@ class Game {
       this.updateTotalOreCount();
       this.updateOreList();
       this.updateMarketDisplay();
+      this.updateQuestDisplay();
       this.updateDisplay();
       this.showUpgrades();
       this.updatePrestigeBar();
@@ -2233,11 +2537,32 @@ class Game {
         }
       });
     }
-
+    if (!gameState.quests) {
+      gameState.quests = this.quests;
+    } else {
+      // Yeni questleri ekle ve mevcut quest verilerini koru
+      Object.keys(this.quests).forEach((questId) => {
+        if (!gameState.quests[questId]) {
+          gameState.quests[questId] = this.quests[questId];
+        } else {
+          // Mevcut ilerlemeyi ve durumu koru
+          const savedQuest = gameState.quests[questId];
+          gameState.quests[questId] = {
+            ...this.quests[questId],
+            progress: savedQuest.progress || 0,
+            completed: savedQuest.completed || false,
+            claimed: savedQuest.claimed || false,
+          };
+        }
+      });
+    }
+    // Multiplier sistemini güncelle
+    if (!gameState.activeMultipliers) {
+      gameState.activeMultipliers = [];
+    }
     gameState.gameVersion = this.currentVersion;
     localStorage.setItem("gameState", JSON.stringify(gameState));
   }
-
   resetGame() {
     const confirmation = confirm(
       "Are you sure you want to reset the game? All your progress will be deleted."
@@ -2248,7 +2573,334 @@ class Game {
       location.reload();
     }
   }
+  setupQuestSystem() {
+    // Quest menüsü elementlerini seç
+    this.questsMenu = document.getElementById("quests-menu");
+    this.questsButton = document.getElementById("quests");
+    this.closeQuestsMenu = document.getElementById("close-quests-menu");
+
+    // Event listener'ları ekle
+    this.questsButton.addEventListener("click", () => this.toggleQuestMenu());
+    this.closeQuestsMenu.addEventListener("click", () =>
+      this.toggleQuestMenu()
+    );
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () =>
+        this.switchQuestTab(button.dataset.tab)
+      );
+    });
+    // İlk quest durumunu güncelle
+    this.updateQuestDisplay();
+  }
+  toggleQuestMenu() {
+    // Gizlilik kontrolü için classList toggle özelliği
+    if (this.questsMenu.classList.contains("hidden")) {
+      this.questsMenu.classList.remove("hidden");
+      this.questsMenu.classList.add("visible");
+      this.updateQuestDisplay(); // Mevcut görevlerin görüntülenmesi
+    } else {
+      this.questsMenu.classList.add("hidden");
+      this.questsMenu.classList.remove("visible");
+    }
+  }
+  switchQuestTab(tabName) {
+    // Tab butonlarını güncelle
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach((button) => {
+      button.classList.toggle("active", button.dataset.tab === tabName);
+    });
+
+    // Quest container'larını güncelle
+    const containers = document.querySelectorAll(".quests-container");
+    containers.forEach((container) => {
+      container.classList.toggle(
+        "hidden",
+        !container.classList.contains(tabName)
+      );
+    });
+  }
+  updateQuestDisplay() {
+    const activeContainer = document.querySelector(".quests-container.active");
+    const completedContainer = document.querySelector(
+      ".quests-container.completed"
+    );
+
+    // Önce container'ları temizle
+    activeContainer.innerHTML = "";
+    completedContainer.innerHTML = "";
+
+    // Görevleri uygun container'lara dağıt
+    Object.values(this.quests).forEach((quest) => {
+      const questElement = this.createQuestElement(quest);
+
+      if (quest.claimed) {
+        completedContainer.appendChild(questElement);
+      } else {
+        activeContainer.appendChild(questElement);
+      }
+    });
+  }
+  updateQuestElement(element, quest) {
+    const progressBar = element.querySelector(".progress-bar");
+    const progressText = element.querySelector(".progress-text");
+    const claimButton = element.querySelector(".claim-reward");
+
+    const progress = (quest.progress / quest.target) * 100;
+
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `${this.formatNumber(
+      quest.progress
+    )}/${this.formatNumber(quest.target)}`;
+
+    if (quest.completed && !quest.claimed) {
+      claimButton.disabled = false;
+      claimButton.textContent = "Claim Reward";
+    } else if (quest.claimed) {
+      claimButton.disabled = true;
+      claimButton.textContent = "Completed";
+    }
+  }
+  // createQuestElement metodunu güncelle
+  createQuestElement(quest) {
+    const questDiv = document.createElement("div");
+    questDiv.className = "quest-item";
+    questDiv.setAttribute("data-quest-id", quest.id); // Quest ID'sini ekle
+
+    const progress = (quest.progress / quest.target) * 100;
+    const rewardText =
+      quest.reward.type === "donuts"
+        ? `${this.formatNumber(quest.reward.amount)} donut`
+        : `${quest.reward.amount}x production multiplier (${
+            quest.reward.duration / 1000
+          }s)`;
+
+    questDiv.innerHTML = `
+        <div class="quest-info">
+            <h4>${quest.title}</h4>
+            <p>${quest.description}</p>
+            <div class="quest-progress">
+                <div class="progress-bar" style="width: ${progress}%"></div>
+                <span class="progress-text">${this.formatNumber(
+                  quest.progress
+                )}/${this.formatNumber(quest.target)}</span>
+            </div>
+            <p class="reward-text">Reward: ${rewardText}</p>
+        </div>
+        <button class="claim-reward" ${
+          quest.completed && !quest.claimed ? "" : "disabled"
+        }>
+            ${
+              quest.claimed
+                ? "Completed"
+                : quest.completed
+                ? "Claim Reward"
+                : "In Progress"
+            }
+        </button>
+    `;
+
+    const claimButton = questDiv.querySelector(".claim-reward");
+    claimButton.addEventListener("click", () => {
+      if (quest.completed && !quest.claimed) {
+        this.claimQuestReward(quest);
+      }
+    });
+
+    return questDiv;
+  }
+  claimQuestReward(quest) {
+    if (quest.completed && !quest.claimed) {
+      if (quest.reward.type === "donuts") {
+        this.donutCount += quest.reward.amount;
+        this.showNotification(
+          `+${this.formatNumber(quest.reward.amount)} donuts earned!`
+        );
+      } else if (quest.reward.type === "multiplier") {
+        this.activateMultiplier(quest.reward.amount, quest.reward.duration);
+        this.showNotification(
+          `${quest.reward.amount}x production multiplier active for ${
+            quest.reward.duration / 1000
+          } seconds!`
+        );
+      }
+      quest.claimed = true;
+
+      // Sadece ilgili quest elementini güncelle
+      const questElement = document.querySelector(
+        `[data-quest-id="${quest.id}"]`
+      );
+      if (questElement) {
+        // Elementi doğru tab'a taşı
+        const completedContainer = document.querySelector(
+          ".quests-container.completed"
+        );
+        completedContainer.appendChild(questElement);
+
+        // Buton durumunu güncelle
+        const claimButton = questElement.querySelector(".claim-reward");
+        claimButton.disabled = true;
+        claimButton.textContent = "Completed";
+      }
+
+      this.updateDisplay();
+    }
+  }
+  activateMultiplier(amount, duration) {
+    // Yeni multiplier objesi oluştur
+    const multiplier = {
+      id: Date.now(),
+      amount: amount,
+      endTime: Date.now() + duration,
+    };
+
+    // Aktif multiplier'lara ekle
+    this.activeMultipliers.push(multiplier);
+
+    // Üretim çarpanını güncelle
+    this.updateProductionMultiplier();
+
+    // Multiplier'ın süresini kontrol et ve bittiğinde kaldır
+    setTimeout(() => {
+      const index = this.activeMultipliers.findIndex(
+        (m) => m.id === multiplier.id
+      );
+      if (index > -1) {
+        this.activeMultipliers.splice(index, 1);
+        this.updateProductionMultiplier();
+        this.showNotification("Production multiplier expired!");
+      }
+    }, duration);
+  }
+  updateProductionMultiplier() {
+    this.productionMultiplier = 1;
+
+    // Aktif multiplier'ları uygula
+    this.activeMultipliers.forEach((multiplier) => {
+      this.productionMultiplier *= multiplier.amount;
+    });
+
+    // Üretimi güncelle
+    this.updateTotalPerSecond();
+    this.updateDisplay();
+  }
+  checkQuestProgress() {
+    let questsToUpdate = new Set();
+
+    Object.values(this.quests).forEach((quest) => {
+      if (quest.completed || quest.claimed) return;
+
+      const oldProgress = quest.progress;
+      let newProgress = quest.progress;
+
+      switch (quest.type) {
+        case "production":
+          newProgress = Math.floor(this.totalDonutsEarned);
+          break;
+        case "building":
+          newProgress = this.items[quest.buildingType].count;
+          break;
+        case "clicks":
+          newProgress = this.totalClicks;
+          break;
+      }
+
+      // Sadece progress değişmişse güncelle
+      if (newProgress !== oldProgress) {
+        quest.progress = newProgress;
+        questsToUpdate.add(quest.id);
+
+        // Eğer quest tamamlandıysa
+        if (!quest.completed && quest.progress >= quest.target) {
+          quest.completed = true;
+          this.showNotification(`Quest completed: ${quest.title}!`);
+
+          const questElement = document.querySelector(
+            `[data-quest-id="${quest.id}"]`
+          );
+          if (questElement) {
+            questElement.classList.add("quest-completed");
+            setTimeout(
+              () => questElement.classList.remove("quest-completed"),
+              1000
+            );
+          }
+        }
+      }
+    });
+
+    // Sadece quest menüsü açıksa ve güncellenecek quest varsa güncelle
+    if (
+      questsToUpdate.size > 0 &&
+      !this.questsMenu.classList.contains("hidden")
+    ) {
+      this.updateSpecificQuests(questsToUpdate);
+    }
+  }
+  updateSpecificQuests(questIds) {
+    questIds.forEach((questId) => {
+      const quest = this.quests[questId];
+      const questElement = document.querySelector(
+        `[data-quest-id="${questId}"]`
+      );
+
+      if (questElement) {
+        // Sadece progress ve buton durumunu güncelle
+        const progressBar = questElement.querySelector(".progress-bar");
+        const progressText = questElement.querySelector(".progress-text");
+        const claimButton = questElement.querySelector(".claim-reward");
+
+        const progress = (quest.progress / quest.target) * 100;
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${this.formatNumber(
+          quest.progress
+        )}/${this.formatNumber(quest.target)}`;
+
+        if (quest.completed && !quest.claimed) {
+          claimButton.disabled = false;
+          claimButton.textContent = "Claim Reward";
+        }
+      }
+    });
+  }
+  // Constructor dışına eklenecek yeni metod
+  showNotification(message) {
+    // Varsa eski bildirimi kaldır
+    const oldNotification = document.querySelector(".quest-notification");
+    if (oldNotification) {
+      oldNotification.remove();
+    }
+
+    // Yeni bildirimi oluştur
+    const notification = document.createElement("div");
+    notification.className = "quest-notification";
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notification);
+
+    // 3 saniye sonra bildirimi kaldır
+    setTimeout(() => {
+      notification.classList.add("fade-out");
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  // Aktif multiplier göstergesini güncelle
+  updateActiveMultiplierDisplay() {
+    const activeMultiplierDisplay = document.getElementById(
+      "active-multiplier-display"
+    );
+    if (activeMultiplierDisplay) {
+      activeMultiplierDisplay.textContent = `Active Multiplier: ${this.productionMultiplier.toFixed(
+        2
+      )}x`;
+    }
+  }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   const game = new Game(); // Game sınıfından bir örnek oluştur
   game.init(); // Game sınıfındaki init fonksiyonunu çağırarak oyunu başlat
