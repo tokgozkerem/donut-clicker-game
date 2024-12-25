@@ -541,6 +541,7 @@ class Game {
     this.accumulator = 0;
     this.totalDonutsEarned = 0;
     this.totalClicks = 0;
+    this.purchaseAmount = 1;
     this.lastUpdateTime = Date.now();
     this.snowContainer = null;
     this.isSnowing = true;
@@ -888,7 +889,12 @@ class Game {
         this.buyItem(itemKey);
       });
     });
-
+    document.querySelectorAll(".purchase-options button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const amount = parseInt(button.getAttribute("data-amount"));
+        this.setPurchaseAmount(amount);
+      });
+    });
     // Bakery name element click and modal button events
     const bakeryNameElement = document.getElementById("bakery-name");
     if (bakeryNameElement) {
@@ -925,7 +931,52 @@ class Game {
       this.totalPerSecond,
       "perSecond"
     );
-    this.perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+
+    if (this.productionMultiplier > 1 && this.activeMultipliers?.length > 0) {
+      // Süresi geçmiş multiplier'ları temizle
+      this.activeMultipliers = this.activeMultipliers.filter(
+        (m) => m.endTime > Date.now()
+      );
+
+      if (this.activeMultipliers.length === 0) {
+        this.productionMultiplier = 1;
+        this.perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+        this.perSecondDisplay.classList.remove("boosted");
+        return;
+      }
+
+      const nearestEndTime = Math.min(
+        ...this.activeMultipliers.map((m) => m.endTime)
+      );
+      const remainingTime = Math.max(
+        0,
+        Math.ceil((nearestEndTime - Date.now()) / 1000)
+      );
+
+      // Progress hesaplama
+      const currentMultiplier = this.activeMultipliers[0];
+      const progress =
+        (remainingTime / (currentMultiplier.duration / 1000)) * 100;
+
+      this.perSecondDisplay.innerHTML = `
+          <div class="boosted-per-second">
+              <div class="per-second-text">per second: ${formattedPerSecond}</div>
+              <div class="boost-container">
+                  <div class="boost-info">
+                      <span class="boost-multiplier">${this.productionMultiplier}x</span>
+                      <span class="boost-timer">${remainingTime}s</span>
+                  </div>
+                  <div class="boost-progress-bar">
+                      <div class="boost-progress" style="width: ${progress}%"></div>
+                  </div>
+              </div>
+          </div>
+      `;
+      this.perSecondDisplay.classList.add("boosted");
+    } else {
+      this.perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+      this.perSecondDisplay.classList.remove("boosted");
+    }
 
     for (let key in this.items) {
       const costElem = document.getElementById(`${key}Cost`);
@@ -934,25 +985,38 @@ class Game {
       );
 
       if (costElem) {
-        // Cost'u formatla
-        costElem.textContent = this.formatNumber(
-          this.items[key].baseCost,
-          "cost"
+        const bulkCost = this.calculateBulkPrice(
+          this.items[key],
+          this.purchaseAmount
         );
+        costElem.textContent = this.formatNumber(bulkCost, "cost");
 
-        // Donut sayısına bağlı olarak fiyatın rengini ayarla
-        if (this.donutCount < this.items[key].baseCost) {
-          costElem.classList.remove("affordable");
-          costElem.classList.add("insufficient-funds");
-          if (storeItem) {
-            storeItem.classList.add("insufficient-funds");
-          }
-        } else {
-          costElem.classList.remove("insufficient-funds");
-          costElem.classList.add("affordable");
+        // Fiyat rengini ayarla
+        if (this.donutCount >= bulkCost) {
+          costElem.style.color = "#6f6"; // Yeşil
           if (storeItem) {
             storeItem.classList.remove("insufficient-funds");
           }
+        } else {
+          costElem.style.color = "red"; // Kırmızı
+          if (storeItem) {
+            storeItem.classList.add("insufficient-funds");
+          }
+        }
+
+        // Alım miktarı göstergesi
+        const amountDisplay = storeItem.querySelector(".purchase-amount");
+        if (this.purchaseAmount > 1) {
+          if (!amountDisplay) {
+            const span = document.createElement("span");
+            span.className = "purchase-amount";
+            span.textContent = `x${this.purchaseAmount}`;
+            storeItem.querySelector(".item-img").appendChild(span);
+          } else {
+            amountDisplay.textContent = `x${this.purchaseAmount}`;
+          }
+        } else if (amountDisplay) {
+          amountDisplay.remove();
         }
       }
 
@@ -977,6 +1041,7 @@ class Game {
     } else {
       mineImage.classList.remove("active-mine-effect");
     }
+
     // Upgrade'lerin durumunu dinamik olarak güncelle
     this.showUpgrades();
 
@@ -1150,24 +1215,59 @@ class Game {
       }
     });
   }
+  calculateBulkPrice(item, amount) {
+    let totalCost = 0;
+    let currentCost = item.baseCost;
+
+    for (let i = 0; i < amount; i++) {
+      totalCost += currentCost;
+      currentCost *= item.costMultiplier;
+    }
+
+    return Math.ceil(totalCost);
+  }
+
+  setPurchaseAmount(amount) {
+    this.purchaseAmount = amount;
+    this.updateDisplay();
+
+    // Tüm butonların seçili durumunu kaldır
+    document.querySelectorAll(".purchase-options button").forEach((btn) => {
+      btn.classList.remove("selected");
+    });
+
+    // Seçili butonu işaretle
+    document
+      .querySelector(`.purchase-options button[data-amount="${amount}"]`)
+      .classList.add("selected");
+  }
   buyItem(itemKey) {
     const item = this.items[itemKey];
-    if (this.donutCount >= Math.ceil(item.baseCost)) {
-      this.donutCount -= item.baseCost;
-      item.count++;
-      item.baseCost = item.baseCost * item.costMultiplier;
+    const bulkCost = this.calculateBulkPrice(item, this.purchaseAmount);
+
+    if (this.donutCount >= bulkCost) {
+      this.donutCount -= bulkCost;
+
+      // Toplu alım için döngü
+      for (let i = 0; i < this.purchaseAmount; i++) {
+        item.count++;
+        item.baseCost *= item.costMultiplier;
+
+        if (itemKey === "mine") {
+          this.addWorker();
+        }
+
+        if (itemKey === "cursor") {
+          this.addCursor();
+        }
+      }
 
       if (itemKey === "mine") {
-        this.addWorker();
         this.showWorkersBtn.classList.remove("hidden");
       }
 
-      if (itemKey === "cursor") {
-        this.addCursor();
-      }
-
       this.updateTotalPerSecond();
-      this.checkQuestProgress(); // Her item alımından sonra görevleri kontrol et
+      this.checkQuestProgress();
       this.updateDisplay();
       this.showUpgrades();
     }
@@ -2630,17 +2730,32 @@ class Game {
     activeContainer.innerHTML = "";
     completedContainer.innerHTML = "";
 
-    // Görevleri uygun container'lara dağıt
-    Object.values(this.quests).forEach((quest) => {
-      const questElement = this.createQuestElement(quest);
+    // Görevleri sıralama
+    const activeQuests = Object.values(this.quests)
+      .filter((quest) => !quest.claimed)
+      .sort((a, b) => {
+        if (a.completed && !b.completed) return -1;
+        if (!a.completed && b.completed) return 1;
+        return b.progress / b.target - a.progress / a.target;
+      });
 
-      if (quest.claimed) {
-        completedContainer.appendChild(questElement);
-      } else {
-        activeContainer.appendChild(questElement);
-      }
+    const completedQuests = Object.values(this.quests)
+      .filter((quest) => quest.claimed)
+      .sort((a, b) => b.completionTime - a.completionTime); // Tamamlanma zamanına göre sıralama
+
+    // Aktif görevleri ekle
+    activeQuests.forEach((quest) => {
+      const questElement = this.createQuestElement(quest);
+      activeContainer.appendChild(questElement);
+    });
+
+    // Tamamlanmış görevleri ekle
+    completedQuests.forEach((quest) => {
+      const questElement = this.createQuestElement(quest);
+      completedContainer.appendChild(questElement);
     });
   }
+
   updateQuestElement(element, quest) {
     const progressBar = element.querySelector(".progress-bar");
     const progressText = element.querySelector(".progress-text");
@@ -2746,31 +2861,59 @@ class Game {
       this.updateDisplay();
     }
   }
+  createMultiplierTimer(multiplier) {
+    const timerDiv = document.createElement("div");
+    timerDiv.className = "multiplier-timer";
+    timerDiv.setAttribute("data-multiplier-id", multiplier.id);
+
+    const remainingTime = Math.ceil((multiplier.endTime - Date.now()) / 1000);
+
+    timerDiv.innerHTML = `
+      <div class="multiplier-info">
+        <span class="multiplier-amount">${multiplier.amount}x</span>
+        <span class="multiplier-time">${remainingTime}s</span>
+      </div>
+      <div class="multiplier-progress">
+        <div class="timer-bar"></div>
+      </div>
+    `;
+
+    // Timer bar animasyonu için style ekle
+    const timerBar = timerDiv.querySelector(".timer-bar");
+    timerBar.style.animation = `timer-countdown ${remainingTime}s linear`;
+
+    return timerDiv;
+  }
+
+  // activateMultiplier metodunu güncelleyelim
   activateMultiplier(amount, duration) {
-    // Yeni multiplier objesi oluştur
     const multiplier = {
       id: Date.now(),
       amount: amount,
       endTime: Date.now() + duration,
+      duration: duration,
     };
-
-    // Aktif multiplier'lara ekle
+    this.activeMultipliers = this.activeMultipliers.filter(
+      (m) => m.endTime > Date.now()
+    );
     this.activeMultipliers.push(multiplier);
-
-    // Üretim çarpanını güncelle
     this.updateProductionMultiplier();
-
-    // Multiplier'ın süresini kontrol et ve bittiğinde kaldır
     setTimeout(() => {
-      const index = this.activeMultipliers.findIndex(
-        (m) => m.id === multiplier.id
+      this.activeMultipliers = this.activeMultipliers.filter(
+        (m) => m.id !== multiplier.id
       );
-      if (index > -1) {
-        this.activeMultipliers.splice(index, 1);
-        this.updateProductionMultiplier();
-        this.showNotification("Production multiplier expired!");
-      }
+      this.updateProductionMultiplier();
+      this.updateDisplay();
     }, duration);
+  }
+
+  // Timer container oluşturma metodu
+  createTimerContainer() {
+    const container = document.createElement("div");
+    container.id = "multiplier-timers";
+    container.className = "multiplier-timers-container";
+    document.body.appendChild(container);
+    return container;
   }
   updateProductionMultiplier() {
     this.productionMultiplier = 1;
