@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.2.9";
+    this.currentVersion = "1.3";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
