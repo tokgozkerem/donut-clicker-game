@@ -27,7 +27,7 @@
       content="donut clicker, idle game, clicker game, factory building, donut factory, upgrades, idle clicker, incremental game, donut game, best clicker games 2024"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.3" />
+    <link rel="stylesheet" href="styles.css?v=1.3.0" />
     <link rel="icon" href="img/donutPixelArt.ico" type="image/x-icon" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
     <link rel="preload" as="image" href="img/tabela.webp" />
@@ -231,6 +231,30 @@
           <!-- Updates Section -->
           <section id="updates-section">
             <h3>Updates</h3>
+            <div class="update big-update">
+              <h4 class="big-update-title">Big Update: Version 1.3.0</h4>
+              <ul class="big-update-text">
+                <li>New quests added with exciting challenges to complete!</li>
+                <li>Quest rewards have been adjusted and balanced.</li>
+                <li>UI improvements for a better mobile experience.</li>
+                <li>New notification system added for key game events!</li>
+                <li>
+                  Baker panel introduced (still in development, more features
+                  coming soon!).
+                </li>
+                <li>
+                  Building contributions to total production are now calculated
+                  and displayed.
+                </li>
+                <li>Prestige now grants 5 cursors for free at the start!</li>
+                <li>UI fixes applied to multiplier rewards from quests.</li>
+                <li>Several bugs have been resolved for smoother gameplay.</li>
+                <li>
+                  Cursors around the donut have been removed for a cleaner
+                  design.
+                </li>
+              </ul>
+            </div>
             <div class="update small-update">
               <h4 class="small-update-title">Small Update: Version 1.2.9</h4>
               <ul class="small-update-text">
@@ -333,10 +357,111 @@
           </section>
         </div>
       </div>
+      <!-- Recipe Book Modal -->
+      <div id="recipe-book-modal" class="book-modal">
+        <div class="recipe-book-content">
+          <span class="close-btn">&times;</span>
+          <div class="book-container">
+            <!-- Sol Sayfa -->
+            <div class="book-page left-page">
+              <h2 class="page-title">Donut Recipes</h2>
+              <div class="recipes-list">
+                <div class="recipe-item">
+                  <div class="recipe-header">
+                    <img src="img/classic-donut.webp" alt="Classic Donut" />
+                    <span class="recipe-name">Classic Donut</span>
+                  </div>
+                  <div class="recipe-ingredients">
+                    <span class="ingredient">
+                      <img src="img/dough.webp" alt="Dough" />2x
+                    </span>
+                    <span class="ingredient">
+                      <img src="img/sugar.webp" alt="Sugar" />1x
+                    </span>
+                  </div>
+                  <button class="make-btn" data-recipe="Classic Donut">
+                    Make!
+                  </button>
+                </div>
+
+                <div class="recipe-item">
+                  <div class="recipe-header">
+                    <img src="img/classic-donut.webp" alt="Classic Donut" />
+                    <span class="recipe-name">Classic Donut</span>
+                  </div>
+                  <div class="recipe-ingredients">
+                    <span class="ingredient">
+                      <img src="img/dough.webp" alt="Dough" />2x
+                    </span>
+                    <span class="ingredient">
+                      <img src="img/sugar.webp" alt="Sugar" />1x
+                    </span>
+                  </div>
+                  <button class="make-btn" data-recipe="Classic Donut">
+                    Make!
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sağ Sayfa -->
+            <div class="book-page right-page">
+              <div class="page-content">
+                <h2>Master Baker's Notes</h2>
+                <p>
+                  Select a recipe from the left page to start crafting delicious
+                  donuts!
+                </p>
+                <p style="color: #ffd700; margin-top: 10px; font-style: italic">
+                  Still in development – Exciting new features coming soon!
+                </p>
+                <!-- İsterseniz buraya ek bilgiler ekleyebilirsiniz -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="footer-container">
+        <!-- Baker Panel -->
+        <div id="baker-panel" class="footer-panel hidden">
+          <span id="close-baker-panel" class="close-btn">&times;</span>
+          <div class="baker-content">
+            <div class="left-section">
+              <div class="baker-content-header">
+                <img
+                  id="baker-info-image"
+                  src="img/baker.webp"
+                  alt="baker image"
+                  class="item-image"
+                />
+                <div id="baker-info-text">
+                  <h4>Baker</h4>
+                  <p>Workers: <span id="bakerWorkerCount">0</span></p>
+                  <h4>Ingredients</h4>
+                  <p>Total Ingredients: <span id="ingredientCount">0</span></p>
+                </div>
+              </div>
+
+              <div class="ingredient-container">
+                <ul id="ingredientList"></ul>
+                <p class="ingredient-generation-info">
+                  (Ingredients are generated every 3 minutes)
+                </p>
+              </div>
+            </div>
+
+            <div class="right-section">
+              <div class="crafting-container">
+                <button id="recipe-book-btn">
+                  <img src="img/recipe-book.webp" alt="Recipe Book" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Mine Panel -->
         <div id="mine-panel" class="footer-panel hidden">
           <span id="close-mine-panel" class="close-btn">&times;</span>
-
           <div class="mine-content">
             <div class="left-section">
               <div class="mine-content-header">
@@ -380,9 +505,7 @@
                 <p id="remainingChances">
                   You can get a maximum of 10 ores every 1 minute. Remaining: 10
                 </p>
-                <ul id="marketList">
-                  <!-- Ore fiyatları burada listelenecek -->
-                </ul>
+                <ul id="marketList"></ul>
                 <button id="buyBtn" class="market-btn">Buy</button>
                 <button id="sellBtn" class="market-btn">Sell</button>
               </div>
@@ -398,8 +521,6 @@
         <p id="per-second">per second: 0</p>
         <div class="donut-wrapper">
           <img src="img/donutNew.webp" alt="Donut" id="donut" />
-          <div id="cursor-container"></div>
-          <!-- Cursorlar bu alana eklenecek -->
         </div>
       </div>
       <div id="changeNameModal" class="modal">
@@ -678,12 +799,43 @@
     <button id="reset-button">Reset</button>
     <div id="snow-container"></div>
     <div id="christmax-box"></div>
+    <div class="mobile-menu">
+      <a href="#" class="mobile-menu-btn active">
+        <i class="fas fa-tasks"></i>
+        <span>Quests</span>
+      </a>
+      <a href="#" class="mobile-menu-btn">
+        <i class="fas fa-cookie-bite"></i>
+        <span>Donut</span>
+      </a>
+      <a href="#" class="mobile-menu-btn">
+        <i class="fas fa-store"></i>
+        <span>Market</span>
+      </a>
+    </div>
+
+    <div class="header-menu">
+      <a href="#" class="header-menu-btn" id="stats-btn">
+        <i class="fas fa-chart-bar"></i>
+        <span>Stats</span>
+      </a>
+      <a href="#" class="header-menu-btn" id="settings-btn">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
+      <a href="#" class="header-menu-btn" id="info-btn">
+        <i class="fas fa-info-circle"></i>
+        <span>Info</span>
+      </a>
+    </div>
+    <!-- hidden sınıfını kaldır -->
+
     <a
       href="https://buymeacoffee.com/donutclickernet"
       id="buy-me-a-donut"
       target="_blank"
       >☕ Buy me a coffee!</a
     >
-    <script src="script.js?v=1.3" defer></script>
+    <script src="script.js?v=1.3.0" defer></script>
   </body>
 </html>
