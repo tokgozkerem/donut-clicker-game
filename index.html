@@ -26,8 +26,16 @@
       name="keywords"
       content="donut clicker, idle game, clicker game, factory building, donut factory, upgrades, idle clicker, incremental game, donut game, best clicker games 2024"
     />
+    <meta http-equiv="Page-Enter" content="blendTrans(Duration=0)" />
+    <meta http-equiv="Page-Exit" content="blendTrans(Duration=0)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap"
+      rel="stylesheet"
+    />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.3.0" />
+    <link rel="stylesheet" href="styles.css?v=1.3.1" />
     <link rel="icon" href="img/donutPixelArt.ico" type="image/x-icon" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
     <link rel="preload" as="image" href="img/tabela.webp" />
@@ -153,7 +161,19 @@
             <button id="save-button">Save</button>
             <span class="save-text">Save Manually</span>
           </div>
-
+          <div class="settings-section auto-buyer-section">
+            <h3>Auto-Buyer</h3>
+            <div class="auto-buyer-toggle">
+              <label class="switch">
+                <input type="checkbox" id="auto-buyer-toggle" />
+                <span class="slider round"></span>
+              </label>
+              <span>Enable Auto-Buyer</span>
+            </div>
+            <div class="auto-buyer-container">
+              <div class="auto-buyer-items"></div>
+            </div>
+          </div>
           <div class="volume-control">
             <p class="volume-info">Adjust click sound volume here</p>
             <label for="volume-slider">Volume:</label>
@@ -208,7 +228,7 @@
 
       <!-- Information Panel -->
       <div id="information-menu" class="hidden">
-        <div class="menu-content">
+        <div class="info-menu-content">
           <span id="close-menu" class="close-btn">&times;</span>
           <h2>Information</h2>
 
@@ -231,6 +251,29 @@
           <!-- Updates Section -->
           <section id="updates-section">
             <h3>Updates</h3>
+            <div class="update big-update">
+              <h4 class="big-update-title">Big Update: Version 1.3.1</h4>
+              <ul class="big-update-text">
+                <li>
+                  Auto-buyer added, so you won't miss progress even when you're
+                  away from the game.
+                </li>
+                <li>New upgrades introduced to enhance your production.</li>
+                <li>
+                  Baker's Recipe Book in the Baker panel is now active,
+                  currently providing boosts for 2 buildings.
+                </li>
+                <li>Quest reward multipliers will no longer stack.</li>
+                <li>Issues with the quest screen have been resolved.</li>
+                <li>UI improvements for a more seamless experience.</li>
+                <li>
+                  Optimizations implemented, and several bugs have been fixed.
+                </li>
+                <li>
+                  Fixed an issue where images were repeatedly re-downloaded.
+                </li>
+              </ul>
+            </div>
             <div class="update big-update">
               <h4 class="big-update-title">Big Update: Version 1.3.0</h4>
               <ul class="big-update-text">
@@ -445,7 +488,12 @@
               <div class="ingredient-container">
                 <ul id="ingredientList"></ul>
                 <p class="ingredient-generation-info">
-                  (Ingredients are generated every 3 minutes)
+                  Each baker produces 4 ingredients every 3 minutes
+                  <br />
+                  <span id="baker-countdown"
+                    >Next production in:
+                    <span id="baker-timer">180</span>s</span
+                  >
                 </p>
               </div>
             </div>
@@ -485,16 +533,12 @@
 
               <div class="ore-container">
                 <ul id="oreList"></ul>
-                <p
-                  class="ore-generation-info"
-                  style="
-                    font-size: 0.65em;
-                    opacity: 0.7;
-                    margin-top: 5px;
-                    text-align: left;
-                  "
-                >
-                  (1 ore is generated every minute)
+                <p class="ore-generation-info">
+                  (Each worker generate 5 ore every minute)
+                  <br />
+                  <span id="mine-countdown"
+                    >Next production in: <span id="mine-timer">60</span>s</span
+                  >
                 </p>
               </div>
             </div>
@@ -836,6 +880,6 @@
       target="_blank"
       >☕ Buy me a coffee!</a
     >
-    <script src="script.js?v=1.3.0" defer></script>
+    <script defer src="script.js?v=1.3.1"></script>
   </body>
 </html>
