@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.1";
+    this.currentVersion = "1.3.1a";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -806,7 +806,6 @@ class Game {
     this.perSecondDisplay = document.getElementById("per-second");
     this.setupModal();
     this.setupStoreHover();
-    this.setupVisibilityChange();
     this.totalPerSecond = 0;
     this.updateTotalPerSecond(); // Başlangıçta hesapla
     this.currentBakeryName = "";
@@ -3316,106 +3315,6 @@ class Game {
       } else {
         console.error(`Store item with key ${key} not found.`);
       }
-    }
-  }
-  setupVisibilityChange() {
-    let lastTime = Date.now();
-
-    document.addEventListener("visibilitychange", () => {
-      const currentTime = Date.now();
-      const timeDiff = currentTime - lastTime;
-
-      if (document.hidden) {
-        // Sekme arka planda ise son zamanı kaydet
-        lastTime = currentTime;
-      } else {
-        // Sekme tekrar aktif olduğunda
-        if (timeDiff > 1000) {
-          // 1 saniyeden uzun süre geçmişse
-          // Üretimi parçalara bölerek hesapla
-          this.handleReturnToGame(timeDiff);
-        }
-      }
-    });
-  }
-
-  handleReturnToGame(timeDiff) {
-    // Maksimum işlem süresi (ms)
-    const maxBatchTime = 50;
-    // Her batch'te işlenecek süre (ms)
-    const batchSize = 10000; // 10 saniyelik üretim
-
-    // Toplam batch sayısını hesapla
-    const totalBatches = Math.ceil(timeDiff / batchSize);
-    let currentBatch = 0;
-
-    const processBatch = () => {
-      const batchStart = Date.now();
-
-      while (
-        currentBatch < totalBatches &&
-        Date.now() - batchStart < maxBatchTime
-      ) {
-        const start = currentBatch * batchSize;
-        const end = Math.min(start + batchSize, timeDiff);
-        const duration = end - start;
-
-        // Bu batch için üretimi hesapla
-        this.processOfflineProduction(duration);
-
-        currentBatch++;
-      }
-
-      if (currentBatch < totalBatches) {
-        // Hala işlenecek batch varsa, bir sonraki frame'de devam et
-        requestAnimationFrame(processBatch);
-      } else {
-        // Tüm batchler tamamlandığında son güncellemeleri yap
-        this.finalizeOfflineProduction(timeDiff);
-      }
-    };
-
-    // İlk batch'i başlat
-    requestAnimationFrame(processBatch);
-  }
-
-  processOfflineProduction(duration) {
-    // Bir batch için üretimi hesapla
-    const productionMultiplier = duration / 1000; // Saniyeye çevir
-
-    // Üretimi hesapla
-    for (let key in this.items) {
-      const item = this.items[key];
-      const production = item.production * productionMultiplier;
-      this.donutCount += production;
-      this.totalDonutsEarned += production;
-    }
-  }
-
-  finalizeOfflineProduction(totalTime) {
-    // Son güncellemeleri yap
-    this.updateTotalPerSecond();
-    this.updateDisplay();
-    this.checkQuestProgress();
-
-    // Offline süreyi formatla
-    const timeAway = this.formatOfflineTime(totalTime);
-
-    // Bildirim göster
-    this.showNotification(`Welcome back! You were away for ${timeAway}`);
-  }
-
-  formatOfflineTime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
     }
   }
 
