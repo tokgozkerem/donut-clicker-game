@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.1a";
+    this.currentVersion = "1.3.1b";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -578,6 +578,16 @@ class Game {
           description:
             "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
         },
+        {
+          name: "Auto Catcher",
+          cost: 1,
+          multiplier: 0.2, // %20 yakalama şansı
+          purchased: false,
+          requirement: 1,
+          img: "autoCatcher.webp",
+          specialEffect: "automation",
+          description: "Automatically catches falling donuts with 20% chance!",
+        },
       ],
     };
     this.items = {
@@ -810,10 +820,10 @@ class Game {
     this.updateTotalPerSecond(); // Başlangıçta hesapla
     this.currentBakeryName = "";
     this.BUILDING_COST_MULTIPLIER = 1.15;
-    this.PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT = 1.35;
-    this.UPGRADE_COST_MULTIPLIER = 1.1;
+    this.PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT = 1.45;
+    this.UPGRADE_COST_MULTIPLIER = 1.45;
     this.prestigeCount = 0;
-    this.nextPrestigeThreshold = 30000000;
+    this.nextPrestigeThreshold = 300000000;
     this.prestigeMultiplier = 2;
     this.setupPrestigeModal();
 
@@ -1622,25 +1632,6 @@ class Game {
       };
     }
 
-    // Mevcut constructor içeriğine ekle
-    this.chainReactionSystem = {
-      activeChains: [],
-      chainBonuses: {
-        level1: 1.2, // %20 bonus
-        level2: 1.5, // %50 bonus
-        level3: 2.0, // %100 bonus
-        level4: 3.0, // %200 bonus
-        level5: 5.0, // %400 bonus
-      },
-      triggers: {
-        cursor: { type: "speed", color: "#FFD700" },
-        baker: { type: "multiply", color: "#FF6B6B" },
-        farm: { type: "growth", color: "#77DD77" },
-        mine: { type: "wealth", color: "#836FFF" },
-        factory: { type: "efficiency", color: "#FF69B4" },
-      },
-    };
-
     this.lastFrameTime = 0;
     this.frameThrottle = 1000 / 60; // 60 FPS hedefi
     this.accumulatedTime = 0;
@@ -1686,6 +1677,28 @@ class Game {
     // Resim önbellekleme için yeni özellik
     this.imageCache = new Map();
     this.preloadedImages = new Set();
+
+    this.comboActive = false;
+    this.comboMultiplier = 1.1; // %10 bonus
+    this.comboTimeout = null;
+    this.comboDonutImages = [
+      "donut.webp",
+      "donut6.webp",
+      "donut7.webp",
+      "donut8.webp",
+      "donut5.webp",
+    ];
+    this.fallingDonutInterval = null;
+    this.lastClickSuccess = false;
+
+    this.autoCatcherConfig = {
+      enabled: false,
+      chance: 0.2,
+      minCatchDelay: 100,
+      maxCatchDelay: 500,
+      catchQueue: new Set(), // Yakalanacak donutları takip et
+      processingInterval: null,
+    };
   }
 
   // Resim önbellekleme sistemi
@@ -1750,7 +1763,7 @@ class Game {
   init() {
     // Önce resimleri yükle
     this.preloadImages();
-
+    this.initializeComboSystem();
     this.loadGame();
     this.updateBakeryName();
     this.initSnowEffect();
@@ -2317,13 +2330,23 @@ class Game {
         allUpgrades.push({ key, index, upgrade });
       });
     }
-    // Handle non-item upgrades separately
+
+    // nonItemUpgrades için özel kontrol
     this.upgrades.nonItemUpgrades.forEach((upgrade, index) => {
       if (upgrade.purchased) return;
-      if (this.totalClicks < upgrade.requirement) return; // totalClicks gereksinim kontrolü
+
+      // Auto Catcher için özel kontrol
+      if (upgrade.specialEffect === "automation") {
+        // Eğer combo modu aktif değilse gösterme
+        if (!this.comboActive) return;
+      } else {
+        // Diğer upgradeler için normal requirement kontrolü
+        if (this.totalClicks < upgrade.requirement) return;
+      }
 
       allUpgrades.push({ key: "nonItemUpgrades", index, upgrade });
     });
+
     allUpgrades.sort((a, b) => a.upgrade.cost - b.upgrade.cost);
 
     allUpgrades.forEach(({ key, index, upgrade }, position) => {
@@ -2514,7 +2537,12 @@ class Game {
       upgrade.purchased = true;
 
       if (itemKey === "nonItemUpgrades") {
-        this.clickValue *= upgrade.multiplier; // Or any effect specific to click upgrades
+        if (upgrade.specialEffect === "automation") {
+          // Auto Catcher özelliğini aktifleştir
+          this.autoCatcherEnabled = true;
+        } else {
+          this.clickValue *= upgrade.multiplier;
+        }
       } else {
         const item = this.items[itemKey];
         item.production *= upgrade.multiplier;
@@ -3117,7 +3145,11 @@ class Game {
 
     let efficiencyText;
     if (itemName === "nonItemUpgrades") {
-      efficiencyText = "Clicking gains +1% of your DpS";
+      if (upgrade.specialEffect === "automation") {
+        efficiencyText = "I'll help you catch those delicious falling donuts!";
+      } else {
+        efficiencyText = "Clicking gains +1% of your DpS";
+      }
     } else if (upgrade.specialEffect === "dynamicBoost") {
       let totalBuildings = 0;
       for (let key in this.items) {
@@ -4686,6 +4718,43 @@ class Game {
             // Bildirim göster
             requestAnimationFrame(() => {
               this.showNotification(`Quest completed: ${quest.title}!`);
+              // Quests div'ini ve img container'ını seç
+              const questsDiv = document.querySelector(".page-item#quests");
+              const questsImgContainer = questsDiv.querySelector(".page-img");
+
+              // Eğer zaten bir completed etiketi yoksa ekle
+              const existingLabel = questsImgContainer.querySelector(
+                ".completed-feature-label"
+              );
+              if (!existingLabel) {
+                // Completed etiketi oluştur
+                const completedLabel = document.createElement("div");
+                completedLabel.className = "completed-feature-label";
+                completedLabel.textContent = "Completed!";
+                questsImgContainer.appendChild(completedLabel);
+
+                // Quests div'ine tıklandığında etiketi kaldır
+                const removeCompletedLabel = (e) => {
+                  // Eğer tıklanan element questsDiv ise
+                  if (e.currentTarget === questsDiv) {
+                    // Etiketi kaldır
+                    const label = questsImgContainer.querySelector(
+                      ".completed-feature-label"
+                    );
+                    if (label) {
+                      label.remove();
+                    }
+                    // Event listener'ı kaldır
+                    questsDiv.removeEventListener(
+                      "click",
+                      removeCompletedLabel
+                    );
+                  }
+                };
+
+                // Click event listener'ı ekle
+                questsDiv.addEventListener("click", removeCompletedLabel);
+              }
             });
           }
 
@@ -4769,6 +4838,7 @@ class Game {
       this.showNotification("No ores to sell!");
     }
   }
+
   setupMobileMenus() {
     // Header menü butonları için event listener'lar
     document.querySelectorAll(".header-menu-btn").forEach((btn) => {
@@ -4973,6 +5043,274 @@ class Game {
       }
     };
   }
+
+  initializeComboSystem() {
+    const combosElement = document.getElementById("combos");
+    if (combosElement) {
+      // Özel class ismiyle yeni etiket oluştur
+      const newLabel = document.createElement("div");
+      newLabel.className = "combo-feature-label";
+      newLabel.textContent = "Try new feature!";
+
+      // Label'ı doğrudan combos elementinin üzerine yerleştir
+      newLabel.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            animation: bounce 1s infinite;
+        `;
+
+      combosElement.style.position = "relative";
+      combosElement.appendChild(newLabel);
+
+      // Combo elementine pulse efekti ekle
+      combosElement.classList.add("pulse-effect", "new-feature");
+
+      combosElement.addEventListener("click", () => {
+        // Tıklandığında efektleri kaldır
+        combosElement.classList.remove("pulse-effect", "new-feature");
+        const label = combosElement.querySelector(".combo-feature-label");
+        if (label) label.remove();
+
+        this.toggleComboMode();
+      });
+    }
+  }
+
+  toggleComboMode() {
+    this.comboActive = !this.comboActive;
+
+    if (this.comboActive) {
+      this.startFallingDonuts();
+      this.startAutoCatcher(); // Auto catcher'ı başlat
+      document.getElementById("combos").classList.add("active-combo");
+      this.showUpgrades();
+    } else {
+      this.stopFallingDonuts();
+      this.stopAutoCatcher(); // Auto catcher'ı durdur
+      document.getElementById("combos").classList.remove("active-combo");
+    }
+  }
+
+  startFallingDonuts() {
+    if (this.fallingDonutInterval) return;
+
+    // Daha sık donut oluştur (500ms yerine)
+    this.fallingDonutInterval = setInterval(() => {
+      this.createComboDonut();
+    }, 500);
+  }
+
+  stopFallingDonuts() {
+    if (this.fallingDonutInterval) {
+      clearInterval(this.fallingDonutInterval);
+      this.fallingDonutInterval = null;
+    }
+    // Tüm mevcut falling donutları temizle
+    document.querySelectorAll(".combo-donut").forEach((donut) => {
+      donut.remove();
+    });
+  }
+
+  createComboDonut() {
+    const donut = document.createElement("div");
+    donut.className = "combo-donut";
+
+    const randomImage =
+      this.comboDonutImages[
+        Math.floor(Math.random() * this.comboDonutImages.length)
+      ];
+    const container = document.querySelector(".donut-container");
+    const containerRect = container.getBoundingClientRect();
+
+    // Rastgele başlangıç rotasyonu
+    const randomRotation = Math.random() * 360;
+    const randomX = Math.random() * (containerRect.width - 40);
+
+    donut.style.cssText = `
+        background-image: url(img/${randomImage});
+        left: ${randomX}px;
+        top: -50px; /* Ekranın üstünden başlasın */
+        transform: rotate(${randomRotation}deg);
+    `;
+
+    container.appendChild(donut);
+
+    // Auto Catcher kontrolü
+    const autoCatcherUpgrade = this.upgrades.nonItemUpgrades.find(
+      (upgrade) => upgrade.specialEffect === "automation" && upgrade.purchased
+    );
+
+    if (autoCatcherUpgrade) {
+      const randomChance = Math.random();
+      if (randomChance <= autoCatcherUpgrade.multiplier) {
+        this.autoCatcherConfig.catchQueue.add(donut);
+      }
+    }
+
+    donut.addEventListener("click", (e) => {
+      if (!this.autoCatcherConfig.catchQueue.has(donut)) {
+        this.handleComboDonutClick(e, donut);
+      }
+    });
+
+    // Yakalanmayan donutları temizle
+    setTimeout(() => {
+      if (donut && donut.parentElement) {
+        this.autoCatcherConfig.catchQueue.delete(donut);
+        donut.remove();
+        this.lastClickSuccess = false;
+      }
+    }, 3000);
+  }
+
+  startAutoCatcher() {
+    if (this.autoCatcherConfig.processingInterval) return;
+
+    this.autoCatcherConfig.processingInterval = setInterval(() => {
+      this.processAutoCatchQueue();
+    }, 50); // Her 50ms'de bir kuyruğu kontrol et
+  }
+
+  stopAutoCatcher() {
+    if (this.autoCatcherConfig.processingInterval) {
+      clearInterval(this.autoCatcherConfig.processingInterval);
+      this.autoCatcherConfig.processingInterval = null;
+    }
+    this.autoCatcherConfig.catchQueue.clear();
+  }
+
+  processAutoCatchQueue() {
+    if (this.autoCatcherConfig.catchQueue.size === 0) return;
+
+    const now = performance.now();
+
+    for (const donut of this.autoCatcherConfig.catchQueue) {
+      // Donut hala DOM'da mı kontrol et
+      if (!donut.parentElement) {
+        this.autoCatcherConfig.catchQueue.delete(donut);
+        continue;
+      }
+
+      const rect = donut.getBoundingClientRect();
+      // Ekranın ortasına yakın donutları yakala
+      if (
+        rect.top > window.innerHeight * 0.3 &&
+        rect.top < window.innerHeight * 0.7
+      ) {
+        this.autoCatcherConfig.catchQueue.delete(donut);
+        requestAnimationFrame(() => {
+          this.catchFallingDonut(donut);
+        });
+      }
+    }
+  }
+
+  catchFallingDonut(donut) {
+    if (!donut || !donut.parentElement) return;
+
+    let clickValue = this.calculateClickValue();
+    if (this.lastClickSuccess) {
+      clickValue *= this.comboMultiplier;
+    }
+
+    const rect = donut.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // Yakalama animasyonu
+    donut.style.transition = "all 0.3s ease-out";
+    donut.classList.add("caught");
+
+    // Yakalama efekti
+    const catchEffect = document.createElement("div");
+    catchEffect.className = "catch-effect";
+    catchEffect.style.cssText = `
+        position: fixed;
+        left: ${centerX - 20}px;
+        top: ${centerY - 20}px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #ffeb3b;
+        animation: catchRipple 0.5s ease-out;
+        pointer-events: none;
+    `;
+    document.body.appendChild(catchEffect);
+
+    // Değer gösterimi
+    this.showComboClickEffect(centerX, centerY, clickValue);
+
+    // Skor güncelleme
+    this.donutCount += clickValue;
+    this.totalDonutsEarned += clickValue;
+
+    // Temizlik
+    setTimeout(() => {
+      donut.remove();
+      catchEffect.remove();
+    }, 300);
+
+    this.lastClickSuccess = true;
+    this.updateDisplay();
+  }
+
+  handleComboDonutClick(event, donutElement) {
+    event.stopPropagation();
+
+    // Normal click value hesapla
+    let clickValue = this.calculateClickValue();
+
+    // Eğer son tıklama başarılıysa combo bonusu uygula
+    if (this.lastClickSuccess) {
+      clickValue *= this.comboMultiplier;
+    }
+
+    this.donutCount += clickValue;
+    this.totalDonutsEarned += clickValue;
+
+    // Görsel feedback
+    this.showComboClickEffect(event.clientX, event.clientY, clickValue);
+
+    // Combo durumunu güncelle
+    this.lastClickSuccess = true;
+
+    // Donutu kaldır
+    donutElement.remove();
+
+    // Combo timeout'u yenile
+    if (this.comboTimeout) {
+      clearTimeout(this.comboTimeout);
+    }
+
+    this.comboTimeout = setTimeout(() => {
+      this.lastClickSuccess = false;
+    }, 1000); // 1 saniye içinde tıklanmazsa combo resetlenir
+
+    this.updateDisplay();
+  }
+
+  showComboClickEffect(x, y, value) {
+    const effect = document.createElement("div");
+    effect.className = "combo-click-effect";
+    effect.textContent = `+${this.formatNumber(value)}`;
+    effect.style.left = `${x}px`;
+    effect.style.top = `${y}px`;
+
+    document.body.appendChild(effect);
+
+    setTimeout(() => {
+      effect.remove();
+    }, 1000);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4984,6 +5322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     game.resetGame();
   });
 });
+
 document.querySelectorAll(".mobile-menu-btn").forEach((btn) => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -5014,6 +5353,7 @@ document.querySelectorAll(".mobile-menu-btn").forEach((btn) => {
     }
   });
 });
+
 document.querySelectorAll(".mobile-menu-btn").forEach((btn) => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
