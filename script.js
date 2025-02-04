@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.3";
+    this.currentVersion = "1.3.4";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -4443,6 +4443,7 @@ class Game {
     }
   }
   applyUpdates(gameState) {
+    // Upgrade kategorilerini güncelle
     const upgradeCategories = [
       "cursor",
       "baker",
@@ -4454,7 +4455,6 @@ class Game {
       "donutUpgrades",
     ];
 
-    // Upgrade kategorilerini güncelle
     upgradeCategories.forEach((category) => {
       if (!gameState.upgrades[category]) {
         gameState.upgrades[category] = this.upgrades[category];
@@ -4466,7 +4466,6 @@ class Game {
           ) {
             gameState.upgrades[category][index] = upgrade;
           }
-          // Resim dosyasının yolunu güncelle
           gameState.upgrades[category][index].img =
             gameState.upgrades[category][index].img +
             "?v=" +
@@ -4475,20 +4474,32 @@ class Game {
       }
     });
 
-    // Item verilerini güncelle
+    // Yeni items kontrolü ve güncelleme
+    gameState.items = gameState.items || {};
+
+    // This.items'daki tüm öğeleri gameState.items'a ekle/güncelle
     Object.keys(this.items).forEach((itemKey) => {
       if (!gameState.items[itemKey]) {
-        gameState.items[itemKey] = this.items[itemKey];
+        // Yeni item ekle
+        gameState.items[itemKey] = {
+          ...this.items[itemKey],
+          count: 0,
+          totalProduced: 0,
+        };
       } else {
-        const gameStateItem = gameState.items[itemKey];
-        const currentItem = this.items[itemKey];
-        gameStateItem.baseCost = currentItem.baseCost || gameStateItem.baseCost;
-        gameStateItem.production =
-          currentItem.production || gameStateItem.production;
+        // Mevcut itemin özelliklerini güncelle, ama count ve totalProduced değerlerini koru
+        const savedCount = gameState.items[itemKey].count;
+        const savedTotalProduced = gameState.items[itemKey].totalProduced;
+
+        gameState.items[itemKey] = {
+          ...this.items[itemKey],
+          count: savedCount,
+          totalProduced: savedTotalProduced,
+        };
       }
     });
 
-    // Ores verilerini güncelle
+    // Diğer güncellemeler aynı kalacak
     if (!gameState.ores) {
       gameState.ores = this.ores;
     } else {
@@ -4499,7 +4510,6 @@ class Game {
       });
     }
 
-    // Workers verilerini güncelle
     if (!gameState.workers) {
       gameState.workers = this.workers;
     } else {
@@ -4509,15 +4519,14 @@ class Game {
         }
       });
     }
+
     if (!gameState.quests) {
       gameState.quests = this.quests;
     } else {
-      // Yeni questleri ekle ve mevcut quest verilerini koru
       Object.keys(this.quests).forEach((questId) => {
         if (!gameState.quests[questId]) {
           gameState.quests[questId] = this.quests[questId];
         } else {
-          // Mevcut ilerlemeyi ve durumu koru
           const savedQuest = gameState.quests[questId];
           gameState.quests[questId] = {
             ...this.quests[questId],
@@ -4528,10 +4537,11 @@ class Game {
         }
       });
     }
-    // Multiplier sistemini güncelle
+
     if (!gameState.activeMultipliers) {
       gameState.activeMultipliers = [];
     }
+
     gameState.gameVersion = this.currentVersion;
     localStorage.setItem("gameState", JSON.stringify(gameState));
   }
