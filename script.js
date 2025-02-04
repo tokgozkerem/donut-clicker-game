@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.1b";
+    this.currentVersion = "1.3.3";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -589,6 +589,69 @@ class Game {
           description: "Automatically catches falling donuts with 20% chance!",
         },
       ],
+      donutUpgrades: [
+        {
+          name: "Sweet Loop",
+          cost: 250000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 50000,
+          img: "donutUpgrade-6.webp",
+          description: "So sweet it bends time. Maybe.",
+          type: "totalProduced",
+        },
+        {
+          name: "Berry Burst",
+          cost: 250000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 150000,
+          img: "donutUpgrade-5.webp",
+          description: "Explodes in flavor, not in your hand.",
+          type: "perSecond",
+        },
+        {
+          name: "Caramel Crown",
+          cost: 1000000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 500000,
+          img: "donutUpgrade-4.webp",
+          description: "Wear it like a king. Eat it like a fool.",
+          type: "totalProduced",
+        },
+        {
+          name: "Berry Bliss",
+          cost: 1000000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 100,
+          img: "donutUpgrade-3.webp",
+          description:
+            "Packed with so much blueberry, it might start singing jazz.",
+          type: "perSecond",
+        },
+        {
+          name: "Matcha Swirl",
+          cost: 5000000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 1000,
+          img: "donutUpgrade-2.webp",
+          description: "So zen, it might start meditating on its own.",
+          type: "totalProduced",
+        },
+        {
+          name: "Banana Bounce",
+          cost: 5000000,
+          multiplier: 1.03,
+          purchased: false,
+          requirement: 7500,
+          img: "donutUpgrade-1.webp",
+          description: "Bounces back with more potassium.",
+          type: "perSecond",
+        },
+      ],
     };
     this.items = {
       cursor: {
@@ -658,7 +721,7 @@ class Game {
         originalBaseCost: 21090250,
         costMultiplier: 1.16,
         production: 8000,
-        originalProduction: 6000,
+        originalProduction: 8000,
         totalProduced: 0,
       },
       nature: {
@@ -668,7 +731,7 @@ class Game {
         originalBaseCost: 230800850,
         costMultiplier: 1.16,
         production: 46000,
-        originalProduction: 28000,
+        originalProduction: 46000,
         totalProduced: 0,
       },
       neuralNetworkBakery: {
@@ -678,7 +741,7 @@ class Game {
         originalBaseCost: 2525256900,
         costMultiplier: 1.16,
         production: 270500,
-        originalProduction: 135500,
+        originalProduction: 270500,
         totalProduced: 0,
       },
       portal: {
@@ -688,7 +751,17 @@ class Game {
         originalBaseCost: 27650200500,
         costMultiplier: 1.16,
         production: 1800000,
-        originalProduction: 650250,
+        originalProduction: 1800000,
+        totalProduced: 0,
+      },
+      capitalCrest: {
+        name: "Capital Crest",
+        count: 0,
+        baseCost: 302924200000,
+        originalBaseCost: 302924200000,
+        costMultiplier: 1.16,
+        production: 10980000,
+        originalProduction: 10980000,
         totalProduced: 0,
       },
     };
@@ -1726,6 +1799,7 @@ class Game {
       ...this.upgrades.powerPlant.map((u) => u.img),
       ...this.upgrades.nature.map((u) => u.img),
       ...this.upgrades.nonItemUpgrades.map((u) => u.img),
+      ...this.upgrades.donutUpgrades.map((u) => u.img),
 
       // Bina görselleri
       "cursor.webp",
@@ -2005,23 +2079,26 @@ class Game {
       if (key === "cursor") {
         // Cursor için özel hesaplama
         let cursorProduction = this.items.cursor.originalProduction;
-        let buildingBoostMultiplier = 1;
+        let normalMultiplier = 1;
+        let x10Multiplier = 1;
 
+        // Normal multiplier'ları hesapla
         this.upgrades.cursor.forEach((upgrade) => {
           if (upgrade.purchased && !upgrade.specialEffect) {
             if (
-              upgrade === this.upgrades.cursor[5] ||
-              upgrade === this.upgrades.cursor[6] ||
+              upgrade === this.upgrades.cursor[5] || // Ruby Cursor
+              upgrade === this.upgrades.cursor[6] || // Verdant Precision
               upgrade === this.upgrades.cursor[7]
             ) {
-              buildingBoostMultiplier *= upgrade.multiplier;
+              // Obsidian Whisper
+              x10Multiplier *= 10;
             } else {
-              cursorProduction *= upgrade.multiplier;
+              normalMultiplier *= upgrade.multiplier;
             }
           }
         });
 
-        // Dinamik boost'u ekle
+        // Önce dinamik boost'u ekle (base production'a)
         const dynamicBoostUpgrade = this.upgrades.cursor[4];
         if (dynamicBoostUpgrade.purchased) {
           let buildingBoost = 0;
@@ -2030,10 +2107,14 @@ class Game {
               buildingBoost += this.items[buildingKey].count;
             }
           }
-          cursorProduction += buildingBoost;
+          cursorProduction += buildingBoost; // Base production'a ekle
         }
 
-        cursorProduction *= buildingBoostMultiplier;
+        // Sonra normal multiplier'ları uygula
+        cursorProduction *= normalMultiplier;
+
+        // En son x10 multiplier'ları uygula
+        cursorProduction *= x10Multiplier;
 
         // Multiplier etkisini ekle
         if (this.activeMultipliers && this.activeMultipliers.length > 0) {
@@ -2122,6 +2203,7 @@ class Game {
     // Mine üretimi kontrolü (60 saniye)
     if (mineElapsedTime >= 60000) {
       this.produceMineResources();
+      this.updateMarketPrices();
       this.lastMineProduction = currentTime;
     }
 
@@ -2224,22 +2306,14 @@ class Game {
       }
       clickValue += cursorBoost; // Click value'ya boost ekle
     }
-
-    // Upgrade'leri ayrı ayrı işle
-    this.upgrades.cursor.forEach((upgrade) => {
-      if (upgrade.purchased && !upgrade.specialEffect) {
-        if (
-          upgrade === this.upgrades.cursor[5] || // Ruby Cursor
-          upgrade === this.upgrades.cursor[6] || // Verdant Precision
-          upgrade === this.upgrades.cursor[7]
-        ) {
-          // Obsidian Whisper
-          multiplier *= upgrade.multiplier;
-        } else {
-          clickValue *= upgrade.multiplier;
+    // Donut Upgrades'lerin etkisini ekle
+    if (this.upgrades.donutUpgrades) {
+      this.upgrades.donutUpgrades.forEach((upgrade) => {
+        if (upgrade.purchased) {
+          clickValue *= upgrade.multiplier; // Her satın alınan donut upgrade'i için %3 artış
         }
-      }
-    });
+      });
+    }
 
     // En son x10 multiplier'ları uygula
     clickValue *= multiplier;
@@ -2316,36 +2390,56 @@ class Game {
   }
   showUpgrades() {
     const upgradeList = document.getElementById("upgrade-list");
+    if (!upgradeList) return;
+
     const existingUpgrades = Array.from(upgradeList.children);
-
     let allUpgrades = [];
+    if (this.upgrades.donutUpgrades) {
+      this.upgrades.donutUpgrades.forEach((upgrade, index) => {
+        if (upgrade.purchased) {
+          return;
+        }
 
+        let meetsRequirement = false;
+        if (upgrade.type === "totalProduced") {
+          meetsRequirement = this.totalDonutsEarned >= upgrade.requirement;
+        } else if (upgrade.type === "perSecond") {
+          meetsRequirement = this.totalPerSecond >= upgrade.requirement;
+        }
+
+        if (meetsRequirement) {
+          allUpgrades.push({ key: "donutUpgrades", index, upgrade });
+        }
+      });
+    }
+    // Normal item upgrade'leri ekle
     for (let key in this.upgrades) {
-      if (key === "nonItemUpgrades") continue;
-      const itemUpgrades = this.upgrades[key];
+      if (key === "nonItemUpgrades" || key === "donutUpgrades") continue;
 
-      itemUpgrades.forEach((upgrade, index) => {
+      if (!this.upgrades[key]) continue;
+
+      this.upgrades[key].forEach((upgrade, index) => {
         if (upgrade.purchased) return;
-        if (this.items[key].count < upgrade.requirement) return;
+        if (this.items[key] && this.items[key].count < upgrade.requirement)
+          return;
         allUpgrades.push({ key, index, upgrade });
       });
     }
 
-    // nonItemUpgrades için özel kontrol
-    this.upgrades.nonItemUpgrades.forEach((upgrade, index) => {
-      if (upgrade.purchased) return;
+    // nonItemUpgrades kontrolü
+    if (this.upgrades.nonItemUpgrades) {
+      this.upgrades.nonItemUpgrades.forEach((upgrade, index) => {
+        if (upgrade.purchased) return;
 
-      // Auto Catcher için özel kontrol
-      if (upgrade.specialEffect === "automation") {
-        // Eğer combo modu aktif değilse gösterme
-        if (!this.comboActive) return;
-      } else {
-        // Diğer upgradeler için normal requirement kontrolü
-        if (this.totalClicks < upgrade.requirement) return;
-      }
+        if (upgrade.specialEffect === "automation") {
+          if (!this.comboActive) return;
+        } else {
+          if (this.totalClicks < upgrade.requirement) return;
+        }
 
-      allUpgrades.push({ key: "nonItemUpgrades", index, upgrade });
-    });
+        allUpgrades.push({ key: "nonItemUpgrades", index, upgrade });
+      });
+    }
 
     allUpgrades.sort((a, b) => a.upgrade.cost - b.upgrade.cost);
 
@@ -2528,6 +2622,8 @@ class Game {
     let upgrade;
     if (itemKey === "nonItemUpgrades") {
       upgrade = this.upgrades.nonItemUpgrades[upgradeIndex];
+    } else if (itemKey === "donutUpgrades") {
+      upgrade = this.upgrades.donutUpgrades[upgradeIndex];
     } else {
       upgrade = this.upgrades[itemKey][upgradeIndex];
     }
@@ -2538,16 +2634,29 @@ class Game {
 
       if (itemKey === "nonItemUpgrades") {
         if (upgrade.specialEffect === "automation") {
-          // Auto Catcher özelliğini aktifleştir
           this.autoCatcherEnabled = true;
         } else {
           this.clickValue *= upgrade.multiplier;
         }
-      } else {
+      } else if (itemKey === "donutUpgrades") {
+        // Tüm üretimleri ve click value'yu %3 arttır
+        for (let key in this.items) {
+          // originalProduction'ı güncelle
+          if (this.items[key].originalProduction) {
+            this.items[key].originalProduction *= upgrade.multiplier;
+          }
+        }
+        // Click value'yu da artır
+        this.clickValue *= upgrade.multiplier;
+      } else if (itemKey !== "cursor") {
+        // Cursor dışındaki itemlar için
         const item = this.items[itemKey];
-        item.production *= upgrade.multiplier;
+        if (item && item.originalProduction) {
+          item.originalProduction *= upgrade.multiplier;
+        }
       }
 
+      // UI güncellemeleri
       const upgradeList = document.getElementById("upgrade-list");
       const upgradeDiv = upgradeList.querySelector(
         `div[data-key="${itemKey}"][data-index="${upgradeIndex}"]`
@@ -2555,7 +2664,10 @@ class Game {
       if (upgradeDiv) {
         upgradeList.removeChild(upgradeDiv);
       }
+
+      // Diğer güncellemeler
       this.hideInfoPanel();
+      this.updateTotalPerSecond();
       this.updateDisplay();
       this.showUpgrades();
     }
@@ -3099,7 +3211,7 @@ class Game {
       // Panel içeriğini güncelle
       if (type === "mine") {
         this.updateOreList();
-        this.updateMarketPrices();
+        this.updateMarketDisplay();
       } else if (type === "baker") {
         this.updateIngredientList();
         this.setupRecipeBook(); // Yeni eklenen
@@ -3144,7 +3256,9 @@ class Game {
     };
 
     let efficiencyText;
-    if (itemName === "nonItemUpgrades") {
+    if (itemName === "donutUpgrades") {
+      efficiencyText = "All production is increased by 3%";
+    } else if (itemName === "nonItemUpgrades") {
       if (upgrade.specialEffect === "automation") {
         efficiencyText = "I'll help you catch those delicious falling donuts!";
       } else {
@@ -3207,8 +3321,16 @@ class Game {
       let featureHTML = "";
 
       if (itemKey === "cursor") {
-        // Cursor için mevcut hesaplama mantığı
-        // ... (cursor hesaplama kodu değişmedi)
+        const dynamicBoostUpgrade = this.upgrades.cursor[4];
+        if (dynamicBoostUpgrade.purchased) {
+          let buildingCount = 0;
+          for (let key in this.items) {
+            if (key !== "cursor") {
+              buildingCount += this.items[key].count;
+            }
+          }
+          currentProduction += buildingCount;
+        }
       }
 
       // Resmi önbellekten al veya yükle
@@ -3246,7 +3368,9 @@ class Game {
         Each <strong>${item.name}</strong> produces <strong>${
         itemKey === "cursor"
           ? this.formatNumber(currentProduction, "perSecond")
-          : this.formatNumber(currentProduction, "count")
+          : currentProduction < 1000
+          ? currentProduction.toFixed(1).replace(".", ",")
+          : this.formatNumber(currentProduction, "perSecond")
       } donuts</strong> per second<br>
         ${this.formatNumber(item.count, "count")} <strong>${
         item.name + "(s)"
@@ -3548,7 +3672,15 @@ class Game {
     ]);
 
     let result;
-    if (type === "perSecond") {
+    if (type === "suffix") {
+      // Sadece suffix için
+      for (const [value, suffix] of numberSuffixes) {
+        if (number >= value) {
+          result = `${(number / value).toFixed(3)} ${suffix}`;
+          break;
+        }
+      }
+    } else if (type === "perSecond") {
       if (number < 1000) {
         result = number.toFixed(1).replace(".", ",");
       } else if (number < 1e6) {
@@ -4319,6 +4451,7 @@ class Game {
       "factory",
       "logisticCenter",
       "nonItemUpgrades",
+      "donutUpgrades",
     ];
 
     // Upgrade kategorilerini güncelle

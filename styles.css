@@ -2027,6 +2027,38 @@ h3::after {
     box-shadow: 0 4px 15px rgba(252, 203, 114, 0.4);
   }
 }
+#reddit-button {
+  position: fixed;
+  bottom: 60px; /* buy-me-a-donut'un üstünde olması için */
+  left: calc(20px + 0px);
+  padding: 5px 10px;
+  background: #ff4500; /* Reddit'in karakteristik turuncu rengi */
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#reddit-button img {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1); /* SVG'yi beyaza çevirir */
+}
+
+#reddit-button:hover {
+  transform: translateY(-2px);
+  background: #ff5414;
+  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+}
 /* Üretim bilgi paneli için genel stil */
 .ore-generation-info,
 .ingredient-generation-info {
