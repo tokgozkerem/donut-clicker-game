@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.7";
+    this.currentVersion = "1.3.8";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -1833,95 +1833,7 @@ class Game {
       }
     });
   }
-  async updateGameVersion(gameState) {
-    const backupSave = JSON.stringify(gameState); // Mevcut save'i yedekle
 
-    // Yeni özellikleri ekleyerek save'i güncelle
-    const updatedState = {
-      ...gameState,
-      gameVersion: this.currentVersion,
-      items: this.mergeItems(gameState.items),
-      upgrades: this.mergeUpgrades(gameState.upgrades),
-      quests: this.mergeQuests(gameState.quests),
-    };
-
-    return updatedState;
-  }
-
-  mergeItems(oldItems) {
-    const mergedItems = {};
-
-    // Tüm mevcut item'ları kontrol et
-    for (const itemKey in this.items) {
-      mergedItems[itemKey] = {
-        ...this.items[itemKey], // Yeni özellikler
-        count: oldItems?.[itemKey]?.count || 0,
-        totalProduced: oldItems?.[itemKey]?.totalProduced || 0,
-        // Diğer kaydedilmiş özellikleri koru
-        ...Object.fromEntries(
-          Object.entries(oldItems?.[itemKey] || {}).filter(
-            ([key]) =>
-              ![
-                "name",
-                "baseCost",
-                "originalBaseCost",
-                "costMultiplier",
-                "production",
-                "originalProduction",
-              ].includes(key)
-          )
-        ),
-      };
-    }
-
-    return mergedItems;
-  }
-
-  mergeUpgrades(oldUpgrades) {
-    const mergedUpgrades = {};
-
-    // Tüm upgrade kategorilerini kontrol et
-    for (const category in this.upgrades) {
-      mergedUpgrades[category] = this.upgrades[category].map(
-        (newUpgrade, index) => ({
-          ...newUpgrade,
-          purchased: oldUpgrades?.[category]?.[index]?.purchased || false,
-          // Diğer kaydedilmiş özellikleri koru
-          ...Object.fromEntries(
-            Object.entries(oldUpgrades?.[category]?.[index] || {}).filter(
-              ([key]) =>
-                ![
-                  "name",
-                  "cost",
-                  "multiplier",
-                  "requirement",
-                  "img",
-                  "description",
-                ].includes(key)
-            )
-          ),
-        })
-      );
-    }
-
-    return mergedUpgrades;
-  }
-
-  mergeQuests(oldQuests) {
-    const mergedQuests = {};
-
-    // Tüm questleri kontrol et
-    for (const questId in this.quests) {
-      mergedQuests[questId] = {
-        ...this.quests[questId],
-        progress: oldQuests?.[questId]?.progress || 0,
-        completed: oldQuests?.[questId]?.completed || false,
-        claimed: oldQuests?.[questId]?.claimed || false,
-      };
-    }
-
-    return mergedQuests;
-  }
   init() {
     // Önce resimleri yükle
     this.preloadImages();
@@ -4448,7 +4360,12 @@ class Game {
     const savedGame = localStorage.getItem("gameState");
     if (savedGame) {
       let gameState = JSON.parse(savedGame);
+      console.log("Yüklenen save:", gameState); // TEST
+      gameState.items = this.mergeItems(gameState.items);
+      console.log("Güncellenmiş save:", gameState.items); // TEST
 
+      this.items = gameState.items;
+      localStorage.setItem("gameState", JSON.stringify(gameState));
       // Versiyon kontrolü ve güncelleme
       if (
         !gameState.gameVersion ||
@@ -4537,7 +4454,110 @@ class Game {
       this.updateTotalPerSecond();
     }
   }
+  async updateGameVersion(gameState) {
+    const backupSave = JSON.stringify(gameState); // Mevcut save'i yedekle
 
+    // Yeni özellikleri ekleyerek save'i güncelle
+    const updatedState = {
+      ...gameState,
+      gameVersion: this.currentVersion,
+      items: this.mergeItems(gameState.items),
+      upgrades: this.mergeUpgrades(gameState.upgrades),
+      quests: this.mergeQuests(gameState.quests),
+    };
+
+    return updatedState;
+  }
+
+  mergeItems(oldItems) {
+    const mergedItems = {}; // Yeni güncellenmiş item listesi
+
+    for (const itemKey in oldItems) {
+      if (this.items[itemKey]) {
+        // Eğer bina yeni listede varsa, onu koru ve güncelle
+        mergedItems[itemKey] = {
+          ...this.items[itemKey],
+          count: oldItems[itemKey]?.count || 0,
+          totalProduced: oldItems[itemKey]?.totalProduced || 0,
+          ...Object.fromEntries(
+            Object.entries(oldItems[itemKey] || {}).filter(
+              ([key]) =>
+                ![
+                  "name",
+                  "baseCost",
+                  "originalBaseCost",
+                  "costMultiplier",
+                  "production",
+                  "originalProduction",
+                ].includes(key)
+            )
+          ),
+        };
+      } else {
+        console.log(`Siliniyor: ${itemKey} (Artık kullanılmayan bina)`);
+      }
+    }
+
+    // Yeni eklenen binaları dahil et
+    for (const itemKey in this.items) {
+      if (!mergedItems[itemKey]) {
+        console.log(`Yeni bina eklendi: ${itemKey}`);
+        mergedItems[itemKey] = {
+          ...this.items[itemKey],
+          count: 0,
+          totalProduced: 0,
+        };
+      }
+    }
+
+    return mergedItems;
+  }
+
+  mergeUpgrades(oldUpgrades) {
+    const mergedUpgrades = {};
+
+    // Tüm upgrade kategorilerini kontrol et
+    for (const category in this.upgrades) {
+      mergedUpgrades[category] = this.upgrades[category].map(
+        (newUpgrade, index) => ({
+          ...newUpgrade,
+          purchased: oldUpgrades?.[category]?.[index]?.purchased || false,
+          // Diğer kaydedilmiş özellikleri koru
+          ...Object.fromEntries(
+            Object.entries(oldUpgrades?.[category]?.[index] || {}).filter(
+              ([key]) =>
+                ![
+                  "name",
+                  "cost",
+                  "multiplier",
+                  "requirement",
+                  "img",
+                  "description",
+                ].includes(key)
+            )
+          ),
+        })
+      );
+    }
+
+    return mergedUpgrades;
+  }
+
+  mergeQuests(oldQuests) {
+    const mergedQuests = {};
+
+    // Tüm questleri kontrol et
+    for (const questId in this.quests) {
+      mergedQuests[questId] = {
+        ...this.quests[questId],
+        progress: oldQuests?.[questId]?.progress || 0,
+        completed: oldQuests?.[questId]?.completed || false,
+        claimed: oldQuests?.[questId]?.claimed || false,
+      };
+    }
+
+    return mergedQuests;
+  }
   applyUpdates(gameState) {
     const upgradeCategories = [
       "cursor",
@@ -4650,7 +4670,6 @@ class Game {
     gameState.gameVersion = this.currentVersion;
     localStorage.setItem("gameState", JSON.stringify(gameState));
   }
-
   resetGame() {
     const confirmation = confirm(
       "Are you sure you want to reset the game? All your progress will be deleted."
