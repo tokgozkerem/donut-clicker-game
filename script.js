@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.6";
+    this.currentVersion = "1.3.7";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -4447,7 +4447,7 @@ class Game {
   loadGame() {
     const savedGame = localStorage.getItem("gameState");
     if (savedGame) {
-      const gameState = JSON.parse(savedGame);
+      let gameState = JSON.parse(savedGame);
 
       // Versiyon kontrolü ve güncelleme
       if (
@@ -4455,14 +4455,15 @@ class Game {
         parseFloat(gameState.gameVersion) < parseFloat(this.currentVersion)
       ) {
         console.log(
-          "Updating game from version",
-          gameState.gameVersion,
-          "to",
-          this.currentVersion
+          `Updating game from version ${
+            gameState.gameVersion || "unknown"
+          } to ${this.currentVersion}`
         );
+
         this.applyUpdates(gameState);
-        // Güncellenmiş gameState'i tekrar yükle
-        return this.loadGame();
+
+        // Güncellenmiş `gameState`'i kaydet
+        localStorage.setItem("gameState", JSON.stringify(gameState));
       }
 
       // Mevcut yükleme kodları...
@@ -4473,15 +4474,11 @@ class Game {
       const workerCountElem = document.getElementById("workerCount");
       const bakerWorkerCountElem = document.getElementById("bakerWorkerCount");
 
-      if (workerCountElem) {
-        workerCountElem.textContent = this.workers.length;
-      }
-
-      if (bakerWorkerCountElem) {
+      if (workerCountElem) workerCountElem.textContent = this.workers.length;
+      if (bakerWorkerCountElem)
         bakerWorkerCountElem.textContent = this.bakers.length;
-      }
 
-      // Güncellenmiş `gameState` verilerini yüklüyoruz
+      // Güncellenmiş `gameState` verilerini yükle
       this.items = gameState.items || this.items;
       this.upgrades = gameState.upgrades || this.upgrades;
       this.donutCount = gameState.donutCount || 0;
@@ -4540,6 +4537,7 @@ class Game {
       this.updateTotalPerSecond();
     }
   }
+
   applyUpdates(gameState) {
     const upgradeCategories = [
       "cursor",
@@ -4548,10 +4546,10 @@ class Game {
       "mine",
       "factory",
       "logisticCenter",
-      "powerPlant", // Eklendi
-      "nature", // Eklendi
-      "portal", // Eklendi
-      "capitalCrest", // Eklendi
+      "powerPlant",
+      "nature",
+      "portal",
+      "capitalCrest",
       "nonItemUpgrades",
       "donutUpgrades",
     ];
@@ -4575,38 +4573,34 @@ class Game {
       }
     });
 
-    // Yeni items kontrolü ve güncelleme
-    gameState.items = gameState.items || {};
+    // Yeni bina güncellemeleri
+    if (!gameState.items) {
+      gameState.items = {};
+    }
 
-    // Tüm mevcut items'ları kontrol et ve eksik olanları ekle
-    for (const itemKey in this.items) {
+    Object.keys(this.items).forEach((itemKey) => {
       if (!gameState.items[itemKey]) {
-        // Eğer item yoksa, yeni item'ı ekle
+        console.log(`Yeni bina eklendi: ${itemKey}`);
         gameState.items[itemKey] = {
           ...this.items[itemKey],
           count: 0,
           totalProduced: 0,
         };
       } else {
-        // Item varsa, sadece mevcut count ve totalProduced değerlerini koru
-        const savedCount = gameState.items[itemKey].count;
-        const savedTotalProduced = gameState.items[itemKey].totalProduced;
+        const savedData = gameState.items[itemKey];
 
-        // Item'ı güncelle ama count ve totalProduced değerlerini koru
         gameState.items[itemKey] = {
-          ...this.items[itemKey],
-          count: savedCount,
-          totalProduced: savedTotalProduced,
+          ...this.items[itemKey], // Güncellenmiş bina özellikleri
+          count: savedData.count, // Kullanıcının sahip olduğu miktar
+          totalProduced: savedData.totalProduced, // Üretilen miktar
           baseCost:
-            savedCount > 0
-              ? this.items[itemKey].originalBaseCost *
-                Math.pow(this.items[itemKey].costMultiplier, savedCount)
-              : this.items[itemKey].originalBaseCost,
+            this.items[itemKey].originalBaseCost *
+            Math.pow(this.items[itemKey].costMultiplier, savedData.count),
         };
       }
-    }
+    });
 
-    // Diğer güncellemeler aynı...
+    // Cevherler (Ores) güncelleme
     if (!gameState.ores) {
       gameState.ores = this.ores;
     } else {
@@ -4617,6 +4611,7 @@ class Game {
       });
     }
 
+    // İşçiler (Workers) güncelleme
     if (!gameState.workers) {
       gameState.workers = this.workers;
     } else {
@@ -4627,6 +4622,7 @@ class Game {
       });
     }
 
+    // Görevler (Quests) güncelleme
     if (!gameState.quests) {
       gameState.quests = this.quests;
     } else {
@@ -4645,13 +4641,16 @@ class Game {
       });
     }
 
+    // Aktif çarpanlar (Multipliers) güncelleme
     if (!gameState.activeMultipliers) {
       gameState.activeMultipliers = [];
     }
 
+    // Oyun versiyonunu güncelle
     gameState.gameVersion = this.currentVersion;
     localStorage.setItem("gameState", JSON.stringify(gameState));
   }
+
   resetGame() {
     const confirmation = confirm(
       "Are you sure you want to reset the game? All your progress will be deleted."
