@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.4";
+    this.currentVersion = "1.3.5";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -4443,7 +4443,6 @@ class Game {
     }
   }
   applyUpdates(gameState) {
-    // Upgrade kategorilerini güncelle
     const upgradeCategories = [
       "cursor",
       "baker",
@@ -4451,6 +4450,10 @@ class Game {
       "mine",
       "factory",
       "logisticCenter",
+      "powerPlant", // Eklendi
+      "nature", // Eklendi
+      "portal", // Eklendi
+      "capitalCrest", // Eklendi
       "nonItemUpgrades",
       "donutUpgrades",
     ];
@@ -4459,7 +4462,7 @@ class Game {
       if (!gameState.upgrades[category]) {
         gameState.upgrades[category] = this.upgrades[category];
       } else {
-        this.upgrades[category].forEach((upgrade, index) => {
+        this.upgrades[category]?.forEach((upgrade, index) => {
           if (
             !gameState.upgrades[category][index] ||
             gameState.upgrades[category][index].cost !== upgrade.cost
@@ -4477,17 +4480,14 @@ class Game {
     // Yeni items kontrolü ve güncelleme
     gameState.items = gameState.items || {};
 
-    // This.items'daki tüm öğeleri gameState.items'a ekle/güncelle
     Object.keys(this.items).forEach((itemKey) => {
       if (!gameState.items[itemKey]) {
-        // Yeni item ekle
         gameState.items[itemKey] = {
           ...this.items[itemKey],
           count: 0,
           totalProduced: 0,
         };
       } else {
-        // Mevcut itemin özelliklerini güncelle, ama count ve totalProduced değerlerini koru
         const savedCount = gameState.items[itemKey].count;
         const savedTotalProduced = gameState.items[itemKey].totalProduced;
 
@@ -4499,7 +4499,7 @@ class Game {
       }
     });
 
-    // Diğer güncellemeler aynı kalacak
+    // Diğer güncellemeler aynı...
     if (!gameState.ores) {
       gameState.ores = this.ores;
     } else {
