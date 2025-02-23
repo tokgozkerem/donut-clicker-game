@@ -226,7 +226,7 @@ body {
 .headerImg {
   position: relative;
   width: 100%;
-  max-width: 335px;
+  max-width: 290px;
   height: auto;
   top: 2px;
   left: 50%;
@@ -307,7 +307,6 @@ body {
   background-size: cover;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
-  filter: drop-shadow(0 0 10px rgba(231, 76, 60, 0.5));
   z-index: 1;
   pointer-events: auto;
   margin-top: 43px;
@@ -2005,7 +2004,6 @@ h3::after {
   text-decoration: none; /* Altı çizgiyi kaldırır */
   display: inline-block; /* Buton görünümünü korur */
   overflow: hidden;
-  animation: pulse 2s infinite;
   box-shadow: 0 4px 15px rgba(252, 203, 114, 0.4);
   transition: all 0.3s ease;
 }
@@ -2015,18 +2013,6 @@ h3::after {
   box-shadow: 0 6px 20px rgba(252, 203, 114, 0.6);
 }
 
-/* Parıltı animasyonu */
-@keyframes coffee-pulse {
-  0% {
-    box-shadow: 0 4px 15px rgba(252, 203, 114, 0.4);
-  }
-  50% {
-    box-shadow: 0 4px 25px rgba(252, 203, 114, 0.6);
-  }
-  100% {
-    box-shadow: 0 4px 15px rgba(252, 203, 114, 0.4);
-  }
-}
 #reddit-button {
   position: fixed;
   bottom: 60px; /* buy-me-a-donut'un üstünde olması için */
@@ -2172,17 +2158,7 @@ h3::after {
   bottom: 20px; /* Ekranın altından 20px yukarı */
   opacity: 1;
 }
-/* Kar Taneleri Konteyneri */
-#snow-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* Tıklamaları engeller */
-  overflow: hidden; /* Taşan kar tanelerini gizler */
-  z-index: 9999; /* En üstte tutar */
-}
+
 .completed-feature-label {
   position: absolute;
   top: 105px;
@@ -2206,100 +2182,6 @@ h3::after {
   }
   100% {
     transform: scale(1);
-  }
-}
-/* Kar Tanesi */
-.snowflake {
-  position: absolute;
-  top: -10%; /* Başlangıç noktası */
-  color: white; /* Kar rengi */
-  font-size: 10px; /* Varsayılan boyut */
-  animation: fall linear infinite, sway ease-in-out infinite;
-  opacity: 0.8; /* Hafif şeffaflık */
-}
-.christmas-box {
-  width: 60px;
-  height: 60px;
-  cursor: pointer;
-  transition: transform 0.3s;
-  z-index: 155555;
-}
-
-.christmas-box:hover {
-  transform: scale(1.2);
-}
-
-.christmas-box.small {
-  width: 50px;
-  height: 50px;
-}
-
-.christmas-box.medium {
-  width: 70px;
-  height: 70px;
-}
-
-.christmas-box.large {
-  width: 90px;
-  height: 90px;
-}
-
-.reward-message {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 14px;
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-  animation: fade-out 5s ease-out forwards;
-  z-index: 155554;
-}
-
-.reward-display {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-.reward-image {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-}
-
-.reward-timer-bar {
-  position: relative;
-  width: 100px;
-  height: 10px;
-  background: #ddd;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.timer-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0%;
-  height: 100%;
-  background: #4caf50;
-  animation: fillProgress var(--duration) linear forwards;
-}
-
-@keyframes fillProgress {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
   }
 }
 
@@ -2390,24 +2272,7 @@ h3::after {
     opacity: 0;
   }
 }
-.snow-control {
-  margin-top: 20px;
-  text-align: center;
-}
 
-#toggle-snow-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-#toggle-snow-button:hover {
-  background-color: #0056b3;
-}
 @keyframes fadeOut {
   0% {
     opacity: 1;

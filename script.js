@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.8";
+    this.currentVersion = "1.3.9";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -773,34 +773,8 @@ class Game {
     this.purchaseAmount = 1;
     this.lastUpdateTime = Date.now();
     this.lastBakerProduction = Date.now(); // Baker üretimi için son üretim zamanı
-    this.lastMineProduction = Date.now(); // Mine üretimi için son üretim zamanı
-    this.snowContainer = null;
-    this.isSnowing = true;
-    this.initSnowEffect();
-    this.initControls();
+    this.lastMineProduction = Date.now(); // Mine üretimi için son üretim zaman
     this.productionMultiplier = 1;
-    this.christmasBoxes = [
-      {
-        type: "small",
-        image: "small-box.webp",
-        rewardMultiplier: 1,
-        duration: 5000, // 5 saniye görünür
-      },
-      {
-        type: "medium",
-        image: "medium-box.webp",
-        rewardMultiplier: 3,
-        duration: 7000, // 7 saniye görünür
-      },
-      {
-        type: "large",
-        image: "large-box.webp",
-        rewardMultiplier: 5,
-        duration: 10000, // 10 saniye görünür
-      },
-    ];
-    this.activeBox = null;
-    this.boxSpawnInterval = null;
     this.ingredientTypes = [
       { type: "Dough", rarity: 0.5, price: this.items.baker.baseCost * 0.015 },
       { type: "Sugar", rarity: 0.35, price: this.items.baker.baseCost * 0.03 },
@@ -1779,9 +1753,7 @@ class Game {
     const imagesToPreload = [
       // Donut görselleri
       "donutNew.webp",
-      "christmasGift.webp",
-      "christmasCookie.webp",
-      "christmasRed.webp",
+      "chocoDonut.webp",
       "classic-donut.webp",
       "donut5.webp",
       "donut.webp",
@@ -1840,8 +1812,6 @@ class Game {
     this.initializeComboSystem();
     this.loadGame();
     this.updateBakeryName();
-    this.initSnowEffect();
-    this.startChristmasBoxes();
 
     // Zamanlayıcıları optimize et
     setInterval(this._throttle(this.saveGame.bind(this), 60000), 180000);
@@ -3582,12 +3552,7 @@ class Game {
     this.clickSounds[randomIndex].play();
   }
   createFallingDonut(x, y) {
-    const images = [
-      "donutNew.webp",
-      "christmasGift.webp",
-      "christmasCookie.webp",
-      "christmasRed.webp",
-    ];
+    const images = ["donutNew.webp", "donut5.webp", "chocoDonut.webp"];
     const randomImage = images[Math.floor(Math.random() * images.length)];
 
     // Önbellekten resmi al veya yeni oluştur
@@ -4036,295 +4001,6 @@ class Game {
       localStorage.setItem("bakeryName", this.currentBakeryName);
       this.closeChangeNameModal();
     }
-  }
-  initSnowEffect() {
-    if (this.snowContainer) {
-      this.snowContainer.remove();
-    }
-
-    this.snowContainer = document.createElement("div");
-    this.snowContainer.id = "snow-container";
-    document.body.appendChild(this.snowContainer);
-
-    // Performans için style optimizasyonu
-    const style = document.createElement("style");
-    style.textContent = `
-        #snow-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 9999;
-        }
-
-        .snowflake {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            opacity: 0;
-            will-change: transform; 
-            transform: translateZ(0); 
-            animation: fall-and-sway var(--fall-duration) linear forwards;
-            width: var(--size);
-            height: var(--size);
-            box-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
-        }
-
-        @keyframes fall-and-sway {
-            0% { transform: translate3d(0, -10px, 0); opacity: 0; }
-            2% { opacity: 0.9; } /* Opaklık 0.6'dan 0.9'a çıkarıldı */
-            100% { transform: translate3d(var(--sway-distance), calc(100vh + 20px), 0); opacity: 0.8; } /* Son opaklık değeri eklendi */
-        }
-    `;
-
-    if (!document.getElementById("snow-style")) {
-      style.id = "snow-style";
-      document.head.appendChild(style);
-    }
-
-    // Performans optimizasyonları
-    this.isSnowing = true;
-    this.snowflakePool = new Set();
-    this.lastTime = performance.now();
-    this.snowflakeTemplate = document.createElement("div");
-    this.snowflakeTemplate.className = "snowflake";
-
-    // Performans ayarları
-    this.snowSettings = {
-      maxSnowflakes: Math.min(400, Math.floor(window.innerWidth / 3)), // Kar tanesi sayısı artırıldı
-      batchSize: 15, // Her seferde daha fazla kar tanesi
-      minSize: 2,
-      maxSize: 4,
-      minDuration: 3, // Daha hızlı düşsün
-      maxDuration: 5,
-      spawnInterval: 30, // Daha sık kar tanesi oluştur
-    };
-
-    this.lastSpawnTime = 0;
-    this.boundSnowingLoop = this.snowingLoop.bind(this);
-    requestAnimationFrame(this.boundSnowingLoop);
-  }
-
-  snowingLoop(timestamp) {
-    if (!this.isSnowing) return;
-
-    // Spawn kontrolü için zaman kontrolü
-    if (timestamp - this.lastSpawnTime >= this.snowSettings.spawnInterval) {
-      const currentSnowflakes = this.snowflakePool.size;
-
-      if (currentSnowflakes < this.snowSettings.maxSnowflakes) {
-        for (let i = 0; i < this.snowSettings.batchSize; i++) {
-          const snowflake = this.createSnowflake();
-          this.snowContainer.appendChild(snowflake);
-        }
-      }
-
-      this.lastSpawnTime = timestamp;
-    }
-
-    // Performans için daha az sıklıkta frame güncelleme
-    requestAnimationFrame(this.boundSnowingLoop);
-  }
-
-  createSnowflake() {
-    const snowflake = this.snowflakeTemplate.cloneNode(true);
-    const { minSize, maxSize, minDuration, maxDuration } = this.snowSettings;
-
-    // Basitleştirilmiş kar tanesi özellikleri
-    const size = minSize + Math.random() * (maxSize - minSize);
-    const fallDuration =
-      minDuration + Math.random() * (maxDuration - minDuration);
-    const swayDistance = `${Math.random() * 20 - 10}vw`; // Daha az sallanma
-
-    snowflake.style.cssText = `
-        --size: ${size}px;
-        --fall-duration: ${fallDuration}s;
-        --sway-distance: ${swayDistance};
-        left: ${Math.random() * 100}vw;
-    `;
-
-    this.snowflakePool.add(snowflake);
-
-    // Otomatik temizleme
-    setTimeout(() => {
-      if (snowflake.parentNode === this.snowContainer) {
-        snowflake.remove();
-        this.snowflakePool.delete(snowflake);
-      }
-    }, fallDuration * 1000);
-
-    return snowflake;
-  }
-
-  stopSnowEffect() {
-    this.isSnowing = false;
-    if (this.snowContainer) {
-      this.snowflakePool.forEach((snowflake) => snowflake.remove());
-      this.snowflakePool.clear();
-    }
-  }
-
-  startSnowEffect() {
-    if (!this.isSnowing) {
-      this.initSnowEffect();
-    }
-  }
-  initControls() {
-    const toggleButton = document.getElementById("toggle-snow-button");
-    if (toggleButton) {
-      toggleButton.addEventListener("click", () => {
-        if (this.isSnowing) {
-          this.stopSnowEffect();
-          toggleButton.textContent = "Start Snow";
-        } else {
-          this.startSnowEffect();
-          toggleButton.textContent = "Stop Snow";
-        }
-      });
-    }
-  }
-  spawnChristmasBox() {
-    if (this.activeBox) return; // Zaten aktif kutu varsa, başka bir kutu oluşturma
-
-    const randomBox =
-      this.christmasBoxes[
-        Math.floor(Math.random() * this.christmasBoxes.length)
-      ];
-
-    const boxElement = document.createElement("img");
-    boxElement.src = `img/${randomBox.image}`;
-    boxElement.classList.add("christmas-box", randomBox.type);
-    boxElement.style.position = "absolute";
-    boxElement.style.left = `${Math.random() * 80 + 10}%`; // Between 10% and 90%
-    boxElement.style.top = `${Math.random() * 70 + 10}%`; // Between 10% and 80%
-
-    document.body.appendChild(boxElement);
-    this.activeBox = { element: boxElement, data: randomBox };
-
-    setTimeout(() => {
-      if (this.activeBox?.element === boxElement) {
-        this.removeActiveBox();
-      }
-    }, 15000); // 15 saniye
-
-    // Kutunun tıklama olayını ayarla
-    boxElement.addEventListener("click", () => this.handleBoxClick(randomBox));
-  }
-  removeActiveBox() {
-    if (this.activeBox) {
-      if (this.activeBox.element.parentNode) {
-        document.body.removeChild(this.activeBox.element);
-      }
-      this.activeBox = null;
-    }
-  }
-  handleBoxClick(boxData) {
-    if (!this.activeBox || this.activeBox.data !== boxData) return;
-
-    const randomBonus = Math.random();
-    let rewardText = "";
-    let duration = 0;
-
-    if (randomBonus < 0.5) {
-      // %50 şansla donut ödülü
-      const donutsAdded = Math.floor(this.donutCount * (0.5 + Math.random()));
-      this.donutCount += donutsAdded;
-      this.totalDonutsEarned += donutsAdded;
-      rewardText = `+${donutsAdded} donuts!`;
-      duration = 8000;
-    } else if (randomBonus < 0.8) {
-      // %30 şansla üretim çarpanı
-      const multiplier = 1 + boxData.rewardMultiplier;
-      duration = 30000;
-      this.applyProductionMultiplier(multiplier, duration);
-      rewardText = `Production boosted by ${multiplier}x for ${
-        duration / 1000
-      } seconds!`;
-    } else {
-      // %20 şansla şanslı ödül
-      const luckyReward = Math.max(
-        Math.floor(Math.random() * (this.donutCount * 0.1)),
-        500 // Minimum 500 donut
-      );
-      this.donutCount += luckyReward;
-      this.totalDonutsEarned += luckyReward;
-      rewardText = `+${luckyReward} bonus donuts!`;
-      duration = 8000;
-    }
-
-    // Ödül ve mesajları göster
-    const rewardElement = document.createElement("div");
-    rewardElement.className = "reward-display";
-    rewardElement.innerHTML = `
-        <img src="img/${boxData.image}" alt="Reward" class="reward-image" />
-        <div class="reward-timer-bar">
-            <div class="timer-fill"></div>
-        </div>
-    `;
-    rewardElement.style.setProperty("--duration", `${duration}ms`);
-    document.body.appendChild(rewardElement);
-
-    const rewardMessage = document.createElement("div");
-    rewardMessage.className = "reward-message";
-    rewardMessage.textContent = rewardText;
-
-    const boxRect = this.activeBox.element.getBoundingClientRect();
-    rewardMessage.style.left = `${boxRect.left + boxRect.width / 2}px`;
-    rewardMessage.style.top = `${boxRect.top}px`;
-
-    document.body.appendChild(rewardMessage);
-    setTimeout(() => document.body.removeChild(rewardMessage), 5000);
-
-    rewardElement.addEventListener("mouseenter", () =>
-      this.showRewardInfo(rewardElement, rewardText)
-    );
-    rewardElement.addEventListener("mouseleave", () => this.hideRewardInfo());
-    setTimeout(() => {
-      document.body.removeChild(rewardElement);
-    }, duration);
-
-    // Aktif kutuyu kaldır
-    this.removeActiveBox();
-  }
-  showRewardInfo(element, rewardText) {
-    const infoPanel = document.createElement("div");
-    infoPanel.className = "reward-info-panel";
-    infoPanel.innerHTML = `
-        <p>${rewardText}</p>
-    `;
-    element.appendChild(infoPanel);
-  }
-  hideRewardInfo() {
-    clearInterval(this.infoInterval);
-    const panel = document.querySelector(".reward-info-panel");
-    if (panel) panel.remove();
-  }
-  applyProductionMultiplier(multiplier, duration) {
-    this.productionMultiplier *= multiplier; // Çarpanı uygula
-    this.updateTotalPerSecond();
-    this.updateDisplay();
-
-    setTimeout(() => {
-      this.productionMultiplier /= multiplier; // Çarpanı sıfırla
-      this.updateTotalPerSecond();
-      this.updateDisplay();
-    }, duration);
-  }
-  startChristmasBoxes() {
-    const spawnRandomBox = () => {
-      this.spawnChristmasBox();
-
-      const nextSpawnTime =
-        Math.random() * (15 - 10) * 60 * 1000 + 10 * 60 * 1000;
-      this.boxSpawnTimeout = setTimeout(spawnRandomBox, nextSpawnTime);
-    };
-
-    // İlk kutuyu hemen üretmek yerine 10-15 dakika sonra üret
-    const initialDelay = Math.random() * (15 - 10) * 60 * 1000 + 10 * 60 * 1000;
-    this.boxSpawnTimeout = setTimeout(spawnRandomBox, initialDelay);
   }
   saveGame() {
     const gameState = {
