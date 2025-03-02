@@ -5339,7 +5339,7 @@ class Game {
         timeRemaining.style.color = "";
         donutCoinElement.classList.remove("ready");
       } else {
-        timeRemaining.textContent = "Hazır!";
+        timeRemaining.textContent = "Ready!";
         timeRemaining.style.color = "#00ff00";
         donutCoinElement.classList.add("ready");
       }
