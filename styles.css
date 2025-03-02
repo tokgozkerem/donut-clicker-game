@@ -181,6 +181,23 @@ body {
 #section-right::-webkit-scrollbar-thumb:hover {
   background-color: #e2b584;
 }
+#section-left::-webkit-scrollbar {
+  width: 8px;
+}
+
+#section-left::-webkit-scrollbar-track {
+  background: #ffeab628;
+}
+
+#section-left::-webkit-scrollbar-thumb {
+  background-color: #ffeab6;
+  border-radius: 10px;
+  border: 2px solid #ffeab628;
+}
+
+#section-left::-webkit-scrollbar-thumb:hover {
+  background-color: #e2b584;
+}
 
 #store-title {
   width: 100%;
@@ -4050,4 +4067,220 @@ input:checked + .slider:before {
 .active-combo {
   background: rgba(255, 235, 59, 0.2);
   box-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+}
+
+.donut-coin {
+  position: absolute;
+  left: 305px;
+  top: 170px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1px 8px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.donut-coin .coin-image-wrapper {
+  position: relative;
+  width: 46px;
+  height: 46px;
+}
+
+.donut-coin img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.donut-coin.ready .coin-image-wrapper::before,
+.donut-coin.ready .coin-image-wrapper::after {
+  content: "★";
+  position: absolute;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  animation: starShine 2s linear infinite;
+}
+
+.donut-coin.ready .coin-image-wrapper::before {
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.donut-coin.ready .coin-image-wrapper::after {
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 1s;
+}
+
+.donut-coin.ready .coin-image-wrapper {
+  overflow: visible;
+}
+
+.donut-coin.ready .coin-image-wrapper::before {
+  content: "✦";
+}
+
+.donut-coin.ready .coin-image-wrapper::after {
+  content: "✧";
+}
+
+@keyframes starShine {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5) rotate(360deg);
+  }
+}
+
+.donut-coin.ready .coin-image-wrapper .star-left,
+.donut-coin.ready .coin-image-wrapper .star-right {
+  display: none;
+}
+
+.donut-coin.ready .coin-image-wrapper .star-left {
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starShineSide 2s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.donut-coin.ready .coin-image-wrapper .star-right {
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starShineSide 2s linear infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes starShineSide {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(360deg);
+  }
+}
+
+.donut-coin:hover {
+  transform: scale(1.1);
+}
+
+.donut-coin img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+#donut-coin-count {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.donut-coin-info {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 15px;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  width: 200px;
+  display: none;
+  z-index: 1000;
+  border: 1px solid #ffd700;
+}
+
+.donut-coin:hover .donut-coin-info {
+  display: block;
+}
+
+.donut-coin-info p {
+  margin: 5px 0;
+}
+
+.donut-coin-info .time-remaining {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.donut-coin-info .total-coins {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.donut-coin-info .message {
+  font-style: italic;
+  font-weight: 300;
+  color: white;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.coin-image-wrapper .star-left,
+.coin-image-wrapper .star-right {
+  display: none;
+  position: absolute;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.donut-coin.ready .coin-image-wrapper .star-left,
+.donut-coin.ready .coin-image-wrapper .star-right {
+  display: block;
+}
+
+.donut-coin.ready .coin-image-wrapper .star-left {
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starShineSide 2s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.donut-coin.ready .coin-image-wrapper .star-right {
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: starShineSide 2s linear infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes starShineSide {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5) rotate(360deg);
+  }
 }

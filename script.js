@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.3.9";
+    this.currentVersion = "1.4.0";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -1746,6 +1746,13 @@ class Game {
       catchQueue: new Set(), // Yakalanacak donutları takip et
       processingInterval: null,
     };
+
+    // DonutCoin sistemi için yeni özellikler
+    this.donutCoin = {
+      count: 0,
+      lastClaimTime: 0,
+      claimInterval: 24 * 60 * 60 * 1000, // 24 saat
+    };
   }
 
   // Resim önbellekleme sistemi
@@ -1753,13 +1760,10 @@ class Game {
     const imagesToPreload = [
       // Donut görselleri
       "donutNew.webp",
-      "chocoDonut.webp",
-      "classic-donut.webp",
-      "donut5.webp",
-      "donut.webp",
-      "donutNew.webp",
+      "donutSign1.webp",
       "donutPixelArt.ico",
       "donutMoney.webp",
+      "donutCoin.webp",
 
       // Upgrade görselleri
       ...this.upgrades.cursor.map((u) => u.img),
@@ -1812,6 +1816,7 @@ class Game {
     this.initializeComboSystem();
     this.loadGame();
     this.updateBakeryName();
+    this.setupDonutCoin();
 
     // Zamanlayıcıları optimize et
     setInterval(this._throttle(this.saveGame.bind(this), 60000), 180000);
@@ -2262,31 +2267,49 @@ class Game {
   }
   calculateClickValue() {
     let clickValue = 1; // Base click value
-    let multiplier = 1;
+    let normalMultiplier = 1;
+    let x10Multiplier = 1;
 
+    // Cursor upgrade'lerinin etkisini hesapla
+    this.upgrades.cursor.forEach((upgrade) => {
+      if (upgrade.purchased && !upgrade.specialEffect) {
+        if (
+          upgrade === this.upgrades.cursor[5] || // Ruby Cursor
+          upgrade === this.upgrades.cursor[6] || // Verdant Precision
+          upgrade === this.upgrades.cursor[7] // Obsidian Whisper
+        ) {
+          x10Multiplier *= 10;
+        } else {
+          normalMultiplier *= upgrade.multiplier;
+        }
+      }
+    });
+
+    // Dynamic boost upgrade'ini kontrol et
     const dynamicBoostUpgrade = this.upgrades.cursor[4];
-    let cursorBoost = 0;
-
     if (dynamicBoostUpgrade.purchased) {
       // Tüm binaların toplamını hesapla (cursor hariç)
       for (let key in this.items) {
         if (key !== "cursor") {
-          cursorBoost += this.items[key].count;
+          clickValue += this.items[key].count;
         }
       }
-      clickValue += cursorBoost; // Click value'ya boost ekle
     }
+
+    // Normal multiplier'ları uygula
+    clickValue *= normalMultiplier;
+
+    // x10 multiplier'ları uygula
+    clickValue *= x10Multiplier;
+
     // Donut Upgrades'lerin etkisini ekle
     if (this.upgrades.donutUpgrades) {
       this.upgrades.donutUpgrades.forEach((upgrade) => {
         if (upgrade.purchased) {
-          clickValue *= upgrade.multiplier; // Her satın alınan donut upgrade'i için %3 artış
+          clickValue *= upgrade.multiplier;
         }
       });
     }
-
-    // En son x10 multiplier'ları uygula
-    clickValue *= multiplier;
 
     // nonItemUpgrades için DPS bonus hesaplaması
     const perSecond = this.calculatePerSecond();
@@ -2297,6 +2320,11 @@ class Game {
     if (purchasedNonItemUpgrades > 0) {
       const perSecondBoost = perSecond * (0.01 * purchasedNonItemUpgrades);
       clickValue += perSecondBoost;
+    }
+
+    // Aktif multiplier varsa uygula
+    if (this.activeMultipliers && this.activeMultipliers.length > 0) {
+      clickValue *= this.productionMultiplier;
     }
 
     return clickValue;
@@ -2605,19 +2633,14 @@ class Game {
       if (itemKey === "nonItemUpgrades") {
         if (upgrade.specialEffect === "automation") {
           this.autoCatcherEnabled = true;
-        } else {
-          this.clickValue *= upgrade.multiplier;
         }
       } else if (itemKey === "donutUpgrades") {
-        // Tüm üretimleri ve click value'yu %3 arttır
+        // Tüm üretimleri güncelle
         for (let key in this.items) {
-          // originalProduction'ı güncelle
           if (this.items[key].originalProduction) {
             this.items[key].originalProduction *= upgrade.multiplier;
           }
         }
-        // Click value'yu da artır
-        this.clickValue *= upgrade.multiplier;
       } else if (itemKey !== "cursor") {
         // Cursor dışındaki itemlar için
         const item = this.items[itemKey];
@@ -2625,6 +2648,9 @@ class Game {
           item.originalProduction *= upgrade.multiplier;
         }
       }
+
+      // Her upgrade sonrası click value'yu yeniden hesapla
+      this.clickValue = this.calculateClickValue();
 
       // UI güncellemeleri
       const upgradeList = document.getElementById("upgrade-list");
@@ -4027,6 +4053,7 @@ class Game {
       currentBakeryName: this.currentBakeryName,
       quests: this.quests,
       activeMultipliers: this.activeMultipliers,
+      donutCoin: this.donutCoin,
     };
 
     localStorage.setItem("gameState", JSON.stringify(gameState));
@@ -4128,6 +4155,11 @@ class Game {
       this.showUpgrades();
       this.updatePrestigeBar();
       this.updateTotalPerSecond();
+      this.donutCoin = gameState.donutCoin || {
+        count: 0,
+        lastClaimTime: 0,
+        claimInterval: 24 * 60 * 60 * 1000,
+      };
     }
   }
   async updateGameVersion(gameState) {
@@ -5254,6 +5286,77 @@ class Game {
     setTimeout(() => {
       effect.remove();
     }, 1000);
+  }
+
+  setupDonutCoin() {
+    const donutCoinElement = document.getElementById("donut-coin");
+    const donutCoinCount = document.getElementById("donut-coin-count");
+
+    // Info panel oluştur
+    const infoPanel = document.createElement("div");
+    infoPanel.className = "donut-coin-info";
+    infoPanel.innerHTML = `
+      <p>Remaining Time: <span class="time-remaining">24:00:00</span></p>
+      <p>Total DonutCoin: <span class="total-coins">0</span></p>
+      <p class="message">You can buy unique items with this coin!</p>
+    `;
+    donutCoinElement.appendChild(infoPanel);
+
+    // Tıklama olayı
+    donutCoinElement.addEventListener("click", () => {
+      this.claimDonutCoin();
+    });
+
+    // Her saniye kalan süreyi güncelle
+    setInterval(() => {
+      this.updateDonutCoinDisplay();
+    }, 1000);
+  }
+
+  updateDonutCoinDisplay() {
+    const donutCoinCount = document.getElementById("donut-coin-count");
+    const timeRemaining = document.querySelector(".time-remaining");
+    const totalCoins = document.querySelector(".total-coins");
+    const donutCoinElement = document.getElementById("donut-coin");
+
+    if (donutCoinCount && timeRemaining && totalCoins) {
+      donutCoinCount.textContent = this.donutCoin.count;
+      totalCoins.textContent = this.donutCoin.count;
+
+      const now = Date.now();
+      const timeLeft =
+        this.donutCoin.lastClaimTime + this.donutCoin.claimInterval - now;
+
+      if (timeLeft > 0) {
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        timeRemaining.textContent = `${hours
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+        timeRemaining.style.color = "";
+        donutCoinElement.classList.remove("ready");
+      } else {
+        timeRemaining.textContent = "Hazır!";
+        timeRemaining.style.color = "#00ff00";
+        donutCoinElement.classList.add("ready");
+      }
+    }
+  }
+
+  claimDonutCoin() {
+    const now = Date.now();
+    const donutCoinElement = document.getElementById("donut-coin");
+    if (now - this.donutCoin.lastClaimTime >= this.donutCoin.claimInterval) {
+      this.donutCoin.count++;
+      this.donutCoin.lastClaimTime = now;
+      donutCoinElement.classList.remove("ready");
+      this.updateDonutCoinDisplay();
+      this.showNotification("DonutCoin kazandın!");
+      this.saveGame();
+    }
   }
 }
 
