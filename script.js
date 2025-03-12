@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.4.2";
+    this.currentVersion = "1.4.3";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -1761,7 +1761,7 @@ class Game {
       // Donut görselleri
       "donutNew.webp",
       "donutSign1.webp",
-      "donutPixelArt.ico",
+      "donutPixelArt.webp",
       "donutMoney.webp",
       "donutCoin.webp",
 
@@ -2047,16 +2047,6 @@ class Game {
     let basePerSecond = 0;
     let itemProductions = {};
 
-    // Donut upgrade'lerinden gelen toplam çarpanı hesapla
-    let donutUpgradeMultiplier = 1;
-    if (this.upgrades.donutUpgrades) {
-      this.upgrades.donutUpgrades.forEach((upgrade) => {
-        if (upgrade.purchased && upgrade.type === "perSecond") {
-          donutUpgradeMultiplier *= upgrade.multiplier;
-        }
-      });
-    }
-
     // Tüm itemların üretimini hesapla
     for (let key in this.items) {
       let itemProduction = 0;
@@ -2101,9 +2091,6 @@ class Game {
         // En son x10 multiplier'ları uygula
         cursorProduction *= x10Multiplier;
 
-        // Donut upgrade'lerini uygula
-        cursorProduction *= donutUpgradeMultiplier;
-
         // Multiplier etkisini ekle
         if (this.activeMultipliers && this.activeMultipliers.length > 0) {
           cursorProduction *= this.productionMultiplier;
@@ -2133,18 +2120,6 @@ class Game {
             baseProduction = baseProduction * (1 + mineBonus);
           }
         }
-
-        // Binanın upgrade'lerini uygula
-        if (this.upgrades[key]) {
-          this.upgrades[key].forEach((upgrade) => {
-            if (upgrade.purchased && !upgrade.specialEffect) {
-              baseProduction *= upgrade.multiplier;
-            }
-          });
-        }
-
-        // Donut upgrade'lerini uygula
-        baseProduction *= donutUpgradeMultiplier;
 
         // Aktif multiplier varsa uygula
         if (this.activeMultipliers && this.activeMultipliers.length > 0) {
