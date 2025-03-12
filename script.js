@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.4.1";
+    this.currentVersion = "1.4.2";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -2047,6 +2047,16 @@ class Game {
     let basePerSecond = 0;
     let itemProductions = {};
 
+    // Donut upgrade'lerinden gelen toplam çarpanı hesapla
+    let donutUpgradeMultiplier = 1;
+    if (this.upgrades.donutUpgrades) {
+      this.upgrades.donutUpgrades.forEach((upgrade) => {
+        if (upgrade.purchased && upgrade.type === "perSecond") {
+          donutUpgradeMultiplier *= upgrade.multiplier;
+        }
+      });
+    }
+
     // Tüm itemların üretimini hesapla
     for (let key in this.items) {
       let itemProduction = 0;
@@ -2091,6 +2101,9 @@ class Game {
         // En son x10 multiplier'ları uygula
         cursorProduction *= x10Multiplier;
 
+        // Donut upgrade'lerini uygula
+        cursorProduction *= donutUpgradeMultiplier;
+
         // Multiplier etkisini ekle
         if (this.activeMultipliers && this.activeMultipliers.length > 0) {
           cursorProduction *= this.productionMultiplier;
@@ -2130,6 +2143,9 @@ class Game {
           });
         }
 
+        // Donut upgrade'lerini uygula
+        baseProduction *= donutUpgradeMultiplier;
+
         // Aktif multiplier varsa uygula
         if (this.activeMultipliers && this.activeMultipliers.length > 0) {
           baseProduction *= this.productionMultiplier;
@@ -2141,6 +2157,15 @@ class Game {
 
       itemProductions[key] = itemProduction;
       basePerSecond += itemProduction;
+    }
+
+    // Donut upgrade'lerinden gelen toplam üretim bonusunu uygula
+    if (this.upgrades.donutUpgrades) {
+      this.upgrades.donutUpgrades.forEach((upgrade) => {
+        if (upgrade.purchased && upgrade.type === "totalProduced") {
+          basePerSecond *= upgrade.multiplier;
+        }
+      });
     }
 
     this.totalPerSecond = basePerSecond;
@@ -2634,15 +2659,11 @@ class Game {
         if (upgrade.specialEffect === "automation") {
           this.autoCatcherEnabled = true;
         }
-      } else if (itemKey === "donutUpgrades") {
-        // Tüm üretimleri güncelle
-        for (let key in this.items) {
-          if (this.items[key].originalProduction) {
-            this.items[key].originalProduction *= upgrade.multiplier;
-          }
-        }
-      } else if (itemKey !== "cursor") {
-        // Cursor dışındaki itemlar için
+      } else if (itemKey === "cursor") {
+        // Cursor için özel bir işlem yapmıyoruz
+        // Cursor multiplier'ları updateTotalPerSecond'da hesaplanıyor
+      } else {
+        // Diğer itemlar için (donutUpgrades dahil)
         const item = this.items[itemKey];
         if (item && item.originalProduction) {
           item.originalProduction *= upgrade.multiplier;
@@ -3415,17 +3436,20 @@ class Game {
       elements.feature.innerHTML = featureHTML;
     };
 
-    // RAF kullanarak güncelleme yap
     let frameRequest;
-    const tick = () => {
-      updateItemInfo();
+    let lastUpdate = 0;
+    const UPDATE_INTERVAL = 1000; // 1 saniyede bir güncelle
+
+    const tick = (timestamp) => {
+      if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
+        updateItemInfo();
+        lastUpdate = timestamp;
+      }
       frameRequest = requestAnimationFrame(tick);
     };
 
-    // İlk güncellemeyi yap
+    // İlk güncellemeyi hemen yap
     updateItemInfo();
-
-    // RAF'ı başlat
     frameRequest = requestAnimationFrame(tick);
 
     // Panel pozisyonunu ayarla
@@ -3881,14 +3905,13 @@ class Game {
   updateBakeryName() {
     const bakeryNameElement = document.getElementById("bakery-name");
     if (bakeryNameElement) {
-      // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata (kaydetme)
+      // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata VE kaydet
       let savedName = localStorage.getItem("bakeryName");
-      if (savedName) {
-        this.currentBakeryName = savedName;
-      } else {
-        this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
+      if (!savedName) {
+        savedName = this.getRandomBakeryName() + "'s Bakery";
+        localStorage.setItem("bakeryName", savedName);
       }
-
+      this.currentBakeryName = savedName;
       bakeryNameElement.textContent = this.currentBakeryName;
     }
   }
@@ -3996,17 +4019,14 @@ class Game {
   updateBakeryName() {
     const bakeryNameElement = document.getElementById("bakery-name");
 
-    // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata (kaydetme)
+    // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata VE kaydet
     let savedName = localStorage.getItem("bakeryName");
-    if (savedName) {
-      this.currentBakeryName = savedName;
-    } else {
-      this.currentBakeryName = this.getRandomBakeryName() + "'s Bakery";
+    if (!savedName) {
+      savedName = this.getRandomBakeryName() + "'s Bakery";
+      localStorage.setItem("bakeryName", savedName);
     }
-
-    if (bakeryNameElement) {
-      bakeryNameElement.textContent = this.currentBakeryName;
-    }
+    this.currentBakeryName = savedName;
+    bakeryNameElement.textContent = this.currentBakeryName;
   }
   openChangeNameModal() {
     const modal = document.getElementById("changeNameModal");
