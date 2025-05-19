@@ -1751,66 +1751,202 @@ class Game {
       lastClaimTime: 0,
       claimInterval: 24 * 60 * 60 * 1000, // 24 saat
     };
-  }
 
-  // Resim önbellekleme sistemi
-  preloadImages() {
-    const imagesToPreload = [
-      // Donut görselleri
-      "donutNew.webp",
-      "donutSign1.webp",
-      "donutPixelArt.webp",
-      "donutMoney.webp",
-      "donutCoin.webp",
+    // Benzersiz kullanıcı ID'si yönetimi
+    this.userId = localStorage.getItem("userId");
+    if (!this.userId) {
+      this.userId = self.crypto.randomUUID(); // Yeni benzersiz ID oluştur
+      localStorage.setItem("userId", this.userId);
+    }
 
-      // Upgrade görselleri
-      ...this.upgrades.cursor.map((u) => u.img),
-      ...this.upgrades.baker.map((u) => u.img),
-      ...this.upgrades.farm.map((u) => u.img),
-      ...this.upgrades.mine.map((u) => u.img),
-      ...this.upgrades.factory.map((u) => u.img),
-      ...this.upgrades.logisticCenter.map((u) => u.img),
-      ...this.upgrades.powerPlant.map((u) => u.img),
-      ...this.upgrades.nature.map((u) => u.img),
-      ...this.upgrades.nonItemUpgrades.map((u) => u.img),
-      ...this.upgrades.donutUpgrades.map((u) => u.img),
+    // Leaderboard fonksiyonları (Game sınıfı içine taşındı)
+    // submitScore fonksiyonu userId ve totalDonutsEarned gönderecek şekilde güncellendi
+    this.submitScore = async function (userId, nickname, score) {
+      console.log(
+        "Skor gönderiliyor - User ID:",
+        userId,
+        ", Nickname:",
+        nickname,
+        "(Type: " + typeof nickname + "), Skor:",
+        score,
+        "(Type: " + typeof score + ")"
+      ); // Debug log
 
-      // Bina görselleri
-      "cursor.webp",
-      "baker.webp",
-      "farm.webp",
-      "mine.webp",
-      "factory.webp",
-      "logisticCenter.webp",
-      "powerPlant.webp",
-      "nature.webp",
+      // Nickname ve score için ek kontrol
+      const finalNickname =
+        nickname && typeof nickname === "string" && nickname.trim().length > 0
+          ? nickname.trim()
+          : "Misafir";
+      const finalScore = typeof score === "number" && score >= 0 ? score : 0; // Negatif skorları da engelle
 
-      // Malzeme görselleri
-      "dough.webp",
-      "sugar.webp",
-      "chocolate.webp",
-
-      // Maden görselleri
-      "copper.webp",
-      "iron.webp",
-      "gold.webp",
-      "diamond.webp",
-    ];
-
-    // Her resmi önbelleğe al
-    imagesToPreload.forEach((imagePath) => {
-      if (!this.preloadedImages.has(imagePath)) {
-        const img = new Image();
-        img.src = `img/${imagePath}`;
-        this.imageCache.set(imagePath, img);
-        this.preloadedImages.add(imagePath);
+      // Eğer userId veya finalNickname boşsa veya finalScore geçerli değilse gönderme
+      if (!userId || !finalNickname || typeof finalScore !== "number") {
+        console.error(
+          `Geçersiz kullanıcı ID'si, skor veya kullanıcı adı. Gönderilemiyor. Detay: Nickname: ${finalNickname}, Skor: ${finalScore}`
+        ); // String formatı düzeltildi
+        return { success: false, error: "Geçersiz veri" };
       }
-    });
+
+      try {
+        const res = await fetch("/api/leaderboard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            nickname: finalNickname,
+            score: finalScore,
+          }),
+        });
+
+        // Yanıtı kontrol et
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`HTTP hata! Durum: ${res.status}, Yanıt: ${errorText}`);
+          // Hata durumunda JSON parse etmeye çalışma
+          return null;
+        }
+
+        return await res.json();
+      } catch (error) {
+        console.error("Skor gönderilirken hata:", error);
+        return null;
+      }
+    };
+
+    this.fetchLeaderboard = async function () {
+      try {
+        const res = await fetch("/api/leaderboard");
+        return await res.json();
+      } catch (error) {
+        console.error("Leaderboard alınırken hata:", error);
+        return null;
+      }
+    };
+
+    // Leaderboard modalını göster - Sync butonu eklendi
+    this.showLeaderboardModal = function () {
+      const modal = document.createElement("div");
+      modal.className = "leaderboard-modal";
+      modal.innerHTML = `
+        <div class="leaderboard-content">
+          <h2>Monthly Leaderboard</h2>
+          <div class="leaderboard-list"></div>
+          <button class="sync-score-button">Sync Score</button>
+          <button class="close-modal">Close</button>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Leaderboard verilerini yükle
+      this.loadLeaderboardData(); // this. kullanıldı
+
+      // Kapatma butonu
+      modal.querySelector(".close-modal").onclick = () => {
+        modal.remove();
+      };
+
+      // Sync butonu event listener
+      modal.querySelector(".sync-score-button").onclick = async () => {
+        const nickname =
+          this.currentBakeryName ||
+          localStorage.getItem("bakeryName") ||
+          "Guest";
+        console.log(
+          "Sync butonuna tıklandı - totalDonutsEarned:",
+          this.totalDonutsEarned
+        ); // Debug log: Gönderilecek değeri kontrol et
+        // submitScore çağrısı userId ve totalDonutsEarned gönderecek şekilde güncellendi
+        const result = await this.submitScore(
+          this.userId,
+          nickname,
+          this.totalDonutsEarned
+        );
+        if (result?.success) {
+          this.showNotification("Score sent to leaderboard!"); // Tırnak işareti düzeltildi
+          this.loadLeaderboardData(); // Leaderboard'u yeniden yükle
+        } else {
+          this.showNotification("Error sending score.");
+        }
+      };
+    }.bind(this); // this bağlamı korundu
+
+    // Leaderboard verilerini yükle ve göster
+    this.loadLeaderboardData = async function () {
+      console.log("loadLeaderboardData çalıştı."); // Adım 1
+      const data = await this.fetchLeaderboard(); // this. kullanıldı
+      console.log("Fetch sonucu:", data); // Adım 2
+      if (!data) {
+        console.error("Leaderboard verisi alınamadı."); // Adım 3
+        return;
+      }
+
+      const list = document.querySelector(".leaderboard-list");
+      console.log("Leaderboard list elementi:", list); // Adım 4
+      if (!list) {
+        console.error(".leaderboard-list elementi bulunamadı!"); // Adım 5
+        return;
+      }
+      list.innerHTML = "";
+
+      // this.currentBakeryName kullanıldı
+      const myName =
+        this.currentBakeryName || localStorage.getItem("bakeryName") || "Guest";
+
+      if (data.entries && data.entries.length > 0) {
+        // entries dizisi var mı ve boş değil mi kontrol et
+        console.log("Leaderboard girişleri:", data.entries); // Adım 6
+        data.entries.forEach((entry, index) => {
+          // Normal fonksiyon yerine arrow function kullanıldı
+          console.log(
+            `Giriş işleniyor: ${entry.nickname}, Skor: ${entry.score}`
+          ); // Adım 7
+          const item = document.createElement("div");
+          item.className = "leaderboard-item";
+          if (entry.nickname === myName) {
+            item.classList.add("my-nickname");
+          }
+          // Debug metni kaldırıldı
+          item.innerHTML = `
+              <span class="rank">#${index + 1}</span>
+              <span class="nickname">${entry.nickname}</span>
+              <span class="score">${this.formatNumber(
+                entry.score
+              )} donuts</span>
+            `;
+          list.appendChild(item);
+        });
+        console.log("Leaderboard girişleri eklendi."); // Adım 8
+      } else {
+        console.log(
+          "Leaderboard boş veya veri formatı hatalı: entries dizisi bulunamadı veya boş."
+        ); // Adım 9
+        list.innerHTML = '<p style="text-align: center;">Leaderboard boş.</p>';
+      }
+    }.bind(this); // this bağlamı korundu
+
+    // Add leaderboard button to header-left under Info
+    this.addLeaderboardButton = function () {
+      // Remove old leaderboard button if exists
+      const oldBtn = document.querySelector(".leaderboard-button");
+      if (oldBtn) oldBtn.remove();
+      // Find Info button in header-left
+      const headerLeft = document.querySelector(".header-left");
+      const infoBtn = document.getElementById("info-button");
+      if (headerLeft && infoBtn) {
+        // Create leaderboard button
+        const leaderboardBtn = document.createElement("button");
+        leaderboardBtn.className = "leaderboard-button";
+        leaderboardBtn.innerHTML = "🏆 Leaderboard";
+        leaderboardBtn.style.marginTop = "10px";
+        leaderboardBtn.onclick = this.showLeaderboardModal;
+        // Insert after Info button inside header-left
+        headerLeft.insertBefore(leaderboardBtn, infoBtn.nextSibling);
+      }
+    };
   }
 
   init() {
-    // Önce resimleri yükle
-    this.preloadImages();
     this.initializeComboSystem();
     this.loadGame();
     this.updateBakeryName();
@@ -1890,6 +2026,21 @@ class Game {
     if (versionElem) {
       versionElem.textContent = `v${this.currentVersion}`;
     }
+
+    // Oyun başladığında leaderboard butonunu ekle (init metodu içine taşındı)
+    window.addEventListener("load", () => {
+      this.addLeaderboardButton(); // this. kullanıldı
+    });
+
+    // Her 5 dakikada bir skoru güncelle (init metodu içinde)
+    setInterval(async () => {
+      const nickname =
+        this.currentBakeryName ||
+        localStorage.getItem("bakeryName") ||
+        "Misafir";
+      // submitScore çağrısı userId ve totalDonutsEarned gönderecek şekilde güncellendi
+      await this.submitScore(this.userId, nickname, this.totalDonutsEarned);
+    }, 5 * 60 * 1000);
   }
   updateDisplay() {
     // Performans optimizasyonu için RAF kullan
@@ -2167,7 +2318,12 @@ class Game {
     // Depolanmış totalPerSecond kullanarak hesaplama
     const donutsProduced = this.totalPerSecond * deltaTime;
     this.donutCount += donutsProduced;
-    this.totalDonutsEarned += donutsProduced;
+    this.totalDonutsEarned += donutsProduced; // Bu satır totalDonutsEarned'ü güncelliyor
+
+    console.log(
+      "updateProduction - totalDonutsEarned:",
+      this.totalDonutsEarned
+    ); // Debug log: totalDonutsEarned'ün güncellendiğini kontrol et
 
     // Her item'in toplam üretimini de artır
     for (let key in this.items) {
@@ -5453,7 +5609,7 @@ class Game {
 
 document.addEventListener("DOMContentLoaded", () => {
   const game = new Game(); // Game sınıfından bir örnek oluştur
-  game.init(); // Game sınıfındaki init fonksiyonunu çağırarak oyunu başlat
+  game.init.call(game); // init fonksiyonunu game bağlamı ile çağırarak oyunu başlat
   const resetButton = document.getElementById("reset-button");
 
   resetButton.addEventListener("click", () => {
