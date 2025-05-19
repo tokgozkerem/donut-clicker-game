@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.4.3";
+    this.currentVersion = "1.4.5";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -772,8 +772,6 @@ class Game {
     this.totalClicks = 0;
     this.purchaseAmount = 1;
     this.lastUpdateTime = Date.now();
-    this.lastBakerProduction = Date.now(); // Baker üretimi için son üretim zamanı
-    this.lastMineProduction = Date.now(); // Mine üretimi için son üretim zaman
     this.productionMultiplier = 1;
     this.ingredientTypes = [
       { type: "Dough", rarity: 0.5, price: this.items.baker.baseCost * 0.015 },
@@ -1887,6 +1885,11 @@ class Game {
     this.setupSettingsMenu();
 
     this.setupAutoBuyer();
+    // Versiyon bilgisini göster
+    const versionElem = document.getElementById("game-version");
+    if (versionElem) {
+      versionElem.textContent = `v${this.currentVersion}`;
+    }
   }
   updateDisplay() {
     // Performans optimizasyonu için RAF kullan
@@ -1907,9 +1910,10 @@ class Game {
       perSecond: this.formatNumber(this.totalPerSecond, "perSecond"),
     };
 
-    // Batch DOM updates
-    if (this.counter.textContent !== `${updates.counter} donuts`) {
+    // Sadece değişiklik olduğunda güncelle
+    if (this._lastCounter !== updates.counter) {
       this.counter.textContent = `${updates.counter} donuts`;
+      this._lastCounter = updates.counter;
     }
 
     // Multiplier kontrolü ve güncelleme
@@ -1921,7 +1925,10 @@ class Game {
 
       if (this.activeMultipliers.length === 0) {
         this.productionMultiplier = 1;
-        this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
+        if (this._lastPerSecond !== updates.perSecond) {
+          this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
+          this._lastPerSecond = updates.perSecond;
+        }
         this.perSecondDisplay.classList.remove("boosted");
         return;
       }
@@ -1939,7 +1946,8 @@ class Game {
       const progress =
         (remainingTime / (currentMultiplier.duration / 1000)) * 100;
 
-      this.perSecondDisplay.innerHTML = `
+      // Sadece değişiklik olduğunda güncelle
+      const boostedHTML = `
           <div class="boosted-per-second">
               <div class="per-second-text">per second: ${
                 updates.perSecond
@@ -1957,12 +1965,20 @@ class Game {
               </div>
           </div>
       `;
+      if (this._lastBoostedHTML !== boostedHTML) {
+        this.perSecondDisplay.innerHTML = boostedHTML;
+        this._lastBoostedHTML = boostedHTML;
+      }
       this.perSecondDisplay.classList.add("boosted");
     } else {
-      this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
-      this.perSecondDisplay.classList.remove("boosted"); // Burayı ekledik
+      if (this._lastPerSecond !== updates.perSecond) {
+        this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
+        this._lastPerSecond = updates.perSecond;
+      }
+      this.perSecondDisplay.classList.remove("boosted");
     }
 
+    // Store item güncellemeleri için fragment kullan
     for (let key in this.items) {
       const costElem = document.getElementById(`${key}Cost`);
       const storeItem = document.querySelector(
@@ -1974,19 +1990,19 @@ class Game {
           this.items[key],
           this.purchaseAmount
         );
-        costElem.textContent = this.formatNumber(bulkCost, "cost");
+        const formattedBulkCost = this.formatNumber(bulkCost, "cost");
+        if (costElem.textContent !== formattedBulkCost) {
+          costElem.textContent = formattedBulkCost;
+        }
 
-        // Fiyat rengini ayarla
-        if (this.donutCount >= bulkCost) {
-          costElem.style.color = "#6f6"; // Yeşil
+        // Fiyat rengini ayarla (yalnızca değiştiyse)
+        const enough = this.donutCount >= bulkCost;
+        if (costElem._lastEnough !== enough) {
+          costElem.style.color = enough ? "#6f6" : "red";
           if (storeItem) {
-            storeItem.classList.remove("insufficient-funds");
+            storeItem.classList.toggle("insufficient-funds", !enough);
           }
-        } else {
-          costElem.style.color = "red"; // Kırmızı
-          if (storeItem) {
-            storeItem.classList.add("insufficient-funds");
-          }
+          costElem._lastEnough = enough;
         }
 
         // Alım miktarı göstergesi
@@ -1997,7 +2013,7 @@ class Game {
             span.className = "purchase-amount";
             span.textContent = `x${this.purchaseAmount}`;
             storeItem.querySelector(".item-img").appendChild(span);
-          } else {
+          } else if (amountDisplay.textContent !== `x${this.purchaseAmount}`) {
             amountDisplay.textContent = `x${this.purchaseAmount}`;
           }
         } else if (amountDisplay) {
@@ -2005,36 +2021,33 @@ class Game {
         }
       }
 
-      // Toplam sayıyı formatla
+      // Toplam sayıyı formatla (yalnızca değiştiyse)
       const totalElem = document.getElementById(
         `total${this.capitalize(key)}s`
       );
-      if (totalElem) {
-        totalElem.textContent = this.formatNumber(
-          this.items[key].count,
-          "count"
-        );
-      } else {
-        console.error(`Missing total${this.capitalize(key)}s element`);
+      const formattedCount = this.formatNumber(this.items[key].count, "count");
+      if (totalElem && totalElem.textContent !== formattedCount) {
+        totalElem.textContent = formattedCount;
       }
     }
+    // Mine ve Baker image efektleri
     const mineImage = document.querySelector(
       '.store-item[data-item="mine"] .item-img img'
     );
-    if (this.items.mine.count >= 1) {
-      mineImage.classList.add("active-mine-effect");
-    } else {
-      mineImage.classList.remove("active-mine-effect");
+    if (mineImage) {
+      mineImage.classList.toggle(
+        "active-mine-effect",
+        this.items.mine.count >= 1
+      );
     }
-
-    // Baker image kontrolü
     const bakerImage = document.querySelector(
       '.store-item[data-item="baker"] .item-img img'
     );
-    if (this.items.baker.count >= 1) {
-      bakerImage.classList.add("active-baker-effect");
-    } else {
-      bakerImage.classList.remove("active-baker-effect");
+    if (bakerImage) {
+      bakerImage.classList.toggle(
+        "active-baker-effect",
+        this.items.baker.count >= 1
+      );
     }
 
     // Upgrade'lerin durumunu dinamik olarak güncelle
@@ -4420,14 +4433,15 @@ class Game {
 
   openQuestMenu() {
     this.questsMenu.classList.remove("hidden");
-    this.updateQuestDisplay();
+    this.updateQuestDisplay(this._questResortNeeded);
+    this._questResortNeeded = false;
   }
 
   closeQuestMenu() {
     this.questsMenu.classList.add("hidden");
   }
 
-  updateQuestDisplay() {
+  updateQuestDisplay(forceResort = false) {
     const activeContainer = this.questsMenu.querySelector(
       ".quests-container.active"
     );
@@ -4435,29 +4449,107 @@ class Game {
       ".quests-container.completed"
     );
 
-    if (activeContainer) this.renderQuests(activeContainer, false);
-    if (completedContainer) this.renderQuests(completedContainer, true);
+    if (activeContainer)
+      this.updateQuestList(activeContainer, false, forceResort);
+    if (completedContainer)
+      this.updateQuestList(completedContainer, true, forceResort);
   }
 
-  renderQuests(container, showCompleted) {
-    container.innerHTML = "";
-    const fragment = document.createDocumentFragment();
-
-    const quests = Object.values(this.quests)
-      .filter((quest) => (showCompleted ? quest.claimed : !quest.claimed))
-      .sort((a, b) => {
-        // Tamamlanmış görevleri üste al
-        if (a.completed && !b.completed) return -1;
-        if (!a.completed && b.completed) return 1;
-        return 0;
+  updateQuestList(container, showCompleted, forceResort = false) {
+    let quests = Object.values(this.quests).filter((quest) =>
+      showCompleted ? quest.claimed : !quest.claimed
+    );
+    if (forceResort) {
+      quests = quests.sort((a, b) => {
+        if (!showCompleted) {
+          if (a.completed && !a.claimed && !(b.completed && !b.claimed))
+            return -1;
+          if (!(a.completed && !a.claimed) && b.completed && !b.claimed)
+            return 1;
+          if (!a.completed && b.completed) return 1;
+          if (a.completed && !b.completed) return -1;
+          return 0;
+        } else {
+          if (a.completed && !b.completed) return -1;
+          if (!a.completed && b.completed) return 1;
+          return 0;
+        }
       });
+    }
 
-    quests.forEach((quest) => {
-      const questElement = this.createQuestElement(quest);
-      if (questElement) fragment.appendChild(questElement);
+    // Mevcut DOM'daki quest kartlarını bir Map'e al
+    const existing = new Map();
+    container.querySelectorAll(".quest-item").forEach((el) => {
+      existing.set(el.getAttribute("data-quest-id"), el);
     });
 
-    container.appendChild(fragment);
+    // Performans için, sadece sırası değişenleri taşı
+    if (forceResort) {
+      // Sıralı şekilde yeni bir fragment oluştur
+      const fragment = document.createDocumentFragment();
+      quests.forEach((quest) => {
+        let el = existing.get(quest.id);
+        if (!el) {
+          // Yeni görev, ekle
+          el = this.createQuestElement(quest);
+        } else {
+          // Sadece değişen kısımları güncelle
+          this.updateQuestElement(el, quest);
+          existing.delete(quest.id);
+        }
+        fragment.appendChild(el);
+      });
+      // Container'ı tek seferde güncelle
+      container.innerHTML = "";
+      container.appendChild(fragment);
+    } else {
+      // Sıralama yoksa, sadece içerik güncelle
+      quests.forEach((quest) => {
+        let el = existing.get(quest.id);
+        if (!el) {
+          // Yeni görev, ekle
+          el = this.createQuestElement(quest);
+          container.appendChild(el);
+        } else {
+          // Sadece değişen kısımları güncelle
+          this.updateQuestElement(el, quest);
+          existing.delete(quest.id);
+        }
+      });
+    }
+
+    // Artık olmayan görevleri kaldır
+    existing.forEach((el) => el.remove());
+  }
+
+  updateQuestElement(el, quest) {
+    // Sadece ilerleme, buton, class vs. güncelle
+    const progressBar = el.querySelector(".progress-bar");
+    const progress = (quest.progress / quest.target) * 100;
+    if (progressBar && progressBar.style.width !== `${progress}%`) {
+      progressBar.style.width = `${progress}%`;
+    }
+    const progressText = el.querySelector(".progress-text");
+    const formattedProgress = `${this.formatNumber(
+      quest.progress
+    )}/${this.formatNumber(quest.target)}`;
+    if (progressText && progressText.textContent !== formattedProgress) {
+      progressText.textContent = formattedProgress;
+    }
+    // Buton durumu
+    const claimButton = el.querySelector(".claim-reward");
+    if (claimButton) {
+      if (quest.claimed) {
+        claimButton.disabled = true;
+        claimButton.textContent = "Completed";
+      } else if (quest.completed) {
+        claimButton.disabled = false;
+        claimButton.textContent = "Claim Reward";
+      } else {
+        claimButton.disabled = true;
+        claimButton.textContent = "In Progress";
+      }
+    }
   }
 
   switchQuestTab(tabName) {
@@ -4657,7 +4749,7 @@ class Game {
     }
     this._lastQuestCheck = now;
 
-    let hasNewCompletedQuest = false;
+    let anyCompleted = false;
 
     // Tamamlanmamış görevleri filtrele ve sadece onları kontrol et
     Object.values(this.quests)
@@ -4684,7 +4776,7 @@ class Game {
           // Quest tamamlandıysa
           if (!quest.completed && quest.progress >= quest.target) {
             quest.completed = true;
-            hasNewCompletedQuest = true;
+            anyCompleted = true;
 
             // Bildirim göster
             requestAnimationFrame(() => {
@@ -4728,13 +4820,17 @@ class Game {
               }
             });
           }
-
-          // Quest menüsü açıksa güncelle
-          if (!this.questsMenu.classList.contains("hidden")) {
-            this.updateQuestDisplay();
-          }
         }
       });
+    // Her zaman resort flag'i ayarla
+    if (anyCompleted) {
+      this._questResortNeeded = true;
+    }
+    // Quest menüsü açıksa güncelle
+    if (!this.questsMenu.classList.contains("hidden")) {
+      this.updateQuestDisplay(this._questResortNeeded);
+      this._questResortNeeded = false;
+    }
   }
 
   // Constructor dışına eklenecek yeni metod

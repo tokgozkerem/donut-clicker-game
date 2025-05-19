@@ -4284,3 +4284,26 @@ input:checked + .slider:before {
     transform: translateY(-50%) scale(0.5) rotate(360deg);
   }
 }
+
+#game-version {
+  margin: 0 auto 10px auto;
+  padding: 4px 16px;
+  display: inline-block;
+  background: rgba(40, 40, 40, 0.7);
+  color: #ffd700;
+  font-size: 15px;
+  font-family: "Playpen Sans", cursive, sans-serif;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  letter-spacing: 1px;
+  text-align: center;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: box-shadow 0.2s, background 0.2s;
+  cursor: default;
+}
+#game-version:hover {
+  background: rgba(60, 60, 60, 0.85);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.15);
+}
