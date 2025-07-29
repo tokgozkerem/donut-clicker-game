@@ -1,6 +1,6 @@
 class Game {
   constructor() {
-    this.currentVersion = "1.4.5";
+    this.currentVersion = "1.4.3";
     this.bakeryNames = [
       "Snowfall Crust",
       "Frosted Pines",
@@ -772,6 +772,8 @@ class Game {
     this.totalClicks = 0;
     this.purchaseAmount = 1;
     this.lastUpdateTime = Date.now();
+    this.lastBakerProduction = Date.now(); // Baker üretimi için son üretim zamanı
+    this.lastMineProduction = Date.now(); // Mine üretimi için son üretim zaman
     this.productionMultiplier = 1;
     this.ingredientTypes = [
       { type: "Dough", rarity: 0.5, price: this.items.baker.baseCost * 0.015 },
@@ -1751,202 +1753,66 @@ class Game {
       lastClaimTime: 0,
       claimInterval: 24 * 60 * 60 * 1000, // 24 saat
     };
+  }
 
-    // Benzersiz kullanıcı ID'si yönetimi
-    this.userId = localStorage.getItem("userId");
-    if (!this.userId) {
-      this.userId = self.crypto.randomUUID(); // Yeni benzersiz ID oluştur
-      localStorage.setItem("userId", this.userId);
-    }
+  // Resim önbellekleme sistemi
+  preloadImages() {
+    const imagesToPreload = [
+      // Donut görselleri
+      "donutNew.webp",
+      "donutSign1.webp",
+      "donutPixelArt.webp",
+      "donutMoney.webp",
+      "donutCoin.webp",
 
-    // Leaderboard fonksiyonları (Game sınıfı içine taşındı)
-    // submitScore fonksiyonu userId ve totalDonutsEarned gönderecek şekilde güncellendi
-    this.submitScore = async function (userId, nickname, score) {
-      console.log(
-        "Skor gönderiliyor - User ID:",
-        userId,
-        ", Nickname:",
-        nickname,
-        "(Type: " + typeof nickname + "), Skor:",
-        score,
-        "(Type: " + typeof score + ")"
-      ); // Debug log
+      // Upgrade görselleri
+      ...this.upgrades.cursor.map((u) => u.img),
+      ...this.upgrades.baker.map((u) => u.img),
+      ...this.upgrades.farm.map((u) => u.img),
+      ...this.upgrades.mine.map((u) => u.img),
+      ...this.upgrades.factory.map((u) => u.img),
+      ...this.upgrades.logisticCenter.map((u) => u.img),
+      ...this.upgrades.powerPlant.map((u) => u.img),
+      ...this.upgrades.nature.map((u) => u.img),
+      ...this.upgrades.nonItemUpgrades.map((u) => u.img),
+      ...this.upgrades.donutUpgrades.map((u) => u.img),
 
-      // Nickname ve score için ek kontrol
-      const finalNickname =
-        nickname && typeof nickname === "string" && nickname.trim().length > 0
-          ? nickname.trim()
-          : "Misafir";
-      const finalScore = typeof score === "number" && score >= 0 ? score : 0; // Negatif skorları da engelle
+      // Bina görselleri
+      "cursor.webp",
+      "baker.webp",
+      "farm.webp",
+      "mine.webp",
+      "factory.webp",
+      "logisticCenter.webp",
+      "powerPlant.webp",
+      "nature.webp",
 
-      // Eğer userId veya finalNickname boşsa veya finalScore geçerli değilse gönderme
-      if (!userId || !finalNickname || typeof finalScore !== "number") {
-        console.error(
-          `Geçersiz kullanıcı ID'si, skor veya kullanıcı adı. Gönderilemiyor. Detay: Nickname: ${finalNickname}, Skor: ${finalScore}`
-        ); // String formatı düzeltildi
-        return { success: false, error: "Geçersiz veri" };
+      // Malzeme görselleri
+      "dough.webp",
+      "sugar.webp",
+      "chocolate.webp",
+
+      // Maden görselleri
+      "copper.webp",
+      "iron.webp",
+      "gold.webp",
+      "diamond.webp",
+    ];
+
+    // Her resmi önbelleğe al
+    imagesToPreload.forEach((imagePath) => {
+      if (!this.preloadedImages.has(imagePath)) {
+        const img = new Image();
+        img.src = `img/${imagePath}`;
+        this.imageCache.set(imagePath, img);
+        this.preloadedImages.add(imagePath);
       }
-
-      try {
-        const res = await fetch("/api/leaderboard", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userId,
-            nickname: finalNickname,
-            score: finalScore,
-          }),
-        });
-
-        // Yanıtı kontrol et
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`HTTP hata! Durum: ${res.status}, Yanıt: ${errorText}`);
-          // Hata durumunda JSON parse etmeye çalışma
-          return null;
-        }
-
-        return await res.json();
-      } catch (error) {
-        console.error("Skor gönderilirken hata:", error);
-        return null;
-      }
-    };
-
-    this.fetchLeaderboard = async function () {
-      try {
-        const res = await fetch("/api/leaderboard");
-        return await res.json();
-      } catch (error) {
-        console.error("Leaderboard alınırken hata:", error);
-        return null;
-      }
-    };
-
-    // Leaderboard modalını göster - Sync butonu eklendi
-    this.showLeaderboardModal = function () {
-      const modal = document.createElement("div");
-      modal.className = "leaderboard-modal";
-      modal.innerHTML = `
-        <div class="leaderboard-content">
-          <h2>Monthly Leaderboard</h2>
-          <div class="leaderboard-list"></div>
-          <button class="sync-score-button">Sync Score</button>
-          <button class="close-modal">Close</button>
-        </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      // Leaderboard verilerini yükle
-      this.loadLeaderboardData(); // this. kullanıldı
-
-      // Kapatma butonu
-      modal.querySelector(".close-modal").onclick = () => {
-        modal.remove();
-      };
-
-      // Sync butonu event listener
-      modal.querySelector(".sync-score-button").onclick = async () => {
-        const nickname =
-          this.currentBakeryName ||
-          localStorage.getItem("bakeryName") ||
-          "Guest";
-        console.log(
-          "Sync butonuna tıklandı - totalDonutsEarned:",
-          this.totalDonutsEarned
-        ); // Debug log: Gönderilecek değeri kontrol et
-        // submitScore çağrısı userId ve totalDonutsEarned gönderecek şekilde güncellendi
-        const result = await this.submitScore(
-          this.userId,
-          nickname,
-          this.totalDonutsEarned
-        );
-        if (result?.success) {
-          this.showNotification("Score sent to leaderboard!"); // Tırnak işareti düzeltildi
-          this.loadLeaderboardData(); // Leaderboard'u yeniden yükle
-        } else {
-          this.showNotification("Error sending score.");
-        }
-      };
-    }.bind(this); // this bağlamı korundu
-
-    // Leaderboard verilerini yükle ve göster
-    this.loadLeaderboardData = async function () {
-      console.log("loadLeaderboardData çalıştı."); // Adım 1
-      const data = await this.fetchLeaderboard(); // this. kullanıldı
-      console.log("Fetch sonucu:", data); // Adım 2
-      if (!data) {
-        console.error("Leaderboard verisi alınamadı."); // Adım 3
-        return;
-      }
-
-      const list = document.querySelector(".leaderboard-list");
-      console.log("Leaderboard list elementi:", list); // Adım 4
-      if (!list) {
-        console.error(".leaderboard-list elementi bulunamadı!"); // Adım 5
-        return;
-      }
-      list.innerHTML = "";
-
-      // this.currentBakeryName kullanıldı
-      const myName =
-        this.currentBakeryName || localStorage.getItem("bakeryName") || "Guest";
-
-      if (data.entries && data.entries.length > 0) {
-        // entries dizisi var mı ve boş değil mi kontrol et
-        console.log("Leaderboard girişleri:", data.entries); // Adım 6
-        data.entries.forEach((entry, index) => {
-          // Normal fonksiyon yerine arrow function kullanıldı
-          console.log(
-            `Giriş işleniyor: ${entry.nickname}, Skor: ${entry.score}`
-          ); // Adım 7
-          const item = document.createElement("div");
-          item.className = "leaderboard-item";
-          if (entry.nickname === myName) {
-            item.classList.add("my-nickname");
-          }
-          // Debug metni kaldırıldı
-          item.innerHTML = `
-              <span class="rank">#${index + 1}</span>
-              <span class="nickname">${entry.nickname}</span>
-              <span class="score">${this.formatNumber(
-                entry.score
-              )} donuts</span>
-            `;
-          list.appendChild(item);
-        });
-        console.log("Leaderboard girişleri eklendi."); // Adım 8
-      } else {
-        console.log(
-          "Leaderboard boş veya veri formatı hatalı: entries dizisi bulunamadı veya boş."
-        ); // Adım 9
-        list.innerHTML = '<p style="text-align: center;">Leaderboard boş.</p>';
-      }
-    }.bind(this); // this bağlamı korundu
-
-    // Add leaderboard button to header-left under Info
-    this.addLeaderboardButton = function () {
-      // Remove old leaderboard button if exists
-      const oldBtn = document.querySelector(".leaderboard-button");
-      if (oldBtn) oldBtn.remove();
-      // Find Info button in header-left
-      const headerLeft = document.querySelector(".header-left");
-      const infoBtn = document.getElementById("info-button");
-      if (headerLeft && infoBtn) {
-        // Create leaderboard button
-        const leaderboardBtn = document.createElement("button");
-        leaderboardBtn.className = "leaderboard-button";
-        leaderboardBtn.innerHTML = "🏆 Leaderboard";
-        leaderboardBtn.style.marginTop = "10px";
-        leaderboardBtn.onclick = this.showLeaderboardModal;
-        // Insert after Info button inside header-left
-        headerLeft.insertBefore(leaderboardBtn, infoBtn.nextSibling);
-      }
-    };
+    });
   }
 
   init() {
+    // Önce resimleri yükle
+    this.preloadImages();
     this.initializeComboSystem();
     this.loadGame();
     this.updateBakeryName();
@@ -2021,26 +1887,6 @@ class Game {
     this.setupSettingsMenu();
 
     this.setupAutoBuyer();
-    // Versiyon bilgisini göster
-    const versionElem = document.getElementById("game-version");
-    if (versionElem) {
-      versionElem.textContent = `v${this.currentVersion}`;
-    }
-
-    // Oyun başladığında leaderboard butonunu ekle (init metodu içine taşındı)
-    window.addEventListener("load", () => {
-      this.addLeaderboardButton(); // this. kullanıldı
-    });
-
-    // Her 5 dakikada bir skoru güncelle (init metodu içinde)
-    setInterval(async () => {
-      const nickname =
-        this.currentBakeryName ||
-        localStorage.getItem("bakeryName") ||
-        "Misafir";
-      // submitScore çağrısı userId ve totalDonutsEarned gönderecek şekilde güncellendi
-      await this.submitScore(this.userId, nickname, this.totalDonutsEarned);
-    }, 5 * 60 * 1000);
   }
   updateDisplay() {
     // Performans optimizasyonu için RAF kullan
@@ -2061,10 +1907,9 @@ class Game {
       perSecond: this.formatNumber(this.totalPerSecond, "perSecond"),
     };
 
-    // Sadece değişiklik olduğunda güncelle
-    if (this._lastCounter !== updates.counter) {
+    // Batch DOM updates
+    if (this.counter.textContent !== `${updates.counter} donuts`) {
       this.counter.textContent = `${updates.counter} donuts`;
-      this._lastCounter = updates.counter;
     }
 
     // Multiplier kontrolü ve güncelleme
@@ -2076,10 +1921,7 @@ class Game {
 
       if (this.activeMultipliers.length === 0) {
         this.productionMultiplier = 1;
-        if (this._lastPerSecond !== updates.perSecond) {
-          this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
-          this._lastPerSecond = updates.perSecond;
-        }
+        this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
         this.perSecondDisplay.classList.remove("boosted");
         return;
       }
@@ -2097,8 +1939,7 @@ class Game {
       const progress =
         (remainingTime / (currentMultiplier.duration / 1000)) * 100;
 
-      // Sadece değişiklik olduğunda güncelle
-      const boostedHTML = `
+      this.perSecondDisplay.innerHTML = `
           <div class="boosted-per-second">
               <div class="per-second-text">per second: ${
                 updates.perSecond
@@ -2116,20 +1957,12 @@ class Game {
               </div>
           </div>
       `;
-      if (this._lastBoostedHTML !== boostedHTML) {
-        this.perSecondDisplay.innerHTML = boostedHTML;
-        this._lastBoostedHTML = boostedHTML;
-      }
       this.perSecondDisplay.classList.add("boosted");
     } else {
-      if (this._lastPerSecond !== updates.perSecond) {
-        this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
-        this._lastPerSecond = updates.perSecond;
-      }
-      this.perSecondDisplay.classList.remove("boosted");
+      this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
+      this.perSecondDisplay.classList.remove("boosted"); // Burayı ekledik
     }
 
-    // Store item güncellemeleri için fragment kullan
     for (let key in this.items) {
       const costElem = document.getElementById(`${key}Cost`);
       const storeItem = document.querySelector(
@@ -2141,19 +1974,19 @@ class Game {
           this.items[key],
           this.purchaseAmount
         );
-        const formattedBulkCost = this.formatNumber(bulkCost, "cost");
-        if (costElem.textContent !== formattedBulkCost) {
-          costElem.textContent = formattedBulkCost;
-        }
+        costElem.textContent = this.formatNumber(bulkCost, "cost");
 
-        // Fiyat rengini ayarla (yalnızca değiştiyse)
-        const enough = this.donutCount >= bulkCost;
-        if (costElem._lastEnough !== enough) {
-          costElem.style.color = enough ? "#6f6" : "red";
+        // Fiyat rengini ayarla
+        if (this.donutCount >= bulkCost) {
+          costElem.style.color = "#6f6"; // Yeşil
           if (storeItem) {
-            storeItem.classList.toggle("insufficient-funds", !enough);
+            storeItem.classList.remove("insufficient-funds");
           }
-          costElem._lastEnough = enough;
+        } else {
+          costElem.style.color = "red"; // Kırmızı
+          if (storeItem) {
+            storeItem.classList.add("insufficient-funds");
+          }
         }
 
         // Alım miktarı göstergesi
@@ -2164,7 +1997,7 @@ class Game {
             span.className = "purchase-amount";
             span.textContent = `x${this.purchaseAmount}`;
             storeItem.querySelector(".item-img").appendChild(span);
-          } else if (amountDisplay.textContent !== `x${this.purchaseAmount}`) {
+          } else {
             amountDisplay.textContent = `x${this.purchaseAmount}`;
           }
         } else if (amountDisplay) {
@@ -2172,33 +2005,36 @@ class Game {
         }
       }
 
-      // Toplam sayıyı formatla (yalnızca değiştiyse)
+      // Toplam sayıyı formatla
       const totalElem = document.getElementById(
         `total${this.capitalize(key)}s`
       );
-      const formattedCount = this.formatNumber(this.items[key].count, "count");
-      if (totalElem && totalElem.textContent !== formattedCount) {
-        totalElem.textContent = formattedCount;
+      if (totalElem) {
+        totalElem.textContent = this.formatNumber(
+          this.items[key].count,
+          "count"
+        );
+      } else {
+        console.error(`Missing total${this.capitalize(key)}s element`);
       }
     }
-    // Mine ve Baker image efektleri
     const mineImage = document.querySelector(
       '.store-item[data-item="mine"] .item-img img'
     );
-    if (mineImage) {
-      mineImage.classList.toggle(
-        "active-mine-effect",
-        this.items.mine.count >= 1
-      );
+    if (this.items.mine.count >= 1) {
+      mineImage.classList.add("active-mine-effect");
+    } else {
+      mineImage.classList.remove("active-mine-effect");
     }
+
+    // Baker image kontrolü
     const bakerImage = document.querySelector(
       '.store-item[data-item="baker"] .item-img img'
     );
-    if (bakerImage) {
-      bakerImage.classList.toggle(
-        "active-baker-effect",
-        this.items.baker.count >= 1
-      );
+    if (this.items.baker.count >= 1) {
+      bakerImage.classList.add("active-baker-effect");
+    } else {
+      bakerImage.classList.remove("active-baker-effect");
     }
 
     // Upgrade'lerin durumunu dinamik olarak güncelle
@@ -2318,12 +2154,7 @@ class Game {
     // Depolanmış totalPerSecond kullanarak hesaplama
     const donutsProduced = this.totalPerSecond * deltaTime;
     this.donutCount += donutsProduced;
-    this.totalDonutsEarned += donutsProduced; // Bu satır totalDonutsEarned'ü güncelliyor
-
-    console.log(
-      "updateProduction - totalDonutsEarned:",
-      this.totalDonutsEarned
-    ); // Debug log: totalDonutsEarned'ün güncellendiğini kontrol et
+    this.totalDonutsEarned += donutsProduced;
 
     // Her item'in toplam üretimini de artır
     for (let key in this.items) {
@@ -4589,15 +4420,14 @@ class Game {
 
   openQuestMenu() {
     this.questsMenu.classList.remove("hidden");
-    this.updateQuestDisplay(this._questResortNeeded);
-    this._questResortNeeded = false;
+    this.updateQuestDisplay();
   }
 
   closeQuestMenu() {
     this.questsMenu.classList.add("hidden");
   }
 
-  updateQuestDisplay(forceResort = false) {
+  updateQuestDisplay() {
     const activeContainer = this.questsMenu.querySelector(
       ".quests-container.active"
     );
@@ -4605,107 +4435,29 @@ class Game {
       ".quests-container.completed"
     );
 
-    if (activeContainer)
-      this.updateQuestList(activeContainer, false, forceResort);
-    if (completedContainer)
-      this.updateQuestList(completedContainer, true, forceResort);
+    if (activeContainer) this.renderQuests(activeContainer, false);
+    if (completedContainer) this.renderQuests(completedContainer, true);
   }
 
-  updateQuestList(container, showCompleted, forceResort = false) {
-    let quests = Object.values(this.quests).filter((quest) =>
-      showCompleted ? quest.claimed : !quest.claimed
-    );
-    if (forceResort) {
-      quests = quests.sort((a, b) => {
-        if (!showCompleted) {
-          if (a.completed && !a.claimed && !(b.completed && !b.claimed))
-            return -1;
-          if (!(a.completed && !a.claimed) && b.completed && !b.claimed)
-            return 1;
-          if (!a.completed && b.completed) return 1;
-          if (a.completed && !b.completed) return -1;
-          return 0;
-        } else {
-          if (a.completed && !b.completed) return -1;
-          if (!a.completed && b.completed) return 1;
-          return 0;
-        }
-      });
-    }
+  renderQuests(container, showCompleted) {
+    container.innerHTML = "";
+    const fragment = document.createDocumentFragment();
 
-    // Mevcut DOM'daki quest kartlarını bir Map'e al
-    const existing = new Map();
-    container.querySelectorAll(".quest-item").forEach((el) => {
-      existing.set(el.getAttribute("data-quest-id"), el);
+    const quests = Object.values(this.quests)
+      .filter((quest) => (showCompleted ? quest.claimed : !quest.claimed))
+      .sort((a, b) => {
+        // Tamamlanmış görevleri üste al
+        if (a.completed && !b.completed) return -1;
+        if (!a.completed && b.completed) return 1;
+        return 0;
+      });
+
+    quests.forEach((quest) => {
+      const questElement = this.createQuestElement(quest);
+      if (questElement) fragment.appendChild(questElement);
     });
 
-    // Performans için, sadece sırası değişenleri taşı
-    if (forceResort) {
-      // Sıralı şekilde yeni bir fragment oluştur
-      const fragment = document.createDocumentFragment();
-      quests.forEach((quest) => {
-        let el = existing.get(quest.id);
-        if (!el) {
-          // Yeni görev, ekle
-          el = this.createQuestElement(quest);
-        } else {
-          // Sadece değişen kısımları güncelle
-          this.updateQuestElement(el, quest);
-          existing.delete(quest.id);
-        }
-        fragment.appendChild(el);
-      });
-      // Container'ı tek seferde güncelle
-      container.innerHTML = "";
-      container.appendChild(fragment);
-    } else {
-      // Sıralama yoksa, sadece içerik güncelle
-      quests.forEach((quest) => {
-        let el = existing.get(quest.id);
-        if (!el) {
-          // Yeni görev, ekle
-          el = this.createQuestElement(quest);
-          container.appendChild(el);
-        } else {
-          // Sadece değişen kısımları güncelle
-          this.updateQuestElement(el, quest);
-          existing.delete(quest.id);
-        }
-      });
-    }
-
-    // Artık olmayan görevleri kaldır
-    existing.forEach((el) => el.remove());
-  }
-
-  updateQuestElement(el, quest) {
-    // Sadece ilerleme, buton, class vs. güncelle
-    const progressBar = el.querySelector(".progress-bar");
-    const progress = (quest.progress / quest.target) * 100;
-    if (progressBar && progressBar.style.width !== `${progress}%`) {
-      progressBar.style.width = `${progress}%`;
-    }
-    const progressText = el.querySelector(".progress-text");
-    const formattedProgress = `${this.formatNumber(
-      quest.progress
-    )}/${this.formatNumber(quest.target)}`;
-    if (progressText && progressText.textContent !== formattedProgress) {
-      progressText.textContent = formattedProgress;
-    }
-    // Buton durumu
-    const claimButton = el.querySelector(".claim-reward");
-    if (claimButton) {
-      if (quest.claimed) {
-        claimButton.disabled = true;
-        claimButton.textContent = "Completed";
-      } else if (quest.completed) {
-        claimButton.disabled = false;
-        claimButton.textContent = "Claim Reward";
-      } else {
-        claimButton.disabled = true;
-        claimButton.textContent = "In Progress";
-      }
-    }
+    container.appendChild(fragment);
   }
 
   switchQuestTab(tabName) {
@@ -4905,7 +4657,7 @@ class Game {
     }
     this._lastQuestCheck = now;
 
-    let anyCompleted = false;
+    let hasNewCompletedQuest = false;
 
     // Tamamlanmamış görevleri filtrele ve sadece onları kontrol et
     Object.values(this.quests)
@@ -4932,7 +4684,7 @@ class Game {
           // Quest tamamlandıysa
           if (!quest.completed && quest.progress >= quest.target) {
             quest.completed = true;
-            anyCompleted = true;
+            hasNewCompletedQuest = true;
 
             // Bildirim göster
             requestAnimationFrame(() => {
@@ -4976,17 +4728,13 @@ class Game {
               }
             });
           }
+
+          // Quest menüsü açıksa güncelle
+          if (!this.questsMenu.classList.contains("hidden")) {
+            this.updateQuestDisplay();
+          }
         }
       });
-    // Her zaman resort flag'i ayarla
-    if (anyCompleted) {
-      this._questResortNeeded = true;
-    }
-    // Quest menüsü açıksa güncelle
-    if (!this.questsMenu.classList.contains("hidden")) {
-      this.updateQuestDisplay(this._questResortNeeded);
-      this._questResortNeeded = false;
-    }
   }
 
   // Constructor dışına eklenecek yeni metod
@@ -5609,7 +5357,7 @@ class Game {
 
 document.addEventListener("DOMContentLoaded", () => {
   const game = new Game(); // Game sınıfından bir örnek oluştur
-  game.init.call(game); // init fonksiyonunu game bağlamı ile çağırarak oyunu başlat
+  game.init(); // Game sınıfındaki init fonksiyonunu çağırarak oyunu başlat
   const resetButton = document.getElementById("reset-button");
 
   resetButton.addEventListener("click", () => {
