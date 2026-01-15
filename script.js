@@ -1755,8 +1755,8 @@ class Game {
     };
 
     // --- PYTHON BACKEND INTEGRATION ---
-    // Production'da burası Render URL'i olacak (örn: https://donut-clicker-api.onrender.com)
-    this.backendURL = "http://localhost:8000"; 
+    // Production'da burası Render URL'i olacak
+    this.backendURL = "https://donut-clicker-api.onrender.com"; 
     this.userId = this.getOrCreateUserId();
     console.log("Player ID:", this.userId);
   }
