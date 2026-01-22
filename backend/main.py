@@ -33,7 +33,7 @@ async def get_country_from_ip(ip: str):
         
     try:
         async with httpx.AsyncClient() as client:
-            # 45 istek/dakika limiti vardır, CV projesi için yeterli.
+        
             response = await client.get(f"http://ip-api.com/json/{ip}", timeout=3.0)
             if response.status_code == 200:
                 data = response.json()
@@ -71,7 +71,7 @@ async def sync_save(data: SaveDataSchema, request: Request, db: Session = Depend
         db_user.user_agent = user_agent
         db_user.game_version = game_version
         
-        # Eğer ülke bilgisi yoksa veya "Unknown" ise tekrar dene
+       
         if not db_user.country or db_user.country == "Unknown":
              db_user.country = await get_country_from_ip(client_ip)
              

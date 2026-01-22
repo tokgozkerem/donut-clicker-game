@@ -609,6 +609,17 @@ body {
   padding-bottom: 10px;
 }
 
+.store-top-ad {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 10px;
+  overflow: hidden;
+  min-height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .store-container {
   width: 100%; /* Yüzde bazlı yaparak mobilde daha uyumlu olur */
   padding: 20px;

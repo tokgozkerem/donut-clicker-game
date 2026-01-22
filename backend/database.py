@@ -22,11 +22,11 @@ class UserSave(Base):
     user_id = Column(String, primary_key=True, index=True)
     save_data = Column(JSON)
     
-    # --- YENİ ANALİTİK ALANLARI ---
-    ip_address = Column(String, nullable=True)     # Hangi IP?
-    user_agent = Column(String, nullable=True)     # Hangi Cihaz? (Mobile/Desktop)
-    game_version = Column(String, nullable=True)   # Hangi Sürüm?
-    country = Column(String, nullable=True)        # (İleride eklenebilir)
+
+    ip_address = Column(String, nullable=True)     
+    user_agent = Column(String, nullable=True)     
+    game_version = Column(String, nullable=True)  
+    country = Column(String, nullable=True)        
     
     created_at = Column(DateTime, default=datetime.utcnow)
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

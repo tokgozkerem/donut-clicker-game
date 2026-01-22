@@ -1753,53 +1753,6 @@ class Game {
       lastClaimTime: 0,
       claimInterval: 24 * 60 * 60 * 1000, // 24 saat
     };
-
-    // --- PYTHON BACKEND INTEGRATION ---
-    // Production'da burası Render URL'i olacak
-    this.backendURL = "https://donut-clicker-api.onrender.com"; 
-    this.userId = this.getOrCreateUserId();
-    console.log("Player ID:", this.userId);
-  }
-
-  // Kullanıcıya benzersiz bir ID ata (Login gerektirmez)
-  getOrCreateUserId() {
-    let id = localStorage.getItem("donut_user_id");
-    if (!id) {
-      // UUID benzeri rastgele string oluştur
-      id = "user_" + Date.now().toString(36) + Math.random().toString(36).substr(2);
-      localStorage.setItem("donut_user_id", id);
-    }
-    return id;
-  }
-
-  // Veriyi Python Backend'e gönder (Fire and Forget)
-  async syncToBackend(saveData) {
-    if (!this.backendURL) return;
-
-    try {
-      // Backend'e asenkron istek atıyoruz. await kullanmıyoruz ki oyun donmasın.
-      fetch(`${this.backendURL}/sync`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: this.userId,
-          save_data: saveData,
-        }),
-      })
-      .then(response => {
-        if (!response.ok) {
-          // Backend kapalıysa sessizce devam et, konsolu kirletme
-          // console.warn("Backend sync failed:", response.status);
-        }
-      })
-      .catch(err => {
-        // Network hatası olursa sessizce devam et
-      });
-    } catch (e) {
-      // Genel hata koruması
-    }
   }
 
   // Resim önbellekleme sistemi
@@ -4099,8 +4052,6 @@ class Game {
     };
 
     localStorage.setItem("gameState", JSON.stringify(gameState));
-    // Backend Sync (Asenkron)
-    this.syncToBackend(gameState);
     this.showGameSaved();
   }
   loadGame() {
