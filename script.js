@@ -1910,8 +1910,8 @@ class Game {
       const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
       if (!storeItem) return;
 
-      // 1. Kural: İlk 3 bina her zaman açıktır.
-      if (index < 3) {
+      // 1. Kural: İlk 1 bina (Cursor) her zaman açıktır.
+      if (index < 1) {
         storeItem.classList.remove("is-hidden", "is-mystery");
         return;
       }

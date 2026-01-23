@@ -239,16 +239,27 @@ body {
   align-items: center;
   height: 153px;
   margin: 0 auto;
+  position: relative; /* Absolute çocukların doğru hizalanması için */
 }
+
+.logo-wrapper {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1; /* Ortadaki alanı kaplamasını sağlar */
+  z-index: 1;
+}
+
 .headerImg {
   position: relative;
   width: 100%;
   max-width: 290px;
   height: auto;
   top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 1;
+  /* left ve transform kaldırıldı çünkü artık flexbox ile ortalanıyor */
 }
 
 .header-right {
@@ -259,6 +270,7 @@ body {
   margin-right: 30px;
   gap: 10px;
   right: 0;
+  z-index: 10; /* Tıklanabilir olması için en üste taşıdık */
 }
 .header-left {
   position: absolute;
@@ -268,6 +280,7 @@ body {
   margin-left: 30px;
   gap: 10px;
   left: 0;
+  z-index: 10; /* Tıklanabilir olması için en üste taşıdık */
 }
 .header-title {
   flex: 2; /* Başlık daha geniş bir alan kaplayacak */

@@ -1,54 +1,73 @@
 
-/* Gizlilik ve Gizemli Durumlar için Yeni Stiller */
-
 /* Tamamen gizli */
 .store-item.is-hidden {
   display: none !important;
 }
 
-/* Gizemli (Mystery) Durumu */
-.store-item.is-mystery {
-  pointer-events: none; /* Tıklamayı engelle */
-  filter: grayscale(100%); /* Gri tonlama */
+/* =========================================
+   ANIMASYON VE GEÇİŞ AYARLARI
+   ========================================= */
+
+.store-item .item-img img {
+  transition: filter 1.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  will-change: filter, transform;
+}
+
+.store-item .item-name,
+.store-item .item-cost {
   position: relative;
+  transition: color 0.5s ease;
 }
 
-/* Gizemli durumda resmi siyah siluet yap */
+/* =========================================
+   GİZEMLİ (MYSTERY) MODU
+   ========================================= */
+
+.store-item.is-mystery {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Resim Efekti */
 .store-item.is-mystery .item-img img {
-  filter: brightness(0) opacity(0.5); /* Siyah siluet ve biraz şeffaf */
+  filter: brightness(0) opacity(0.4) blur(2px);
+  transform: scale(0.85);
 }
 
-/* Gizemli durumda metinleri gizle ve ??? ile değiştir */
+/* Metinleri ve alt elemanlarını KESİN olarak gizle */
 .store-item.is-mystery .item-name,
 .store-item.is-mystery .item-cost {
-  visibility: hidden; /* Orijinal metni gizle ama yer kaplamaya devam etsin */
+  color: transparent !important;
+  text-shadow: none !important;
 }
 
-/* İsim yerine ??? */
+/* Fiyatın içindeki ikonları ve sayıları da gizle */
+.store-item.is-mystery .item-cost * {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* "???" Yazıları - Daha Okunaklı Konumlandırma */
 .store-item.is-mystery .item-name::after {
   content: "???";
-  visibility: visible;
   position: absolute;
-  left: 0;
+  left: 10px;
   top: 0;
-  color: #fff;
+  color: #eee;
   font-family: "Playpen Sans", cursive;
+  letter-spacing: 3px;
+  visibility: visible;
 }
 
-/* Fiyat yerine ??? */
 .store-item.is-mystery .item-cost::after {
   content: "???";
-  visibility: visible;
   position: absolute;
-  left: 0;
+  left: 10px; 
   top: 0;
-  color: #aaa;
+  color: #888;
   font-family: "Playpen Sans", cursive;
-  display: flex;
-  align-items: center;
-}
-
-/* Gizemli durumda ikon gizlensin mi? */
-.store-item.is-mystery .item-cost .icon {
-  opacity: 0; /* Donut ikonunu gizle */
+  letter-spacing: 2px;
+  font-size: 0.9em;
+  visibility: visible;
 }
