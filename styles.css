@@ -709,6 +709,15 @@ body {
   opacity: 0.5;
 }
 
+.ad-container {
+  width: 100%;
+  text-align: center;
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .hidden {
   display: none;
 }
