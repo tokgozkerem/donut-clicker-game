@@ -1,0 +1,54 @@
+
+/* Gizlilik ve Gizemli Durumlar için Yeni Stiller */
+
+/* Tamamen gizli */
+.store-item.is-hidden {
+  display: none !important;
+}
+
+/* Gizemli (Mystery) Durumu */
+.store-item.is-mystery {
+  pointer-events: none; /* Tıklamayı engelle */
+  filter: grayscale(100%); /* Gri tonlama */
+  position: relative;
+}
+
+/* Gizemli durumda resmi siyah siluet yap */
+.store-item.is-mystery .item-img img {
+  filter: brightness(0) opacity(0.5); /* Siyah siluet ve biraz şeffaf */
+}
+
+/* Gizemli durumda metinleri gizle ve ??? ile değiştir */
+.store-item.is-mystery .item-name,
+.store-item.is-mystery .item-cost {
+  visibility: hidden; /* Orijinal metni gizle ama yer kaplamaya devam etsin */
+}
+
+/* İsim yerine ??? */
+.store-item.is-mystery .item-name::after {
+  content: "???";
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #fff;
+  font-family: "Playpen Sans", cursive;
+}
+
+/* Fiyat yerine ??? */
+.store-item.is-mystery .item-cost::after {
+  content: "???";
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #aaa;
+  font-family: "Playpen Sans", cursive;
+  display: flex;
+  align-items: center;
+}
+
+/* Gizemli durumda ikon gizlensin mi? */
+.store-item.is-mystery .item-cost .icon {
+  opacity: 0; /* Donut ikonunu gizle */
+}

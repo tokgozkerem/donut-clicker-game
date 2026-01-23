@@ -1888,6 +1888,60 @@ class Game {
 
     this.setupAutoBuyer();
   }
+  updateStoreVisibility() {
+    const buildingOrder = [
+      "cursor",
+      "baker",
+      "farm",
+      "mine",
+      "factory",
+      "logisticCenter",
+      "powerPlant",
+      "nature",
+      "neuralNetworkBakery",
+      "portal",
+      "capitalCrest",
+    ];
+
+    let mysterySlots = 0;
+    const maxMysterySlots = 2;
+
+    buildingOrder.forEach((key, index) => {
+      const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
+      if (!storeItem) return;
+
+      // 1. Kural: İlk 3 bina her zaman açıktır.
+      if (index < 3) {
+        storeItem.classList.remove("is-hidden", "is-mystery");
+        return;
+      }
+
+      const itemData = this.items[key];
+      // Unlock koşulu: Binadan en az 1 tane varsa VEYA Toplam Kazanılan Donut >= Şimdiki Fiyatın %75'i
+      // lifetime (totalDonutsEarned) kullanmak daha iyidir, böylece harcama yapınca bina kapanmaz.
+      const isUnlocked =
+        itemData.count > 0 ||
+        this.totalDonutsEarned >= itemData.baseCost * 0.75;
+
+      if (isUnlocked) {
+        // Durum: Açık (Revealed)
+        storeItem.classList.remove("is-hidden", "is-mystery");
+      } else {
+        // Durum: Kapalı, peki Gizemli mi Gizli mi?
+        if (mysterySlots < maxMysterySlots) {
+          // Durum: Gizemli (Mystery - ???)
+          storeItem.classList.remove("is-hidden");
+          storeItem.classList.add("is-mystery");
+          mysterySlots++;
+        } else {
+          // Durum: Tamamen Gizli (Hidden)
+          storeItem.classList.remove("is-mystery");
+          storeItem.classList.add("is-hidden");
+        }
+      }
+    });
+  }
+
   updateDisplay() {
     // Performans optimizasyonu için RAF kullan
     if (!this._displayUpdateScheduled) {
@@ -1899,6 +1953,7 @@ class Game {
     }
   }
   _actualUpdateDisplay() {
+    this.updateStoreVisibility();
     if (!this.counter || !this.perSecondDisplay) return;
 
     // DOM manipülasyonlarını grupla
