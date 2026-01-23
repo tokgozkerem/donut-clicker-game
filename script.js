@@ -1706,7 +1706,7 @@ class Game {
         root: document.querySelector(".quests-container"),
         rootMargin: "20px",
         threshold: 0.1,
-      }
+      },
     );
 
     // Basit quest cache
@@ -1822,18 +1822,18 @@ class Game {
     setInterval(this._throttle(this.saveGame.bind(this), 60000), 180000);
     setInterval(
       this._throttle(this.updateTitleWithDonuts.bind(this), 500),
-      1000
+      1000,
     );
     setInterval(
       this._throttle(() => this.updateStatsDisplay(), 1000),
-      5000
+      5000,
     );
     setInterval(this._throttle(this.updateProduction.bind(this), 100), 225);
 
     // Event listener'ları optimize et
     this.handleDonutClickBound = this._throttle(
       this.handleDonutClick.bind(this),
-      50
+      50,
     );
     this.donut.addEventListener("click", this.handleDonutClickBound);
 
@@ -1842,7 +1842,7 @@ class Game {
       const itemKey = storeItem.getAttribute("data-item");
       const showItemInfoThrottled = this._throttle(
         () => this.showItemInfo(itemKey),
-        100
+        100,
       );
 
       storeItem.addEventListener("mouseenter", showItemInfoThrottled);
@@ -1857,7 +1857,7 @@ class Game {
             return;
           }
           this.buyItem(itemKey);
-        }, 100)
+        }, 100),
       );
     });
     document.querySelectorAll(".purchase-options button").forEach((button) => {
@@ -1871,7 +1871,7 @@ class Game {
     if (bakeryNameElement) {
       bakeryNameElement.addEventListener(
         "click",
-        this.openChangeNameModal.bind(this)
+        this.openChangeNameModal.bind(this),
       );
     }
     document
@@ -1907,7 +1907,9 @@ class Game {
     const maxMysterySlots = 2;
 
     buildingOrder.forEach((key, index) => {
-      const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
+      const storeItem = document.querySelector(
+        `.store-item[data-item="${key}"]`,
+      );
       if (!storeItem) return;
 
       // 1. Kural: İlk 1 bina (Cursor) her zaman açıktır.
@@ -1971,7 +1973,7 @@ class Game {
     if (this.productionMultiplier > 1 && this.activeMultipliers?.length > 0) {
       // Süresi geçmiş multiplier'ları temizle
       this.activeMultipliers = this.activeMultipliers.filter(
-        (m) => m.endTime > Date.now()
+        (m) => m.endTime > Date.now(),
       );
 
       if (this.activeMultipliers.length === 0) {
@@ -1982,11 +1984,11 @@ class Game {
       }
 
       const nearestEndTime = Math.min(
-        ...this.activeMultipliers.map((m) => m.endTime)
+        ...this.activeMultipliers.map((m) => m.endTime),
       );
       const remainingTime = Math.max(
         0,
-        Math.ceil((nearestEndTime - Date.now()) / 1000)
+        Math.ceil((nearestEndTime - Date.now()) / 1000),
       );
 
       // Progress hesaplama
@@ -2002,7 +2004,7 @@ class Game {
               <div class="boost-container">
                   <div class="boost-info">
                       <span class="boost-multiplier">${this.productionMultiplier.toFixed(
-                        2
+                        2,
                       )}x</span>
                       <span class="boost-timer">${remainingTime}s</span>
                   </div>
@@ -2021,13 +2023,13 @@ class Game {
     for (let key in this.items) {
       const costElem = document.getElementById(`${key}Cost`);
       const storeItem = document.querySelector(
-        `.store-item[data-item="${key}"]`
+        `.store-item[data-item="${key}"]`,
       );
 
       if (costElem) {
         const bulkCost = this.calculateBulkPrice(
           this.items[key],
-          this.purchaseAmount
+          this.purchaseAmount,
         );
         costElem.textContent = this.formatNumber(bulkCost, "cost");
 
@@ -2062,19 +2064,19 @@ class Game {
 
       // Toplam sayıyı formatla
       const totalElem = document.getElementById(
-        `total${this.capitalize(key)}s`
+        `total${this.capitalize(key)}s`,
       );
       if (totalElem) {
         totalElem.textContent = this.formatNumber(
           this.items[key].count,
-          "count"
+          "count",
         );
       } else {
         console.error(`Missing total${this.capitalize(key)}s element`);
       }
     }
     const mineImage = document.querySelector(
-      '.store-item[data-item="mine"] .item-img img'
+      '.store-item[data-item="mine"] .item-img img',
     );
     if (this.items.mine.count >= 1) {
       mineImage.classList.add("active-mine-effect");
@@ -2084,7 +2086,7 @@ class Game {
 
     // Baker image kontrolü
     const bakerImage = document.querySelector(
-      '.store-item[data-item="baker"] .item-img img'
+      '.store-item[data-item="baker"] .item-img img',
     );
     if (this.items.baker.count >= 1) {
       bakerImage.classList.add("active-baker-effect");
@@ -2369,7 +2371,7 @@ class Game {
     // nonItemUpgrades için DPS bonus hesaplaması
     const perSecond = this.calculatePerSecond();
     const purchasedNonItemUpgrades = this.upgrades.nonItemUpgrades.filter(
-      (upgrade) => upgrade.purchased
+      (upgrade) => upgrade.purchased,
     ).length;
 
     if (purchasedNonItemUpgrades > 0) {
@@ -2498,7 +2500,7 @@ class Game {
 
     allUpgrades.forEach(({ key, index, upgrade }, position) => {
       let existingUpgrade = existingUpgrades.find(
-        (div) => div.dataset.key === key && div.dataset.index === String(index)
+        (div) => div.dataset.key === key && div.dataset.index === String(index),
       );
 
       if (!existingUpgrade) {
@@ -2551,7 +2553,7 @@ class Game {
         if (currentPos !== position) {
           upgradeList.insertBefore(
             existingUpgrade,
-            upgradeList.children[position]
+            upgradeList.children[position],
           );
         }
       }
@@ -2608,7 +2610,7 @@ class Game {
       // Mine için panel kontrolü
       if (isFirstMine) {
         const mineImage = document.querySelector(
-          '.store-item[data-item="mine"] .item-img img'
+          '.store-item[data-item="mine"] .item-img img',
         );
         mineImage.classList.add("active-mine-effect");
         mineImage.classList.add("pulse-effect", "new-feature");
@@ -2620,7 +2622,7 @@ class Game {
 
         mineImage.setAttribute(
           "title",
-          "Click to manage your mine and workers!"
+          "Click to manage your mine and workers!",
         );
 
         mineImage.addEventListener(
@@ -2631,14 +2633,14 @@ class Game {
               mineImage.parentElement.querySelector(".new-feature-label");
             if (label) label.remove();
           },
-          { once: true }
+          { once: true },
         );
       }
 
       // Baker için panel kontrolü
       if (isFirstBaker) {
         const bakerImage = document.querySelector(
-          '.store-item[data-item="baker"] .item-img img'
+          '.store-item[data-item="baker"] .item-img img',
         );
         bakerImage.classList.add("active-baker-effect");
         bakerImage.classList.add("pulse-effect", "new-feature");
@@ -2650,7 +2652,7 @@ class Game {
 
         bakerImage.setAttribute(
           "title",
-          "Click to manage your bakery and workers!"
+          "Click to manage your bakery and workers!",
         );
 
         bakerImage.addEventListener(
@@ -2661,7 +2663,7 @@ class Game {
               bakerImage.parentElement.querySelector(".new-feature-label");
             if (label) label.remove();
           },
-          { once: true }
+          { once: true },
         );
       }
 
@@ -2706,7 +2708,7 @@ class Game {
       // UI güncellemeleri
       const upgradeList = document.getElementById("upgrade-list");
       const upgradeDiv = upgradeList.querySelector(
-        `div[data-key="${itemKey}"][data-index="${upgradeIndex}"]`
+        `div[data-key="${itemKey}"][data-index="${upgradeIndex}"]`,
       );
       if (upgradeDiv) {
         upgradeList.removeChild(upgradeDiv);
@@ -2764,7 +2766,7 @@ class Game {
           <span class="ingredient ${
             this.hasEnoughIngredients(
               ingredient,
-              amount * recipe.scaling?.ingredients?.current || 1
+              amount * recipe.scaling?.ingredients?.current || 1,
             )
               ? "available"
               : "unavailable"
@@ -2772,7 +2774,7 @@ class Game {
             <img src="img/${ingredient.toLowerCase()}.webp" alt="${ingredient}" />
             ${amount * (recipe.scaling?.ingredients?.current || 1)}x
           </span>
-        `
+        `,
         )
         .join("");
 
@@ -2786,8 +2788,8 @@ class Game {
           ${ingredientsHTML}
         </div>
         <button class="make-btn" data-recipe="${recipeName}" ${
-        this.canMakeRecipe(recipeName) ? "" : "disabled"
-      }>
+          this.canMakeRecipe(recipeName) ? "" : "disabled"
+        }>
           Make!
         </button>
       `;
@@ -2824,7 +2826,7 @@ class Game {
 
     let canCraft = true;
     for (const [ingredient, amount] of Object.entries(
-      this.selectedRecipe.ingredients
+      this.selectedRecipe.ingredients,
     )) {
       if (
         !this.ingredients[ingredient] ||
@@ -2908,7 +2910,7 @@ class Game {
 
     // Bildirimi göster
     this.showNotification(
-      `Crafted ${this.formatNumber(productionAmount)} ${recipeName}!`
+      `Crafted ${this.formatNumber(productionAmount)} ${recipeName}!`,
     );
 
     // UI'ı güncelle
@@ -2946,7 +2948,7 @@ class Game {
   updateTotalIngredientCount() {
     const totalIngredientCount = Object.values(this.ingredients).reduce(
       (sum, ingredient) => sum + ingredient.count,
-      0
+      0,
     );
 
     const ingredientCountElem = document.getElementById("ingredientCount");
@@ -3038,7 +3040,7 @@ class Game {
     // Toplam ore sayısını güncelle (updateTotalOreCount fonksiyonunu buraya taşıdık)
     const totalOreCount = Object.values(this.ores).reduce(
       (sum, ore) => sum + ore.count,
-      0
+      0,
     );
     const oreCountElem = document.getElementById("oreCount");
     if (oreCountElem) {
@@ -3069,7 +3071,7 @@ class Game {
 
       setTimeout(
         () => orePrice.classList.remove("green-text", "red-text"),
-        500
+        500,
       );
     });
   }
@@ -3165,7 +3167,7 @@ class Game {
       } else {
         // Liste öğesine geçici bir efekt ekle
         const listItem = document.querySelector(
-          `#marketList li[data-ore-type="${oreType}"]`
+          `#marketList li[data-ore-type="${oreType}"]`,
         );
         if (listItem) {
           listItem.classList.add("shake-error");
@@ -3200,7 +3202,7 @@ class Game {
 
     // Mine panel kontrolü
     const mineImage = document.querySelector(
-      '.store-item[data-item="mine"] .item-img img'
+      '.store-item[data-item="mine"] .item-img img',
     );
     if (mineImage) {
       mineImage.addEventListener("click", (e) => {
@@ -3213,7 +3215,7 @@ class Game {
 
     // Baker panel kontrolü
     const bakerImage = document.querySelector(
-      '.store-item[data-item="baker"] .item-img img'
+      '.store-item[data-item="baker"] .item-img img',
     );
     if (bakerImage) {
       bakerImage.addEventListener("click", (e) => {
@@ -3397,9 +3399,9 @@ class Game {
       elements.cost.innerHTML = `
         <img src="img/donutMoney.webp" alt="donut icon" class="icon" />
         <span style="color: ${costColor};">${this.formatNumber(
-        item.baseCost,
-        "cost"
-      )}</span>
+          item.baseCost,
+          "cost",
+        )}</span>
       `;
 
       const itemProduction = item.count * currentProduction;
@@ -3413,21 +3415,21 @@ class Game {
 
       featureHTML = `
         Each <strong>${item.name}</strong> produces <strong>${
-        itemKey === "cursor"
-          ? this.formatNumber(currentProduction, "perSecond")
-          : currentProduction < 1000
-          ? currentProduction.toFixed(1).replace(".", ",")
-          : this.formatNumber(currentProduction, "perSecond")
-      } donuts</strong> per second<br>
+          itemKey === "cursor"
+            ? this.formatNumber(currentProduction, "perSecond")
+            : currentProduction < 1000
+              ? currentProduction.toFixed(1).replace(".", ",")
+              : this.formatNumber(currentProduction, "perSecond")
+        } donuts</strong> per second<br>
         ${this.formatNumber(item.count, "count")} <strong>${
-        item.name + "(s)"
-      }</strong> producing <strong>${this.formatNumber(
-        itemProduction,
-        "count"
-      )} donuts</strong> per second<br>
+          item.name + "(s)"
+        }</strong> producing <strong>${this.formatNumber(
+          itemProduction,
+          "count",
+        )} donuts</strong> per second<br>
         Total produced: ${this.formatNumber(item.totalProduced, "count")}<br>
         <span style="color: #FFD700;">Contributing ${percentageOfTotal.toFixed(
-          1
+          1,
         )}% of total production</span>
       `;
 
@@ -3437,7 +3439,7 @@ class Game {
           .filter((upgrade) => upgrade.purchased)
           .map(
             (upgrade) =>
-              `<img src="img/${upgrade.img}" alt="${upgrade.name}" class="upgrade-icon" />`
+              `<img src="img/${upgrade.img}" alt="${upgrade.name}" class="upgrade-icon" />`,
           )
           .join("");
 
@@ -3485,7 +3487,7 @@ class Game {
     // Panel pozisyonunu ayarla
     itemInfoPanel.style.display = "block";
     const storeItem = document.querySelector(
-      `.store-item[data-item="${itemKey}"]`
+      `.store-item[data-item="${itemKey}"]`,
     );
     const rect = storeItem.getBoundingClientRect();
     const panelRect = itemInfoPanel.getBoundingClientRect();
@@ -3514,7 +3516,7 @@ class Game {
   setupStoreHover() {
     for (let key in this.items) {
       const storeItem = document.querySelector(
-        `.store-item[data-item="${key}"]`
+        `.store-item[data-item="${key}"]`,
       );
       if (storeItem) {
         storeItem.addEventListener("mouseenter", () => this.showItemInfo(key));
@@ -3531,7 +3533,7 @@ class Game {
 
     const progress = Math.min(
       this.totalDonutsEarned / this.nextPrestigeThreshold,
-      1
+      1,
     );
     prestigeBarFill.style.width = `${progress * 100}%`;
 
@@ -3543,7 +3545,7 @@ class Game {
 
     prestigePoints.textContent = `Prestige Points: ${this.prestigeCount}`;
     nextPrestigeText.textContent = `Next Prestige at: ${this.formatNumber(
-      this.nextPrestigeThreshold
+      this.nextPrestigeThreshold,
     )} donuts`;
   }
   performPrestige() {
@@ -3559,7 +3561,7 @@ class Game {
           this.BUILDING_COST_MULTIPLIER *
           Math.pow(
             this.PRESTIGE_BUILDING_COST_MULTIPLIER_INCREMENT,
-            this.prestigeCount - 1
+            this.prestigeCount - 1,
           );
 
         this.items[key].baseCost =
@@ -3658,7 +3660,7 @@ class Game {
     fallingDonut.style.animationDuration = `${animationDuration}s`;
     fallingDonut.style.setProperty(
       "--horizontalDistance",
-      `${horizontalDistance}px`
+      `${horizontalDistance}px`,
     );
 
     fallingDonut.style.animationTimingFunction = "ease-in-out";
@@ -3770,7 +3772,7 @@ class Game {
   updateTitleWithDonuts() {
     if (!this.hasDonutClicked) return;
     document.title = `${this.formatNumber(
-      this.donutCount
+      this.donutCount,
     )} donuts - Donut Clicker`;
   }
 
@@ -3788,7 +3790,7 @@ class Game {
     // Değerleri hesapla
     const totalItems = Object.values(this.items).reduce(
       (acc, item) => acc + item.count,
-      0
+      0,
     );
     this.lastClickValue = this.calculateClickValue();
 
@@ -3861,7 +3863,7 @@ class Game {
                 nextNotification();
               }
             },
-            { once: true }
+            { once: true },
           );
         }, duration);
       });
@@ -3889,7 +3891,7 @@ class Game {
       const display = document.getElementById("active-multiplier-display");
       if (display) {
         display.textContent = `Active Multiplier: ${this.productionMultiplier.toFixed(
-          2
+          2,
         )}x`;
       }
     });
@@ -3909,15 +3911,15 @@ class Game {
         }
         return acc;
       },
-      { earnings: 0, count: 0 }
+      { earnings: 0, count: 0 },
     );
 
     if (sales.count > 0) {
       this.donutCount += sales.earnings;
       this.showNotification(
         `Sold ${this.formatNumber(sales.count)} ores for ${this.formatNumber(
-          sales.earnings
-        )} donuts!`
+          sales.earnings,
+        )} donuts!`,
       );
 
       requestAnimationFrame(() => {
@@ -4127,7 +4129,7 @@ class Game {
         console.log(
           `Updating game from version ${
             gameState.gameVersion || "unknown"
-          } to ${this.currentVersion}`
+          } to ${this.currentVersion}`,
         );
 
         this.applyUpdates(gameState);
@@ -4189,7 +4191,7 @@ class Game {
       // Aktif multiplier'ları yükle
       if (gameState.activeMultipliers) {
         this.activeMultipliers = gameState.activeMultipliers.filter(
-          (m) => m.endTime > Date.now()
+          (m) => m.endTime > Date.now(),
         );
         this.updateProductionMultiplier();
       }
@@ -4247,8 +4249,8 @@ class Game {
                   "costMultiplier",
                   "production",
                   "originalProduction",
-                ].includes(key)
-            )
+                ].includes(key),
+            ),
           ),
         };
       } else {
@@ -4291,10 +4293,10 @@ class Game {
                   "requirement",
                   "img",
                   "description",
-                ].includes(key)
-            )
+                ].includes(key),
+            ),
           ),
-        })
+        }),
       );
     }
 
@@ -4430,7 +4432,7 @@ class Game {
   }
   resetGame() {
     const confirmation = confirm(
-      "Are you sure you want to reset the game? All your progress will be deleted."
+      "Are you sure you want to reset the game? All your progress will be deleted.",
     );
     if (confirmation) {
       localStorage.removeItem("gameState");
@@ -4447,13 +4449,13 @@ class Game {
     // Event listener'ları ekle
     this.questsButton.addEventListener("click", () => this.toggleQuestMenu());
     this.closeQuestsButton.addEventListener("click", () =>
-      this.closeQuestMenu()
+      this.closeQuestMenu(),
     );
 
     // Tab sistemi
     document.querySelectorAll(".tab-button").forEach((button) => {
       button.addEventListener("click", () =>
-        this.switchQuestTab(button.dataset.tab)
+        this.switchQuestTab(button.dataset.tab),
       );
     });
 
@@ -4484,10 +4486,10 @@ class Game {
 
   updateQuestDisplay() {
     const activeContainer = this.questsMenu.querySelector(
-      ".quests-container.active"
+      ".quests-container.active",
     );
     const completedContainer = this.questsMenu.querySelector(
-      ".quests-container.completed"
+      ".quests-container.completed",
     );
 
     if (activeContainer) this.renderQuests(activeContainer, false);
@@ -4523,7 +4525,7 @@ class Game {
     document.querySelectorAll(".quests-container").forEach((container) => {
       container.classList.toggle(
         "hidden",
-        !container.classList.contains(tabName)
+        !container.classList.contains(tabName),
       );
     });
   }
@@ -4549,7 +4551,7 @@ class Game {
             <div class="quest-progress">
                 <div class="progress-bar" style="width: ${progress}%"></div>
                 <span class="progress-text">${this.formatNumber(
-                  quest.progress
+                  quest.progress,
                 )}/${this.formatNumber(quest.target)}</span>
             </div>
             <p class="reward-text">Reward: ${rewardText}</p>
@@ -4561,8 +4563,8 @@ class Game {
               quest.claimed
                 ? "Completed"
                 : quest.completed
-                ? "Claim Reward"
-                : "In Progress"
+                  ? "Claim Reward"
+                  : "In Progress"
             }
         </button>
     `;
@@ -4584,7 +4586,7 @@ class Game {
       // Aktif multiplier var mı kontrol et
       if (this.activeMultipliers.length > 0) {
         this.showNotification(
-          "You cannot claim a multiplier reward while another one is active!"
+          "You cannot claim a multiplier reward while another one is active!",
         );
         return;
       }
@@ -4594,14 +4596,14 @@ class Game {
     if (quest.reward.type === "donuts") {
       this.donutCount += quest.reward.amount;
       this.showNotification(
-        `+${this.formatNumber(quest.reward.amount)} donuts earned!`
+        `+${this.formatNumber(quest.reward.amount)} donuts earned!`,
       );
     } else if (quest.reward.type === "multiplier") {
       this.activateMultiplier(quest.reward.amount, quest.reward.duration);
       this.showNotification(
         `${quest.reward.amount.toFixed(2)}x production multiplier active for ${
           quest.reward.duration / 1000
-        } seconds!`
+        } seconds!`,
       );
     }
 
@@ -4610,11 +4612,11 @@ class Game {
 
     // Quest elementini güncelle
     const questElement = document.querySelector(
-      `[data-quest-id="${quest.id}"]`
+      `[data-quest-id="${quest.id}"]`,
     );
     if (questElement) {
       const completedContainer = document.querySelector(
-        ".quests-container.completed"
+        ".quests-container.completed",
       );
       completedContainer.appendChild(questElement);
 
@@ -4659,7 +4661,7 @@ class Game {
     };
 
     this.activeMultipliers = this.activeMultipliers.filter(
-      (m) => m.endTime > Date.now()
+      (m) => m.endTime > Date.now(),
     );
     this.activeMultipliers.push(multiplier);
 
@@ -4673,7 +4675,7 @@ class Game {
 
     setTimeout(() => {
       this.activeMultipliers = this.activeMultipliers.filter(
-        (m) => m.id !== multiplier.id
+        (m) => m.id !== multiplier.id,
       );
       // Multiplier bitince production değerlerini sıfırla
       for (let key in this.items) {
@@ -4750,7 +4752,7 @@ class Game {
 
               // Eğer zaten bir completed etiketi yoksa ekle
               const existingLabel = questsImgContainer.querySelector(
-                ".completed-feature-label"
+                ".completed-feature-label",
               );
               if (!existingLabel) {
                 // Completed etiketi oluştur
@@ -4765,7 +4767,7 @@ class Game {
                   if (e.currentTarget === questsDiv) {
                     // Etiketi kaldır
                     const label = questsImgContainer.querySelector(
-                      ".completed-feature-label"
+                      ".completed-feature-label",
                     );
                     if (label) {
                       label.remove();
@@ -4773,7 +4775,7 @@ class Game {
                     // Event listener'ı kaldır
                     questsDiv.removeEventListener(
                       "click",
-                      removeCompletedLabel
+                      removeCompletedLabel,
                     );
                   }
                 };
@@ -4826,11 +4828,11 @@ class Game {
   // Aktif multiplier göstergesini güncelle
   updateActiveMultiplierDisplay() {
     const activeMultiplierDisplay = document.getElementById(
-      "active-multiplier-display"
+      "active-multiplier-display",
     );
     if (activeMultiplierDisplay) {
       activeMultiplierDisplay.textContent = `Active Multiplier: ${this.productionMultiplier.toFixed(
-        2
+        2,
       )}x`;
     }
   }
@@ -4855,8 +4857,8 @@ class Game {
       this.donutCount += totalEarnings;
       this.showNotification(
         `Sold ${this.formatNumber(totalOresSold)} ores for ${this.formatNumber(
-          totalEarnings
-        )} donuts!`
+          totalEarnings,
+        )} donuts!`,
       );
       this.updateDisplay();
       this.updateOreList();
@@ -5003,8 +5005,8 @@ class Game {
         <div class="auto-buyer-controls">
           <label class="switch">
             <input type="checkbox" data-item="${key}" ${
-        this.autoBuyer.settings[key].enabled ? "checked" : ""
-      }>
+              this.autoBuyer.settings[key].enabled ? "checked" : ""
+            }>
             <span class="slider round"></span>
           </label>
           <input type="number" 
@@ -5172,7 +5174,7 @@ class Game {
 
     // Auto Catcher kontrolü
     const autoCatcherUpgrade = this.upgrades.nonItemUpgrades.find(
-      (upgrade) => upgrade.specialEffect === "automation" && upgrade.purchased
+      (upgrade) => upgrade.specialEffect === "automation" && upgrade.purchased,
     );
 
     if (autoCatcherUpgrade) {
