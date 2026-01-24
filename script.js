@@ -4207,11 +4207,25 @@ class Game {
       this.showUpgrades();
       this.updatePrestigeBar();
       this.updateTotalPerSecond();
+      // DonutCoin verilerini yükle
       this.donutCoin = gameState.donutCoin || {
         count: 0,
         lastClaimTime: 0,
         claimInterval: 24 * 60 * 60 * 1000,
       };
+
+      // Fiyat Düzeltme Yaması (Save Bug Fix)
+      // Kayıt dosyasındaki fiyatlara güvenmek yerine, sahip olunan adete göre fiyatı sıfırdan hesapla.
+      // Bu, fiyatların bozulmasını veya sıfırlanmasını %100 engeller.
+      for (const key in this.items) {
+        const item = this.items[key];
+        if (item.count > 0) {
+           item.baseCost = item.originalBaseCost * Math.pow(item.costMultiplier, item.count);
+        } else {
+           // Eğer hiç yoksa, fiyat orijinal fiyattır.
+           item.baseCost = item.originalBaseCost;
+        }
+      }
     }
   }
   async updateGameVersion(gameState) {
