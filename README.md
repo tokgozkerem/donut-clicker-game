@@ -1,33 +1,49 @@
 # Donut Clicker 🍩
 
-**Donut Clicker** is an addictive, incremental clicker game where you bake donuts, purchase upgrades, and build an empire of donut production! Similar to the popular **Cookie Clicker**, in Donut Clicker, your goal is to grow your bakery by earning donuts with each click and unlocking upgrades and items that automate your donut production.
+**Donut Clicker** is a polished, feature-rich incremental idle game where you embark on a journey to build the ultimate donut empire. Starting with nothing but a single donut and a dream, you'll click your way to billions, automating your production with a variety of buildings, upgrades, and mystical crafting recipes.
 
-## 🎮 Gameplay
+## ✨ Core Features
 
-- **Click to Make Donuts**: Start by manually clicking the donut to produce your first delicious treats.
-- **Purchase Upgrades**: Use your hard-earned donuts to buy items like **bakers**, **cursors**, and **factories** that help you automate donut production.
-- **Unlock New Buildings**: As your bakery grows, unlock more efficient buildings to ramp up production, including **farms**, **mines**, and **factories**.
-- **Enhance with Upgrades**: Unlock powerful upgrades for each building to multiply your production, automate clicks, and more.
-- **Animated Clickers**: Watch as cursors and other helpers orbit around the donut, making the experience visually fun as you rack up massive donut counts!
+- **Dynamic Clicking**: Earn donuts with every click. As you progress, unlock upgrades that turn your simple clicks into massive production bursts.
+- **Deep Automation**: Purchase over 10 unique building types, from humble **Cursors** and **Bakers** to reality-bending **Portals** and the legendary **Capital Crest**.
+- **Prestige System**: Hit the ceiling? Reset your progress to gain **Prestige Points**, providing permanent production multipliers that allow you to reach even greater heights.
+- **Quest System**: Complete dozens of challenges—from "Beginner Clicker" to "Donut Universe"—to earn massive donut rewards and temporary production boosters.
+- **Crafting & Resources**: 
+  - **The Mine**: Extract Copper, Iron, Gold, and Diamonds. Trade them in the market or use them for upgrades.
+  - **The Baker's Kitchen**: Collect ingredients like Dough, Sugar, and Chocolate to craft special recipes.
+  - **Recipe Book**: Master complex recipes that provide unique, permanent bonuses to your production buildings.
+- **Auto-Buyer**: Automate your purchases with a customizable auto-buyer, ensuring your empire grows even while you're away.
+- **Responsive Design**: Play seamlessly on desktop or mobile with a fully optimized UI.
 
-## Key Features
+## 🚀 Recent Updates (v1.4.4)
 
-- **Idle Gameplay**: Let the game run in the background and watch your donuts accumulate automatically with the help of your purchased items.
-- **Upgrades and Multipliers**: Buy upgrades to multiply your clicks and donut production rate for massive growth.
-- **Engaging Animations**: Enjoy fun and dynamic animations, including orbiting cursors and flying donuts, that bring the gameplay to life.
-- **Save and Continue**: Your progress is saved automatically so you can return anytime and continue building your donut empire.
-- **Leaderboard Potential**: See how many donuts you can produce and compare your bakery with your friends! (Coming soon!)
+- **Mystery Buildings**: Future production facilities are now shrouded in mystery until you're close to unlocking them.
+- **Auto-Buyer Optimization**: Enhanced logic for smoother automated growth.
+- **Recipe Book Expansion**: New recipes added to the Master Baker's Notes.
+- **UI/UX Polishing**: Improved animations for orbiting cursors and falling donuts.
+- **Bug Fixes**: Resolved issues with quest reward stacking and image preloading.
 
-## 📈 Strategy Tips
+## 🛠️ Technology Stack
 
-- Start by investing in **cursors** and **bakers** to automate early donut production.
-- Upgrade your buildings for better efficiency and production speed.
-- Keep an eye on your **donuts per second (DPS)** and always look for ways to boost it through upgrades.
-- Save up for larger, more expensive buildings like **mines** and **factories** for exponential growth.
-- Don’t forget to take advantage of **upgrades** that multiply your donuts-per-click!
+- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3.
+- **Animations**: CSS Keyframes & RequestAnimationFrame for high-performance rendering.
+- **Storage**: LocalStorage for persistent save states.
+- **Analytics**: Integrated Google Tag Manager for performance tracking.
+- **Deployment**: GitHub Pages / Custom Domain.
 
-## 🌐 Play Online
-- You can also play **Donut Clicker** directly online through this [link](https://tokgozkerem.github.io/donut-clicker-game/)
+## 🎮 How to Play
 
-## 🚀 Keywords and SEO
-- This project is optimized for keywords such as clicker game, donut clicker game, clicker games, donut clicker, idle games, incremental games, donuts per second, donut upgrades, and building clicker games.
+1.  **Click the Donut**: Start your journey by clicking the large donut in the center.
+2.  **Buy Buildings**: Use your donuts to purchase buildings from the Store on the right.
+3.  **Upgrade**: Watch the Upgrade List at the top of the store for powerful multipliers.
+4.  **Manage Resources**: Check the **Mine** and **Baker** panels (bottom) to manage ores and ingredients.
+5.  **Complete Quests**: Open the Quests menu on the left to track your progress and claim rewards.
+6.  **Prestige**: Once your growth slows down, use the Prestige menu to reset and grow faster than ever before.
+
+## 🌐 Live Demo
+
+Play the game now: [donutclicker.net](https://donutclicker.net/)
+
+---
+
+*Developed with ❤️ by ktz and doa.*
