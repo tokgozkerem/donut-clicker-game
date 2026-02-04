@@ -46,4 +46,4 @@ Play the game now: [donutclicker.net](https://donutclicker.net/)
 
 ---
 
-*Developed with ❤️ by ktz and doa.*
+*Developed with by ktz*
