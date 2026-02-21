@@ -467,60 +467,19 @@
         <div class="recipe-book-content">
           <span class="close-btn">&times;</span>
           <div class="book-container">
-            <!-- Sol Sayfa -->
+            <!-- Sol Sayfa - Tarifler -->
             <div class="book-page left-page">
               <h2 class="page-title">Donut Recipes</h2>
               <div class="recipes-list">
-                <div class="recipe-item">
-                  <div class="recipe-header">
-                    <img src="img/classic-donut.webp" alt="Classic Donut" />
-                    <span class="recipe-name">Classic Donut</span>
-                  </div>
-                  <div class="recipe-ingredients">
-                    <span class="ingredient">
-                      <img src="img/dough.webp" alt="Dough" />2x
-                    </span>
-                    <span class="ingredient">
-                      <img src="img/sugar.webp" alt="Sugar" />1x
-                    </span>
-                  </div>
-                  <button class="make-btn" data-recipe="Classic Donut">
-                    Make!
-                  </button>
-                </div>
-
-                <div class="recipe-item">
-                  <div class="recipe-header">
-                    <img src="img/classic-donut.webp" alt="Classic Donut" />
-                    <span class="recipe-name">Classic Donut</span>
-                  </div>
-                  <div class="recipe-ingredients">
-                    <span class="ingredient">
-                      <img src="img/dough.webp" alt="Dough" />2x
-                    </span>
-                    <span class="ingredient">
-                      <img src="img/sugar.webp" alt="Sugar" />1x
-                    </span>
-                  </div>
-                  <button class="make-btn" data-recipe="Classic Donut">
-                    Make!
-                  </button>
-                </div>
+                <!-- JS tarafından dinamik olarak doldurulacak -->
               </div>
             </div>
 
-            <!-- Sağ Sayfa -->
+            <!-- Sağ Sayfa - Tarif Detayı -->
             <div class="book-page right-page">
-              <div class="page-content">
+              <div id="recipe-detail-panel" class="page-content">
                 <h2>Master Baker's Notes</h2>
-                <p>
-                  Select a recipe from the left page to start crafting delicious
-                  donuts!
-                </p>
-                <p style="color: #ffd700; margin-top: 10px; font-style: italic">
-                  Still in development – Exciting new features coming soon!
-                </p>
-                <!-- İsterseniz buraya ek bilgiler ekleyebilirsiniz -->
+                <p>Hover over a recipe to see its details!</p>
               </div>
             </div>
           </div>
@@ -657,12 +616,14 @@
         <div class="store">
           <div class="store-top-ad">
             <!-- right-section above store -->
-            <ins class="adsbygoogle"
-                 style="display:inline-block;width:300px;height:250px"
-                 data-ad-client="ca-pub-2794552984734673"
-                 data-ad-slot="3893553407"></ins>
+            <ins
+              class="adsbygoogle"
+              style="display: inline-block; width: 300px; height: 250px"
+              data-ad-client="ca-pub-2794552984734673"
+              data-ad-slot="3893553407"
+            ></ins>
             <script>
-                 (adsbygoogle = window.adsbygoogle || []).push({});
+              (adsbygoogle = window.adsbygoogle || []).push({});
             </script>
           </div>
           <div id="store-title" class="title">Store</div>
@@ -701,7 +662,7 @@
             </div>
 
             <!-- Baker -->
-            <div class="store-item" data-item="baker">
+            <div class="store-item is-hidden" data-item="baker">
               <div class="item-img">
                 <img src="img/baker.webp" alt="Baker" />
               </div>
@@ -722,7 +683,7 @@
             </div>
 
             <!-- Farm -->
-            <div class="store-item" data-item="farm">
+            <div class="store-item is-hidden" data-item="farm">
               <div class="item-img">
                 <img src="img/farm.webp" alt="Farm" />
               </div>
@@ -743,7 +704,7 @@
             </div>
 
             <!-- Mine -->
-            <div class="store-item" data-item="mine">
+            <div class="store-item is-hidden" data-item="mine">
               <div class="item-img">
                 <img src="img/mine.webp" alt="mineDonut" />
               </div>
@@ -764,7 +725,7 @@
             </div>
 
             <!-- Factory -->
-            <div class="store-item" data-item="factory">
+            <div class="store-item is-hidden" data-item="factory">
               <div class="item-img">
                 <img src="img/factory.webp" alt="Factory" />
               </div>
@@ -784,7 +745,7 @@
               </div>
             </div>
             <!-- Factory -->
-            <div class="store-item" data-item="logisticCenter">
+            <div class="store-item is-hidden" data-item="logisticCenter">
               <div class="item-img">
                 <img src="img/logisticCenter.webp" alt="Factory" />
               </div>
@@ -805,7 +766,7 @@
             </div>
 
             <!-- Power Plant -->
-            <div class="store-item" data-item="powerPlant">
+            <div class="store-item is-hidden" data-item="powerPlant">
               <div class="item-img">
                 <img src="img/powerPlant.webp" alt="powerPlantDonut" />
               </div>
@@ -825,7 +786,7 @@
               </div>
             </div>
             <!-- Nature -->
-            <div class="store-item" data-item="nature">
+            <div class="store-item is-hidden" data-item="nature">
               <div class="item-img">
                 <img src="img/nature.webp" alt="nature" />
               </div>
@@ -846,7 +807,7 @@
             </div>
 
             <!-- Neural Network Bakery -->
-            <div class="store-item" data-item="neuralNetworkBakery">
+            <div class="store-item is-hidden" data-item="neuralNetworkBakery">
               <div class="item-img">
                 <img
                   src="img/neuralNetworkBakery.webp"
@@ -869,7 +830,7 @@
               </div>
             </div>
             <!-- Portal -->
-            <div class="store-item" data-item="portal">
+            <div class="store-item is-hidden" data-item="portal">
               <div class="item-img">
                 <img src="img/portal.webp" alt="portalDonut" />
               </div>
@@ -889,7 +850,7 @@
               </div>
             </div>
             <!-- Capital Crest -->
-            <div class="store-item" data-item="capitalCrest">
+            <div class="store-item is-hidden" data-item="capitalCrest">
               <div class="item-img">
                 <img src="img/capitalCrest.webp" alt="capitalCrest" />
               </div>
@@ -911,16 +872,19 @@
               </div>
             </div>
           </div>
-                              <div class="ad-container">
-                                <!-- bottom banner ad -->
-                                <ins class="adsbygoogle"
-                                     style="display:inline-block;width:300px;height:250px"
-                                     data-ad-client="ca-pub-2794552984734673"
-                                     data-ad-slot="3853966201"></ins>
-                                <script>
-                                     (adsbygoogle = window.adsbygoogle || []).push({});
-                                </script>
-                              </div>        </div>
+          <div class="ad-container">
+            <!-- bottom banner ad -->
+            <ins
+              class="adsbygoogle"
+              style="display: inline-block; width: 300px; height: 250px"
+              data-ad-client="ca-pub-2794552984734673"
+              data-ad-slot="3853966201"
+            ></ins>
+            <script>
+              (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+          </div>
+        </div>
       </div>
     </div>
     <div id="quests-menu" class="hidden">
