@@ -1231,20 +1231,23 @@ h3::after {
 #footer-container {
   position: fixed;
   bottom: 0;
-  width: 60%;
-  left: 20%;
+  width: 56%;
+  left: 22%;
   text-align: center;
   backdrop-filter: blur(15px);
-  background: rgba(44, 24, 16, 0.85);
-  border: 1px solid rgba(212, 162, 86, 0.3);
+  background: rgba(44, 24, 16, 0.92);
+  border: 1px solid rgba(255, 234, 182, 0.18);
   border-bottom: none;
-  border-radius: 20px 20px 0 0;
-  padding: 10px;
+  border-radius: 16px 16px 0 0;
+  padding: 0;
   z-index: 30;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.45);
   font-family: "Playpen Sans", cursive;
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 #footer-container.visible {
   display: block;
@@ -1259,7 +1262,10 @@ h3::after {
 .footer-panel {
   width: 100%;
   color: #f5f5f5;
+  position: relative;
   display: none;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .close-btn {
@@ -1277,140 +1283,325 @@ h3::after {
   color: #ff6666;
 }
 
+/* ========================================
+   MINE PANEL — warm theme
+   palette: #fccb72 gold, #fd9193 salmon,
+   #ffeab6 cream, #2c1810 dark brown
+   ======================================== */
+
 #mine-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  padding: 10px;
+  padding-top: 6px;
 }
 
 .mine-content {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.left-section,
-.right-section {
-  padding: 10px;
-  border-radius: 8px;
-}
-
+/* ---- LEFT: inventory ---- */
 #mine-panel .left-section {
-  flex: 1;
-  background: rgba(51, 51, 51, 0.6);
+  background: rgba(44, 24, 16, 0.5);
+  border: 1px solid rgba(255, 234, 182, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .mine-content-header {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 234, 182, 0.08);
 }
 
-#item-info-text h4,
-#item-info-text p {
-  margin: 0;
-  color: #f5f5f5;
+.mine-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffeab6;
 }
 
-.ore-container {
+.mine-topbar-timer {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fccb72;
+  background: rgba(252, 203, 114, 0.1);
+  border: 1px solid rgba(252, 203, 114, 0.18);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.mine-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 234, 182, 0.2);
+  padding: 3px;
+  background: rgba(252, 203, 114, 0.08);
+  flex-shrink: 0;
+}
+
+.mine-header-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
-  overflow-y: auto;
 }
+
+.mine-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mine-stat-label {
+  font-size: 0.68rem;
+  color: rgba(255, 234, 182, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.mine-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fccb72;
+}
+
+/* ore inventory chips */
+.ore-container { display: flex; flex-direction: column; gap: 6px; }
 
 #oreList {
-  display: flex;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 #oreList li {
   display: flex;
   align-items: center;
-  color: #f5f5f5;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffeab6;
+  background: rgba(255, 234, 182, 0.06);
+  border: 1px solid rgba(255, 234, 182, 0.1);
+  border-radius: 8px;
+  padding: 4px 7px;
 }
 
 #oreList img {
-  width: 24px;
-  height: auto;
-  margin-right: 8px;
-}
-
-#mine-panel .right-section {
-  flex: 2;
-  background: rgba(51, 51, 51, 0.6);
-  padding: 5px;
-  overflow-y: auto;
-  border-left: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.right-section h4 {
-  font-size: 1.2rem;
-  color: #ffd700;
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-.market-container ul {
-  display: flex;
-  flex-direction: row;
-  margin-left: 120px;
-}
-
-.market-container li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px;
-  border-radius: 8px;
-  transition:
-    background-color 0.2s,
-    transform 0.2s;
-}
-
-.market-container li:hover {
-  background-color: rgba(40, 167, 69, 0.2);
-  transform: scale(1.05);
-  cursor: pointer;
-}
-.ore-name {
-  font-weight: bold;
-  color: #ffffff;
-}
-
-.price-display {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  transition: color 0.5s ease;
-}
-
-.donut-money-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 4px;
-}
-
-.ore-image {
-  width: 40px;
-  height: 40px;
+  width: 18px;
+  height: 18px;
   margin-right: 5px;
+  flex-shrink: 0;
 }
 
-.market-container span {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #555;
+.ore-generation-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 234, 182, 0.08);
+  gap: 6px;
 }
-.market-container span,
-.price-display {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff; /* Beyaz renk */
+
+.ore-gen-text {
+  font-size: 0.68rem;
+  color: rgba(255, 234, 182, 0.35);
+  line-height: 1.3;
 }
+
+.mine-timer-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fccb72;
+  background: rgba(252, 203, 114, 0.1);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(252, 203, 114, 0.18);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ---- RIGHT: market ---- */
+#mine-panel .right-section {
+  background: rgba(44, 24, 16, 0.5);
+  border: 1px solid rgba(255, 234, 182, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.market-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 234, 182, 0.1);
+}
+
+.market-header h4 {
+  font-size: 0.9rem;
+  color: #ffeab6;
+  margin: 0;
+  font-weight: 700;
+}
+
+.market-limit-badge {
+  font-size: 0.68rem;
+  color: rgba(255, 234, 182, 0.55);
+  background: rgba(255, 234, 182, 0.08);
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 234, 182, 0.12);
+}
+
+.market-guide-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 234, 182, 0.2);
+  background: rgba(255, 234, 182, 0.06);
+  color: rgba(255, 234, 182, 0.5);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-family: "Playpen Sans", cursive;
+  padding: 0;
+}
+
+.market-guide-btn:hover {
+  background: rgba(252, 203, 114, 0.18);
+  border-color: rgba(252, 203, 114, 0.4);
+  color: #fccb72;
+}
+
+/* ore cards in market */
+.market-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.market-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.market-ore-card {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: rgba(255, 234, 182, 0.04);
+  border: 1px solid rgba(255, 234, 182, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.market-ore-card:hover {
+  background: rgba(252, 203, 114, 0.1);
+  border-color: rgba(252, 203, 114, 0.25);
+}
+
+.market-ore-card.buy-hover:hover {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.market-ore-card.sell-hover:hover {
+  background: rgba(253, 145, 147, 0.12);
+  border-color: rgba(253, 145, 147, 0.3);
+}
+
+.market-ore-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.market-ore-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.market-ore-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffeab6;
+}
+
+.market-ore-chart {
+  width: 100%;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.market-ore-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffeab6;
+  white-space: nowrap;
+}
+
+.market-ore-price .price-change {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.price-up { color: #81c784; }
+.price-down { color: #fd9193; }
+
+.price-change-up {
+  background: rgba(129, 199, 132, 0.14);
+  color: #81c784;
+}
+
+.price-change-down {
+  background: rgba(253, 145, 147, 0.14);
+  color: #fd9193;
+}
+
+.ore-name { font-weight: bold; color: #ffeab6; }
+.donut-money-icon { width: 14px; height: 14px; }
+.ore-image { width: 32px; height: 32px; }
 
 .active-mine-effect {
   cursor: pointer;
@@ -1419,68 +1610,124 @@ h3::after {
 .active-mine-effect:hover {
   transform: scale(1.06);
 }
-/* Market Başlığı ve Yazı Stili */
-#remainingChances {
-  font-size: 0.85em;
-  color: white;
-  margin-bottom: 10px;
+
+/* buy / sell buttons */
+.market-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 234, 182, 0.08);
 }
 
-/* Market Butonları */
 .market-btn {
-  background-color: #4caf50; /* Ana renk */
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px; /* Yuvarlak köşeler */
-  font-size: 1em;
+  flex: 1;
+  background: rgba(129, 199, 132, 0.15);
+  color: #81c784;
+  border: 1px solid rgba(129, 199, 132, 0.25);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.85em;
+  font-weight: 700;
   cursor: pointer;
-  transition:
-    background-color 0.3s ease,
-    transform 0.2s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Hafif gölge */
-}
-#sellBtn {
-  background-color: #f44336; /* Kırmızı renk */
+  transition: all 0.15s ease;
+  font-family: "Playpen Sans", cursive;
 }
 
-#sellBtn:hover {
-  background-color: #d32f2f; /* Hover sırasında daha koyu kırmızı */
-}
-.market-btn:hover {
-  background-color: #3e8e41; /* Hover efekti için daha koyu ton */
-  transform: scale(1.05); /* Hafif büyütme efekti */
-}
+.market-btn:hover { background: rgba(129, 199, 132, 0.25); }
+.market-btn:active { transform: scale(0.97); }
 
-.market-btn:active {
-  transform: scale(0.98); /* Tıklama animasyonu için hafif küçültme */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Tıklama anında gölgeyi azalt */
-}
-
-/* Seçili Buton Stili */
 .market-btn.selected {
-  border: 2px solid #000; /* Seçili buton çerçevesi */
-  background-color: #2e7d32;
+  background: rgba(129, 199, 132, 0.3);
+  border-color: #81c784;
+  box-shadow: 0 0 10px rgba(129, 199, 132, 0.12);
 }
 
-/* Pazar Listeleme Hover Efekti */
-#marketList li.buy-hover:hover {
-  background-color: rgba(
-    76,
-    175,
-    80,
-    0.1
-  ); /* Alım için hafif yeşil arka plan */
+#sellBtn {
+  background: rgba(253, 145, 147, 0.15);
+  color: #fd9193;
+  border-color: rgba(253, 145, 147, 0.25);
 }
 
-#marketList li.sell-hover:hover {
-  background-color: rgba(
-    244,
-    67,
-    54,
-    0.1
-  ); /* Satış için hafif kırmızı arka plan */
+#sellBtn:hover { background: rgba(253, 145, 147, 0.25); }
+
+#sellBtn.selected {
+  background: rgba(253, 145, 147, 0.3);
+  border-color: #fd9193;
+  box-shadow: 0 0 10px rgba(253, 145, 147, 0.12);
 }
+
+/* ---- Guide panel ---- */
+.market-guide-panel {
+  margin: 6px 10px 0;
+  overflow: hidden;
+}
+
+.market-guide-panel.hidden { display: none; }
+
+.guide-content {
+  background: rgba(44, 24, 16, 0.6);
+  border: 1px solid rgba(255, 234, 182, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 234, 182, 0.08);
+}
+
+.guide-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fccb72;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.guide-close {
+  font-size: 1.1rem;
+  color: rgba(255, 234, 182, 0.4);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.guide-close:hover { color: #fd9193; }
+
+.guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.guide-icon {
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.guide-item p {
+  font-size: 0.72rem;
+  color: rgba(255, 234, 182, 0.5);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.guide-item strong {
+  color: #ffeab6;
+}
+
 #baker-panel {
   display: flex;
   flex-direction: column;
@@ -2664,10 +2911,8 @@ h3::after {
     transition: transform 0.5s ease;
   }
 
-  .market-container ul {
-    display: flex;
-    flex-direction: row;
-    margin-left: 40px;
+  .market-grid {
+    flex-direction: column;
   }
   .left-section,
   .right-section {
@@ -3563,9 +3808,8 @@ input:checked + .slider:before {
     padding: 10px;
   }
 
-  .market-container ul {
+  .market-grid {
     margin-left: 0;
-    justify-content: center;
   }
 }
 

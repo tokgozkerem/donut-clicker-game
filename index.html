@@ -102,7 +102,7 @@
       rel="stylesheet"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.4.4" />
+    <link rel="stylesheet" href="styles.css?v=1.4.5" />
     <link rel="stylesheet" href="store-visibility.css?v=1.4.4" />
     <link rel="icon" href="img/donutPixelArt.webp" type="image/webp" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
@@ -151,7 +151,7 @@
             (adsbygoogle = window.adsbygoogle || []).push({});
           </script>
         </div>
-        <div id="page-title" class="title" style="margin-top: 5px;">Options</div>
+        <div id="page-title" class="title" style="margin-top: 5px">Options</div>
         <div class="page-content">
           <div id="pages">
             <div class="page-item" id="quests">
@@ -567,45 +567,72 @@
           <div class="mine-content">
             <div class="left-section">
               <div class="mine-content-header">
-                <img
-                  id="item-info-image"
-                  src="img/mine.webp"
-                  alt="item image"
-                  class="item-image"
-                />
-                <div id="item-info-text">
-                  <h4 id="item-info-name">Mine</h4>
-                  <p id="item-info-owned">
-                    Worker: <span id="workerCount">0</span>
-                  </p>
-                  <h4 id="item-info-name">Ores</h4>
-                  <p id="item-info-owned">
-                    Total Ore: <span id="oreCount">0</span>
-                  </p>
+                <img src="img/mine.webp" alt="Mine" class="mine-header-icon" />
+                <span class="mine-section-title">Mine</span>
+                <span class="mine-topbar-timer"><span id="mine-timer">60</span>s</span>
+              </div>
+              <div class="mine-header-stats">
+                <div class="mine-stat-row">
+                  <span class="mine-stat-label">Workers</span>
+                  <span class="mine-stat-value" id="workerCount">0</span>
+                </div>
+                <div class="mine-stat-row">
+                  <span class="mine-stat-label">Total Ore</span>
+                  <span class="mine-stat-value" id="oreCount">0</span>
                 </div>
               </div>
 
               <div class="ore-container">
                 <ul id="oreList"></ul>
-                <p class="ore-generation-info">
-                  (Each worker generate 5 ore every minute)
-                  <br />
-                  <span id="mine-countdown"
-                    >Next production in: <span id="mine-timer">60</span>s</span
-                  >
-                </p>
+                <div class="ore-generation-info">
+                  <span class="ore-gen-text">Each worker produces 5 ore per cycle</span>
+                </div>
               </div>
             </div>
 
             <div class="right-section">
-              <h4>Market</h4>
+              <div class="market-header">
+                <h4>Ore Market</h4>
+                <span id="remainingChances" class="market-limit-badge">10 / 10</span>
+                <button id="marketGuideBtn" class="market-guide-btn" title="How does the market work?">?</button>
+              </div>
               <div class="market-container">
-                <p id="remainingChances">
-                  You can get a maximum of 10 ores every 1 minute. Remaining: 10
-                </p>
-                <ul id="marketList"></ul>
-                <button id="buyBtn" class="market-btn">Buy</button>
-                <button id="sellBtn" class="market-btn">Sell</button>
+                <div id="marketList" class="market-grid"></div>
+                <div class="market-actions">
+                  <button id="buyBtn" class="market-btn">Buy</button>
+                  <button id="sellBtn" class="market-btn">Sell</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Market Guide Panel -->
+          <div id="marketGuidePanel" class="market-guide-panel hidden">
+            <div class="guide-content">
+              <div class="guide-header">
+                <span class="guide-title">Market Guide</span>
+                <span id="closeMarketGuide" class="guide-close">&times;</span>
+              </div>
+              <div class="guide-body">
+                <div class="guide-item">
+                  <span class="guide-icon">&#9203;</span>
+                  <p>Ore prices update every <strong>60 seconds</strong> along with ore production.</p>
+                </div>
+                <div class="guide-item">
+                  <span class="guide-icon">&#128200;</span>
+                  <p>Each ore has its own <strong>trend</strong> that shifts over time. If a price starts rising, it tends to keep rising for a while, then reverses.</p>
+                </div>
+                <div class="guide-item">
+                  <span class="guide-icon">&#9878;</span>
+                  <p><strong>Volatility</strong> varies by ore: Copper is the most stable, Diamond swings the hardest. Rarer ores = bigger risk & reward.</p>
+                </div>
+                <div class="guide-item">
+                  <span class="guide-icon">&#128176;</span>
+                  <p>You have <strong>10 trades</strong> (buy or sell) per 60-second cycle. Use them wisely!</p>
+                </div>
+                <div class="guide-item">
+                  <span class="guide-icon">&#128161;</span>
+                  <p><strong>Tip:</strong> Watch the sparkline charts. Buy when the trend is low and the line curves upward. Sell before a peak turns into a dip!</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1011,6 +1038,6 @@
     >
       <img src="img/reddit.svg" alt="Reddit" /> Join r/donutClicker
     </a>
-    <script defer src="script.js?v=1.4.4"></script>
+    <script defer src="script.js?v=1.4.5"></script>
   </body>
 </html>
