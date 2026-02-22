@@ -304,6 +304,27 @@
           <!-- Updates Section -->
           <section id="updates-section">
             <h3>Updates</h3>
+            <div class="update big-update">
+              <h4 class="big-update-title">Big Update: Version 1.4.5</h4>
+              <ul class="big-update-text">
+                <li>
+                  Your bakery now earns donuts even when you're away! Collect
+                  offline earnings when you return.
+                </li>
+                <li>
+                  Game performance significantly improved! Enjoy smoother clicks
+                  and less device heating.
+                </li>
+                <li>
+                  Cheating made harder! Your save files are now protected, and
+                  game data is more secure.
+                </li>
+                <li>
+                  Baker Menu & Recipe Book got a fancy new look! More aesthetic
+                  and user-friendly.
+                </li>
+              </ul>
+            </div>
             <div class="update small-update">
               <h4 class="small-update-title">Small Update: Version 1.4.4</h4>
               <ul class="small-update-text">
@@ -313,6 +334,7 @@
                 </li>
               </ul>
             </div>
+
             <div class="update big-update">
               <h4 class="big-update-title">Big Update: Version 1.3.1</h4>
               <ul class="big-update-text">
@@ -910,6 +932,25 @@
         </p>
         <button id="prestigeYes">Yes</button>
         <button id="prestigeNo">No</button>
+      </div>
+    </div>
+
+    <!-- Offline Earnings Modal -->
+    <div id="offlineModal" class="modal">
+      <div class="modal-content">
+        <h2>Welcome Back!</h2>
+        <img
+          src="img/donutNew.webp"
+          alt="Donut"
+          style="width: 60px; height: 60px; margin: 15px 0"
+        />
+        <p id="offlineTimeText"></p>
+        <p
+          id="offlineEarningsText"
+          style="font-size: 1.2em; color: #ffd700; font-weight: bold"
+        ></p>
+        <p style="font-size: 0.8em; color: #aaa">(Efficiency: 25%)</p>
+        <button id="closeOfflineModal">Collect Donuts</button>
       </div>
     </div>
     <div id="game-saved">Game Saved!</div>

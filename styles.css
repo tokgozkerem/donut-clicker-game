@@ -1220,19 +1220,20 @@ h3::after {
 #footer-container {
   position: fixed;
   bottom: 0;
-  width: 66%;
-  left: 16%;
+  width: 60%;
+  left: 20%;
   text-align: center;
-  backdrop-filter: blur(10px); /* Cam efekti */
-  background: rgba(255, 234, 182, 0.2); /* Yarı şeffaf cam arka plan */
-  border-top: 2px solid rgba(255, 234, 182, 0.5);
-  border-radius: 15px 15px 0 0;
-  padding: 12px;
+  backdrop-filter: blur(15px);
+  background: rgba(44, 24, 16, 0.85);
+  border: 1px solid rgba(212, 162, 86, 0.3);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 10px;
   z-index: 30;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-  font-family: "Roboto", sans-serif;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+  font-family: "Playpen Sans", cursive;
   transform: translateY(100%);
-  transition: transform 0.5s ease;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #footer-container.visible {
   display: block;
@@ -1279,8 +1280,8 @@ h3::after {
 
 .left-section,
 .right-section {
-  padding: 20px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 8px;
 }
 
 #mine-panel .left-section {
@@ -1468,33 +1469,29 @@ h3::after {
 #baker-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: linear-gradient(135deg, #2c1810 0%, #3d2317 100%);
-  border: 2px solid #8b4513;
-  box-shadow: 0 0 20px rgba(139, 69, 19, 0.3);
+  gap: 15px;
 }
 
 /* Baker Panel İçeriği */
 .baker-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  padding: 20px;
-  min-height: 300px;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 15px;
+  padding: 15px;
 }
 
 /* Sol bölüm düzenlemesi */
 .left-section {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 /* Sağ bölüm düzenlemesi */
 .right-section {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 .book-modal {
   display: none;
@@ -1540,8 +1537,8 @@ h3::after {
   border: none;
   cursor: pointer;
   transition: transform 0.3s ease;
-  width: 180px;
-  height: 220px;
+  width: 140px;
+  height: 180px;
   padding: 0;
 }
 
@@ -1909,10 +1906,10 @@ h3::after {
   background: linear-gradient(45deg, #1a0f0a 0%, #2a1810 100%);
   border: 2px solid #d4a256;
   border-radius: 12px;
-  padding: 20px;
+  padding: 12px 16px;
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
   box-shadow: inset 0 0 15px rgba(212, 162, 86, 0.1);
   position: relative;
   overflow: hidden;
@@ -1943,11 +1940,12 @@ h3::after {
 }
 
 #baker-info-image {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  padding: 8px;
+  padding: 6px;
   border: 2px solid #d4a256;
+  z-index: 1;
 }
 
 #baker-info-image:hover {
@@ -1956,24 +1954,26 @@ h3::after {
 
 #baker-info-text h4 {
   color: #d4a256;
-  font-size: 20px;
+  font-size: 16px;
   margin: 0;
   font-weight: 700;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 1px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+  z-index: 1;
 }
 
 #baker-info-text h4:first-child {
   color: #ffd700;
-  font-size: 24px;
-  margin-bottom: 8px;
+  font-size: 18px;
+  margin-bottom: 4px;
   text-transform: uppercase;
 }
 
 #baker-info-text p {
   color: #bc8a5f;
-  font-size: 15px;
-  margin: 4px 0;
+  font-size: 13px;
+  margin: 2px 0;
+  z-index: 1;
 }
 
 #baker-info-text span {
@@ -1987,30 +1987,31 @@ h3::after {
   background: linear-gradient(45deg, #1a0f0a 0%, #2a1810 100%);
   border: 2px solid #d4a256;
   border-radius: 12px;
-  padding: 20px;
-  margin-top: 16px;
+  padding: 12px 16px;
+  margin-top: 5px;
   position: relative;
 }
 
 #ingredientList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
   padding: 0;
   list-style: none;
 }
 
 #ingredientList li {
   background: linear-gradient(135deg, #3d2317 0%, #2c1810 100%);
-  padding: 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #d4a256;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  font-size: 14px;
 }
 
 #ingredientList li::after {
@@ -2264,9 +2265,9 @@ h3::after {
 /* Üretim bilgi paneli için genel stil */
 .ore-generation-info,
 .ingredient-generation-info {
-  padding: 8px 0;
-  margin: 10px 0;
-  font-size: 0.85em;
+  padding: 4px 0;
+  margin: 5px 0;
+  font-size: 0.75em;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -2274,8 +2275,8 @@ h3::after {
 #mine-countdown,
 #baker-countdown {
   display: block;
-  margin-top: 8px;
-  padding: 8px;
+  margin-top: 4px;
+  padding: 4px;
   text-align: center;
   font-family: "Courier New", monospace;
   letter-spacing: 1px;
@@ -2285,7 +2286,7 @@ h3::after {
 /* Sayaç rakamları */
 #mine-timer,
 #baker-timer {
-  font-size: 1.2em;
+  font-size: 1.1em;
   font-weight: bold;
   padding: 2px 6px;
   min-width: 30px;

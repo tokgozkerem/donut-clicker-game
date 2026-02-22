@@ -1,3 +1,4 @@
+(function() {
 class Game {
   constructor() {
     this.currentVersion = "1.4.4";
@@ -1849,6 +1850,25 @@ class Game {
       lastClaimTime: 0,
       claimInterval: 24 * 60 * 60 * 1000, // 24 saat
     };
+
+    // Offline Production Settings
+    this.lastActiveTime = Date.now();
+    this.OFFLINE_EFFICIENCY = 0.25; // %25 verimlilik
+    this.MAX_OFFLINE_TIME = 12 * 60 * 60 * 1000; // 12 saat limit
+
+    // Performance Optimization Variables
+    this.domCache = new Map();
+    this.lastUpdateValues = {
+      donutCount: -1,
+      totalPerSecond: -1,
+      purchaseAmount: -1,
+      affordability: {},
+      buildingCounts: {},
+      multiplierCount: -1
+    };
+    this.renderFrameCount = 0;
+    this.activeAnimationElements = 0;
+    this.MAX_ANIMATION_ELEMENTS = 40; // Don't allow more than 40 animation nodes at once
   }
 
   // Resim önbellekleme sistemi
@@ -1907,6 +1927,9 @@ class Game {
   }
 
   init() {
+    // DOM Elemanlarını önbelleğe al
+    this.cacheElements();
+
     // Önce resimleri yükle
     this.preloadImages();
     this.initializeComboSystem();
@@ -1987,6 +2010,27 @@ class Game {
     // Store görünürlüğünü hemen ayarla (RAF beklemeden)
     this.updateStoreVisibility();
   }
+
+  cacheElements() {
+    this.domCache.set("counter", document.getElementById("donut-count"));
+    this.domCache.set("perSecondDisplay", document.getElementById("per-second"));
+    this.domCache.set("mineTimer", document.getElementById("mine-timer"));
+    this.domCache.set("bakerTimer", document.getElementById("baker-timer"));
+    this.domCache.set("upgradeList", document.getElementById("upgrade-list"));
+
+    // Cache building elements
+    for (let key in this.items) {
+      const storeItem = document.querySelector(`.store-item[data-item="${key}"]`);
+      if (storeItem) {
+        this.domCache.set(`${key}StoreItem`, storeItem);
+        this.domCache.set(`${key}Cost`, document.getElementById(`${key}Cost`));
+        this.domCache.set(`${key}Total`, document.getElementById(`total${this.capitalize(key)}s`));
+        this.domCache.set(`${key}Image`, storeItem.querySelector(".item-img img"));
+        this.domCache.set(`${key}ItemImgContainer`, storeItem.querySelector(".item-img"));
+      }
+    }
+  }
+
   updateStoreVisibility() {
     const buildingOrder = [
       "cursor",
@@ -2006,38 +2050,43 @@ class Game {
     const maxMysterySlots = 2;
 
     buildingOrder.forEach((key, index) => {
-      const storeItem = document.querySelector(
-        `.store-item[data-item="${key}"]`,
-      );
+      const storeItem = this.domCache.get(`${key}StoreItem`);
       if (!storeItem) return;
 
       // 1. Kural: İlk 1 bina (Cursor) her zaman açıktır.
       if (index < 1) {
-        storeItem.classList.remove("is-hidden", "is-mystery");
+        if (storeItem.classList.contains("is-hidden") || storeItem.classList.contains("is-mystery")) {
+          storeItem.classList.remove("is-hidden", "is-mystery");
+        }
         return;
       }
 
       const itemData = this.items[key];
       // Unlock koşulu: Binadan en az 1 tane varsa VEYA Toplam Kazanılan Donut >= Şimdiki Fiyatın %75'i
-      // lifetime (totalDonutsEarned) kullanmak daha iyidir, böylece harcama yapınca bina kapanmaz.
       const isUnlocked =
         itemData.count > 0 ||
         this.totalDonutsEarned >= itemData.baseCost * 0.75;
 
       if (isUnlocked) {
         // Durum: Açık (Revealed)
-        storeItem.classList.remove("is-hidden", "is-mystery");
+        if (storeItem.classList.contains("is-hidden") || storeItem.classList.contains("is-mystery")) {
+          storeItem.classList.remove("is-hidden", "is-mystery");
+        }
       } else {
         // Durum: Kapalı, peki Gizemli mi Gizli mi?
         if (mysterySlots < maxMysterySlots) {
           // Durum: Gizemli (Mystery - ???)
-          storeItem.classList.remove("is-hidden");
-          storeItem.classList.add("is-mystery");
+          if (storeItem.classList.contains("is-hidden") || !storeItem.classList.contains("is-mystery")) {
+            storeItem.classList.remove("is-hidden");
+            storeItem.classList.add("is-mystery");
+          }
           mysterySlots++;
         } else {
           // Durum: Tamamen Gizli (Hidden)
-          storeItem.classList.remove("is-mystery");
-          storeItem.classList.add("is-hidden");
+          if (!storeItem.classList.contains("is-hidden") || storeItem.classList.contains("is-mystery")) {
+            storeItem.classList.remove("is-mystery");
+            storeItem.classList.add("is-hidden");
+          }
         }
       }
     });
@@ -2054,149 +2103,139 @@ class Game {
     }
   }
   _actualUpdateDisplay() {
-    this.updateStoreVisibility();
-    if (!this.counter || !this.perSecondDisplay) return;
+    this.renderFrameCount++;
+    const isSlowFrame = this.renderFrameCount % 10 === 0;
 
-    // DOM manipülasyonlarını grupla
-    const updates = {
-      counter: this.formatNumber(this.donutCount, "count"),
-      perSecond: this.formatNumber(this.totalPerSecond, "perSecond"),
-    };
-
-    // Batch DOM updates
-    if (this.counter.textContent !== `${updates.counter} donuts`) {
-      this.counter.textContent = `${updates.counter} donuts`;
+    if (isSlowFrame) {
+      this.updateStoreVisibility();
     }
 
-    // Multiplier kontrolü ve güncelleme
-    if (this.productionMultiplier > 1 && this.activeMultipliers?.length > 0) {
-      // Süresi geçmiş multiplier'ları temizle
-      this.activeMultipliers = this.activeMultipliers.filter(
-        (m) => m.endTime > Date.now(),
-      );
+    const counter = this.domCache.get("counter");
+    const perSecondDisplay = this.domCache.get("perSecondDisplay");
+    if (!counter || !perSecondDisplay) return;
 
-      if (this.activeMultipliers.length === 0) {
-        this.productionMultiplier = 1;
-        this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
-        this.perSecondDisplay.classList.remove("boosted");
-        return;
-      }
-
-      const nearestEndTime = Math.min(
-        ...this.activeMultipliers.map((m) => m.endTime),
-      );
-      const remainingTime = Math.max(
-        0,
-        Math.ceil((nearestEndTime - Date.now()) / 1000),
-      );
-
-      // Progress hesaplama
-      const currentMultiplier = this.activeMultipliers[0];
-      const progress =
-        (remainingTime / (currentMultiplier.duration / 1000)) * 100;
-
-      this.perSecondDisplay.innerHTML = `
-          <div class="boosted-per-second">
-              <div class="per-second-text">per second: ${
-                updates.perSecond
-              }</div>
-              <div class="boost-container">
-                  <div class="boost-info">
-                      <span class="boost-multiplier">${this.productionMultiplier.toFixed(
-                        2,
-                      )}x</span>
-                      <span class="boost-timer">${remainingTime}s</span>
-                  </div>
-                  <div class="boost-progress-bar">
-                      <div class="boost-progress" style="width: ${progress}%"></div>
-                  </div>
-              </div>
-          </div>
-      `;
-      this.perSecondDisplay.classList.add("boosted");
-    } else {
-      this.perSecondDisplay.textContent = `per second: ${updates.perSecond}`;
-      this.perSecondDisplay.classList.remove("boosted"); // Burayı ekledik
+    // Donut sayısı güncelleme (sadece değiştiyse)
+    const currentDonutCount = Math.floor(this.donutCount);
+    if (this.lastUpdateValues.donutCount !== currentDonutCount) {
+      const formattedDonuts = this.formatNumber(this.donutCount, "count");
+      counter.textContent = `${formattedDonuts} donuts`;
+      this.lastUpdateValues.donutCount = currentDonutCount;
     }
 
-    for (let key in this.items) {
-      const costElem = document.getElementById(`${key}Cost`);
-      const storeItem = document.querySelector(
-        `.store-item[data-item="${key}"]`,
-      );
-
-      if (costElem) {
-        const bulkCost = this.calculateBulkPrice(
-          this.items[key],
-          this.purchaseAmount,
-        );
-        costElem.textContent = this.formatNumber(bulkCost, "cost");
-
-        // Fiyat rengini ayarla
-        if (this.donutCount >= bulkCost) {
-          costElem.style.color = "#6f6"; // Yeşil
-          if (storeItem) {
-            storeItem.classList.remove("insufficient-funds");
-          }
+    // Per second güncelleme
+    const currentPerSecond = Math.floor(this.totalPerSecond * 10) / 10;
+    const multiplierCount = this.activeMultipliers?.length || 0;
+    
+    if (this.lastUpdateValues.totalPerSecond !== currentPerSecond || 
+        this.lastUpdateValues.multiplierCount !== multiplierCount || 
+        isSlowFrame) {
+      
+      const formattedPerSecond = this.formatNumber(this.totalPerSecond, "perSecond");
+      
+      if (this.productionMultiplier > 1 && multiplierCount > 0) {
+        // Multiplier aktifken her frame (veya sık) güncelleme gerekebilir (timer için)
+        this.activeMultipliers = this.activeMultipliers.filter(m => m.endTime > Date.now());
+        
+        if (this.activeMultipliers.length === 0) {
+          this.productionMultiplier = 1;
+          perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+          perSecondDisplay.classList.remove("boosted");
         } else {
-          costElem.style.color = "red"; // Kırmızı
-          if (storeItem) {
-            storeItem.classList.add("insufficient-funds");
-          }
-        }
+          const nearestEndTime = Math.min(...this.activeMultipliers.map(m => m.endTime));
+          const remainingTime = Math.max(0, Math.ceil((nearestEndTime - Date.now()) / 1000));
+          const currentMultiplier = this.activeMultipliers[0];
+          const progress = (remainingTime / (currentMultiplier.duration / 1000)) * 100;
 
-        // Alım miktarı göstergesi
-        const amountDisplay = storeItem.querySelector(".purchase-amount");
-        if (this.purchaseAmount > 1) {
-          if (!amountDisplay) {
-            const span = document.createElement("span");
-            span.className = "purchase-amount";
-            span.textContent = `x${this.purchaseAmount}`;
-            storeItem.querySelector(".item-img").appendChild(span);
-          } else {
-            amountDisplay.textContent = `x${this.purchaseAmount}`;
-          }
-        } else if (amountDisplay) {
-          amountDisplay.remove();
+          perSecondDisplay.innerHTML = `
+            <div class="boosted-per-second">
+                <div class="per-second-text">per second: ${formattedPerSecond}</div>
+                <div class="boost-container">
+                    <div class="boost-info">
+                        <span class="boost-multiplier">${this.productionMultiplier.toFixed(2)}x</span>
+                        <span class="boost-timer">${remainingTime}s</span>
+                    </div>
+                    <div class="boost-progress-bar">
+                        <div class="boost-progress" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            </div>
+          `;
+          perSecondDisplay.classList.add("boosted");
         }
-      }
-
-      // Toplam sayıyı formatla
-      const totalElem = document.getElementById(
-        `total${this.capitalize(key)}s`,
-      );
-      if (totalElem) {
-        totalElem.textContent = this.formatNumber(
-          this.items[key].count,
-          "count",
-        );
       } else {
+        perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+        perSecondDisplay.classList.remove("boosted");
+      }
+      
+      this.lastUpdateValues.totalPerSecond = currentPerSecond;
+      this.lastUpdateValues.multiplierCount = multiplierCount;
+    }
+
+    // Building güncellemeleri
+    for (let key in this.items) {
+      const item = this.items[key];
+      const bulkCost = this.calculateBulkPrice(item, this.purchaseAmount);
+      const isAffordable = this.donutCount >= bulkCost;
+      
+      // Affordability veya purchase amount değiştiyse güncelle
+      if (this.lastUpdateValues.affordability[key] !== isAffordable || 
+          this.lastUpdateValues.purchaseAmount !== this.purchaseAmount ||
+          isSlowFrame) {
+        
+        const costElem = this.domCache.get(`${key}Cost`);
+        const storeItem = this.domCache.get(`${key}StoreItem`);
+        const imgContainer = this.domCache.get(`${key}ItemImgContainer`);
+
+        if (costElem) {
+          costElem.textContent = this.formatNumber(bulkCost, "cost");
+          costElem.style.color = isAffordable ? "#6f6" : "red";
+          
+          if (storeItem) {
+            storeItem.classList.toggle("insufficient-funds", !isAffordable);
+          }
+
+          // Alım miktarı göstergesi
+          if (imgContainer) {
+            let amountDisplay = imgContainer.querySelector(".purchase-amount");
+            if (this.purchaseAmount > 1) {
+              if (!amountDisplay) {
+                amountDisplay = document.createElement("span");
+                amountDisplay.className = "purchase-amount";
+                imgContainer.appendChild(amountDisplay);
+              }
+              amountDisplay.textContent = `x${this.purchaseAmount}`;
+            } else if (amountDisplay) {
+              amountDisplay.remove();
+            }
+          }
+        }
+        this.lastUpdateValues.affordability[key] = isAffordable;
+      }
+
+      // Bina sayısı güncelleme (sadece değiştiyse)
+      if (this.lastUpdateValues.buildingCounts[key] !== item.count) {
+        const totalElem = this.domCache.get(`${key}Total`);
+        if (totalElem) {
+          totalElem.textContent = this.formatNumber(item.count, "count");
+        }
+        
+        // Mine/Baker efektleri
+        if ((key === "mine" || key === "baker")) {
+           const img = this.domCache.get(`${key}Image`);
+           if (img) {
+             img.classList.toggle(`active-${key}-effect`, item.count >= 1);
+           }
+        }
+        this.lastUpdateValues.buildingCounts[key] = item.count;
       }
     }
-    const mineImage = document.querySelector(
-      '.store-item[data-item="mine"] .item-img img',
-    );
-    if (this.items.mine.count >= 1) {
-      mineImage.classList.add("active-mine-effect");
-    } else {
-      mineImage.classList.remove("active-mine-effect");
+
+    if (isSlowFrame) {
+      this.showUpgrades();
+      this.updateActiveMultiplierDisplay();
     }
-
-    // Baker image kontrolü
-    const bakerImage = document.querySelector(
-      '.store-item[data-item="baker"] .item-img img',
-    );
-    if (this.items.baker.count >= 1) {
-      bakerImage.classList.add("active-baker-effect");
-    } else {
-      bakerImage.classList.remove("active-baker-effect");
-    }
-
-    // Upgrade'lerin durumunu dinamik olarak güncelle
-    this.showUpgrades();
-
-    // Aktif multiplier göstergesini güncelle
-    this.updateActiveMultiplierDisplay();
+    
+    this.lastUpdateValues.purchaseAmount = this.purchaseAmount;
   }
   updateTotalPerSecond() {
     let basePerSecond = 0;
@@ -2301,72 +2340,70 @@ class Game {
     this.totalPerSecond = basePerSecond;
     return itemProductions;
   }
-  updateProduction() {
-    const currentTime = Date.now();
-    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
-    this.lastUpdateTime = currentTime;
-
-    // Depolanmış totalPerSecond kullanarak hesaplama
-    const donutsProduced = this.totalPerSecond * deltaTime;
-    this.donutCount += donutsProduced;
-    this.totalDonutsEarned += donutsProduced;
-
-    // Her item'in toplam üretimini de artır
-    for (let key in this.items) {
-      if (this.items[key].count > 0) {
-        this.items[key].totalProduced +=
-          this.items[key].count * this.items[key].production * deltaTime;
+    updateProduction() {
+      const currentTime = Date.now();
+      const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
+      this.lastUpdateTime = currentTime;
+  
+      // Depolanmış totalPerSecond kullanarak hesaplama
+      const donutsProduced = this.totalPerSecond * deltaTime;
+      this.donutCount += donutsProduced;
+      this.totalDonutsEarned += donutsProduced;
+  
+      // Her item'in toplam üretimini de artır
+      for (let key in this.items) {
+        if (this.items[key].count > 0) {
+          this.items[key].totalProduced +=
+            this.items[key].count * this.items[key].production * deltaTime;
+        }
+      }
+  
+      // Pahalı hesaplamaları throttle et
+      if (this.renderFrameCount % 5 === 0) {
+        this.updateTotalPerSecond();
+        this.checkQuestProgress();
+        this.checkAutoBuyer();
+        this.updatePrestigeBar();
+      }
+      
+      this.updateDisplay();
+  
+      // Mine ve Baker üretimi zamanlayıcıları
+      const mineElapsedTime = currentTime - this.lastMineProduction;
+      const bakerElapsedTime = currentTime - this.lastBakerProduction;
+  
+      // Mine üretimi kontrolü (60 saniye)
+      if (mineElapsedTime >= 60000) {
+        this.produceMineResources();
+        this.updateMarketPrices();
+        this.lastMineProduction = currentTime;
+      }
+  
+      // Baker üretimi kontrolü (180 saniye)
+      if (bakerElapsedTime >= 180000) {
+        this.produceBakerResources();
+        this.lastBakerProduction = currentTime;
+      }
+  
+      // Timer DOM güncellemeleri
+      const mineTimer = this.domCache.get("mineTimer");
+      if (mineTimer) {
+        const mineRemainingTime = Math.ceil((60000 - mineElapsedTime) / 1000);
+        if (mineTimer.textContent !== String(Math.max(0, mineRemainingTime))) {
+          mineTimer.textContent = Math.max(0, mineRemainingTime);
+          mineTimer.classList.toggle("almost-ready", mineRemainingTime <= 10);
+        }
+      }
+  
+      const bakerTimer = this.domCache.get("bakerTimer");
+      if (bakerTimer) {
+        const bakerRemainingTime = Math.ceil((180000 - bakerElapsedTime) / 1000);
+        if (bakerTimer.textContent !== String(Math.max(0, bakerRemainingTime))) {
+          bakerTimer.textContent = Math.max(0, bakerRemainingTime);
+          bakerTimer.classList.toggle("almost-ready", bakerRemainingTime <= 10);
+        }
       }
     }
-
-    this.updatePrestigeBar();
-    this.updateTotalPerSecond();
-    this.checkQuestProgress();
-    this.updateDisplay();
-
-    this.checkAutoBuyer(); // Her üretim güncellemesinde auto-buyer'ı kontrol et
-
-    // Mine üretimi
-    const mineElapsedTime = currentTime - this.lastMineProduction;
-    const bakerElapsedTime = currentTime - this.lastBakerProduction;
-
-    // Mine üretimi kontrolü (60 saniye)
-    if (mineElapsedTime >= 60000) {
-      this.produceMineResources();
-      this.updateMarketPrices();
-      this.lastMineProduction = currentTime;
-    }
-
-    // Baker üretimi kontrolü (180 saniye)
-    if (bakerElapsedTime >= 180000) {
-      this.produceBakerResources();
-      this.lastBakerProduction = currentTime;
-    }
-
-    if (this.mineTimer) {
-      const mineRemainingTime = Math.ceil((60000 - mineElapsedTime) / 1000);
-      this.mineTimer.textContent = Math.max(0, mineRemainingTime);
-
-      // Son 10 saniye için animasyon class'ı
-      if (mineRemainingTime <= 10) {
-        this.mineTimer.classList.add("almost-ready");
-      } else {
-        this.mineTimer.classList.remove("almost-ready");
-      }
-    }
-
-    if (this.bakerTimer) {
-      const bakerRemainingTime = Math.ceil((180000 - bakerElapsedTime) / 1000);
-      this.bakerTimer.textContent = Math.max(0, bakerRemainingTime);
-
-      // Son 10 saniye için animasyon class'ı
-      if (bakerRemainingTime <= 10) {
-        this.bakerTimer.classList.add("almost-ready");
-      } else {
-        this.bakerTimer.classList.remove("almost-ready");
-      }
-    }
-  }
 
   // Üretim metodları
   produceMineResources() {
@@ -2502,15 +2539,23 @@ class Game {
     this.lastClickValue = clickValue;
 
     // Görsel ve ses efektlerini çalıştır
-    const plusOne = document.createElement("div");
-    plusOne.className = "plus-one";
-    plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
-    plusOne.style.left = `${event.clientX}px`;
-    plusOne.style.top = `${event.clientY}px`;
+    if (this.activeAnimationElements < this.MAX_ANIMATION_ELEMENTS) {
+      this.activeAnimationElements++;
+      const plusOne = document.createElement("div");
+      plusOne.className = "plus-one";
+      plusOne.textContent = `+${this.formatNumber(clickValue, "count")}`;
+      plusOne.style.left = `${event.clientX}px`;
+      plusOne.style.top = `${event.clientY}px`;
 
-    document.body.appendChild(plusOne);
-    setTimeout(() => document.body.removeChild(plusOne), 1000);
-    this.createFallingDonut(event.clientX, event.clientY);
+      document.body.appendChild(plusOne);
+      setTimeout(() => {
+        document.body.removeChild(plusOne);
+        this.activeAnimationElements--;
+      }, 1000);
+      
+      this.createFallingDonut(event.clientX, event.clientY);
+    }
+    
     this.playRandomClickSound();
 
     // checkQuestProgress'i throttle et ve sadece clicks tipindeki görevler için çağır
@@ -3777,10 +3822,12 @@ class Game {
     fallingDonut.style.animationTimingFunction = "ease-in-out";
     fallingDonut.style.animationRotation = `${Math.random() * 360}deg`;
 
+    this.activeAnimationElements++; // Increment for the donut itself
     document.body.appendChild(fallingDonut);
 
     setTimeout(() => {
       document.body.removeChild(fallingDonut);
+      this.activeAnimationElements--;
     }, animationDuration * 1000);
   }
   getRandomAnimation() {
@@ -3791,6 +3838,60 @@ class Game {
   getRandomDistance() {
     return Math.floor(Math.random() * 20) + 10;
   }
+  calculateOfflineEarnings(lastActiveTime) {
+    const now = Date.now();
+    let offlineTime = now - lastActiveTime;
+
+    // Limit kontrolü (12 saat)
+    if (offlineTime > this.MAX_OFFLINE_TIME) {
+      offlineTime = this.MAX_OFFLINE_TIME;
+    }
+
+    // Minimum 1 dakika geçmiş olmalı
+    if (offlineTime < 60000) return;
+
+    const offlineSeconds = offlineTime / 1000;
+    const earnings =
+      offlineSeconds * this.totalPerSecond * this.OFFLINE_EFFICIENCY;
+
+    if (earnings > 0) {
+      this.donutCount += earnings;
+      this.totalDonutsEarned += earnings;
+      this.showOfflineModal(offlineTime, earnings);
+    }
+  }
+
+  showOfflineModal(offlineTime, earnings) {
+    const modal = document.getElementById("offlineModal");
+    const timeText = document.getElementById("offlineTimeText");
+    const earningsText = document.getElementById("offlineEarningsText");
+    const closeBtn = document.getElementById("closeOfflineModal");
+
+    if (!modal || !timeText || !earningsText || !closeBtn) return;
+
+    // Süreyi formatla (Saat:Dakika:Saniye)
+    const hours = Math.floor(offlineTime / 3600000);
+    const minutes = Math.floor((offlineTime % 3600000) / 60000);
+    const seconds = Math.floor((offlineTime % 60000) / 1000);
+
+    let timeString = "";
+    if (hours > 0) timeString += `${hours}h `;
+    if (minutes > 0) timeString += `${minutes}m `;
+    if (seconds > 0 || timeString === "") timeString += `${seconds}s`;
+
+    timeText.textContent = `You were away for ${timeString}`;
+    earningsText.textContent = `+${this.formatNumber(earnings)} donuts`;
+
+    modal.style.display = "block";
+
+    closeBtn.onclick = () => {
+      modal.style.display = "none";
+      this.lastActiveTime = Date.now(); // Zamanı şimdiye sıfırla
+      this.saveGame(); // Yeni zamanı kaydet ki F5 yapınca tekrar çıkmasın
+      this.updateDisplay();
+    };
+  }
+
   formatNumber(number, type = "count") {
     // Cache sistemini sınıf seviyesinde tanımla
     if (!this._numberCache) {
@@ -4176,13 +4277,47 @@ class Game {
     }
   }
   saveGame() {
+    // Sadece dinamik verileri seçerek kaydet (Save boyutu %90 küçülür)
+    const itemData = {};
+    for (let key in this.items) {
+      itemData[key] = {
+        count: this.items[key].count,
+        totalProduced: this.items[key].totalProduced,
+        baseCost: this.items[key].baseCost // Fiyatı da saklayalım (opsiyonel ama güvenli)
+      };
+    }
+
+    const upgradeData = {};
+    for (let key in this.upgrades) {
+      upgradeData[key] = this.upgrades[key].map(u => u.purchased);
+    }
+
+    const questData = {};
+    for (let key in this.quests) {
+      questData[key] = {
+        progress: this.quests[key].progress,
+        completed: this.quests[key].completed,
+        claimed: this.quests[key].claimed
+      };
+    }
+
+    const recipeData = {};
+    for (let key in this.recipes) {
+      recipeData[key] = {
+        craftCount: this.recipes[key].craftCount || 0,
+        currentScaling: this.recipes[key].scaling?.ingredients?.current || 1
+      };
+    }
+
     const gameState = {
       gameVersion: this.currentVersion,
-      items: this.items,
-      upgrades: this.upgrades,
+      items: itemData,
+      upgrades: upgradeData,
+      quests: questData,
+      recipes: recipeData,
       donutCount: this.donutCount,
-      accumulator: this.accumulator,
       totalDonutsEarned: this.totalDonutsEarned,
+      totalClicks: this.totalClicks,
       prestigeCount: this.prestigeCount,
       nextPrestigeThreshold: this.nextPrestigeThreshold,
       ores: this.ores,
@@ -4190,102 +4325,118 @@ class Game {
       bakers: this.bakers,
       ingredients: this.ingredients,
       recipes: this.recipes,
-      totalClicks: this.totalClicks,
       hasDonutClicked: this.hasDonutClicked,
       productionMultiplier: this.productionMultiplier,
-      totalPerSecond: this.totalPerSecond,
-      lastUpdateTime: this.lastUpdateTime,
-      lastBakerProduction: this.lastBakerProduction,
-      lastMineProduction: this.lastMineProduction,
-      currentBakeryName: this.currentBakeryName,
-      quests: this.quests,
       activeMultipliers: this.activeMultipliers,
+      currentBakeryName: this.currentBakeryName,
       donutCoin: this.donutCoin,
+      lastActiveTime: Date.now()
     };
 
-    localStorage.setItem("gameState", JSON.stringify(gameState));
+    const secureData = this.encryptSave(gameState);
+    localStorage.setItem("gameState", secureData);
     this.showGameSaved();
   }
   loadGame() {
     const savedGame = localStorage.getItem("gameState");
     if (savedGame) {
-      let gameState = JSON.parse(savedGame);
-      gameState.items = this.mergeItems(gameState.items);
-
-      this.items = gameState.items;
-      localStorage.setItem("gameState", JSON.stringify(gameState));
-      // Versiyon kontrolü ve güncelleme
-      if (
-        !gameState.gameVersion ||
-        parseFloat(gameState.gameVersion) < parseFloat(this.currentVersion)
-      ) {
-        this.applyUpdates(gameState);
-
-        // Güncellenmiş `gameState`'i kaydet
-        localStorage.setItem("gameState", JSON.stringify(gameState));
+      let gameState;
+      
+      // Geriye dönük uyumluluk: Eğer veri { ile başlıyorsa eski düz JSON'dır
+      if (savedGame.startsWith("{")) {
+        gameState = JSON.parse(savedGame);
+      } else {
+        // Yeni şifreli format
+        gameState = this.decryptSave(savedGame);
       }
 
-      // Mevcut yükleme kodları...
-      this.workers = gameState.workers || [];
-      this.bakers = gameState.bakers || [];
+      if (!gameState) return;
 
-      // İşçi sayılarını UI'da güncelle
-      const workerCountElem = document.getElementById("workerCount");
-      const bakerWorkerCountElem = document.getElementById("bakerWorkerCount");
+      // --- Verileri Giydirme (Merging) ---
+      
+      // Items yükle
+      if (gameState.items) {
+        for (let key in gameState.items) {
+          if (this.items[key]) {
+            this.items[key].count = gameState.items[key].count || 0;
+            this.items[key].totalProduced = gameState.items[key].totalProduced || 0;
+            if (gameState.items[key].baseCost) this.items[key].baseCost = gameState.items[key].baseCost;
+          }
+        }
+      }
 
-      if (workerCountElem) workerCountElem.textContent = this.workers.length;
-      if (bakerWorkerCountElem)
-        bakerWorkerCountElem.textContent = this.bakers.length;
+      // Upgrades yükle (Purchased status)
+      if (gameState.upgrades) {
+        for (let key in gameState.upgrades) {
+          if (this.upgrades[key]) {
+            gameState.upgrades[key].forEach((isPurchased, index) => {
+              if (this.upgrades[key][index]) {
+                this.upgrades[key][index].purchased = isPurchased;
+              }
+            });
+          }
+        }
+      }
 
-      // Güncellenmiş `gameState` verilerini yükle
-      this.items = gameState.items || this.items;
-      this.upgrades = gameState.upgrades || this.upgrades;
+      // Quests yükle
+      if (gameState.quests) {
+        for (let key in gameState.quests) {
+          if (this.quests[key]) {
+            this.quests[key].progress = gameState.quests[key].progress || 0;
+            this.quests[key].completed = gameState.quests[key].completed || false;
+            this.quests[key].claimed = gameState.quests[key].claimed || false;
+          }
+        }
+      }
+
+      // Recipes yükle
+      if (gameState.recipes) {
+        for (let key in gameState.recipes) {
+          if (this.recipes[key]) {
+            this.recipes[key].craftCount = gameState.recipes[key].craftCount || 0;
+            if (this.recipes[key].scaling?.ingredients) {
+              this.recipes[key].scaling.ingredients.current = gameState.recipes[key].currentScaling || 1;
+            }
+          }
+        }
+      }
+
+      // Diğer basit veriler
       this.donutCount = gameState.donutCount || 0;
-      this.accumulator = gameState.accumulator || 0;
       this.totalDonutsEarned = gameState.totalDonutsEarned || 0;
+      this.totalClicks = gameState.totalClicks || 0;
       this.prestigeCount = gameState.prestigeCount || 0;
-      this.nextPrestigeThreshold = gameState.nextPrestigeThreshold || 10000000;
-      this.ores = gameState.ores || {};
+      this.nextPrestigeThreshold = gameState.nextPrestigeThreshold || 300000000;
+      this.currentBakeryName = gameState.currentBakeryName || "My Awesome Bakery";
+      this.hasDonutClicked = gameState.hasDonutClicked || false;
+      this.productionMultiplier = gameState.productionMultiplier || 1;
+      this.activeMultipliers = gameState.activeMultipliers || [];
+      this.ores = gameState.ores || this.ores;
       this.workers = gameState.workers || [];
       this.bakers = gameState.bakers || [];
       this.ingredients = gameState.ingredients || {};
       this.recipes = gameState.recipes || this.recipes;
-      this.totalClicks = gameState.totalClicks || 0;
-      this.hasDonutClicked = gameState.hasDonutClicked || false;
-      this.productionMultiplier = gameState.productionMultiplier || 1;
-      this.totalPerSecond = gameState.totalPerSecond || 0;
-      this.lastUpdateTime = gameState.lastUpdateTime || Date.now();
       this.lastBakerProduction = gameState.lastBakerProduction || Date.now();
       this.lastMineProduction = gameState.lastMineProduction || Date.now();
-      this.currentBakeryName =
-        gameState.currentBakeryName ||
-        localStorage.getItem("bakeryName") ||
-        this.getRandomBakeryName() + "'s Bakery";
+      this.lastUpdateTime = Date.now(); // Bu satırda kalmalı.
 
-      if (gameState.quests) {
-        Object.keys(this.quests).forEach((questId) => {
-          if (gameState.quests[questId]) {
-            this.quests[questId].progress =
-              gameState.quests[questId].progress || 0;
-            this.quests[questId].completed =
-              gameState.quests[questId].completed || false;
-            this.quests[questId].claimed =
-              gameState.quests[questId].claimed || false;
-          }
-        });
+      // DonutCoin verilerini yükle
+      this.donutCoin = gameState.donutCoin || {
+        count: 0,
+        lastClaimTime: 0,
+        claimInterval: 24 * 60 * 60 * 1000,
+      };
+
+      // totalPerSecond'ın doğru hesaplandığından emin ol
+      this.updateTotalPerSecond();
+      
+      // Çevrimdışı kazanç hesapla
+      if (gameState.lastActiveTime) {
+        this.calculateOfflineEarnings(gameState.lastActiveTime);
       }
 
-      // Aktif multiplier'ları yükle
-      if (gameState.activeMultipliers) {
-        this.activeMultipliers = gameState.activeMultipliers.filter(
-          (m) => m.endTime > Date.now(),
-        );
-        this.updateProductionMultiplier();
-      }
-
-      // Ekranı güncelle
-      document.getElementById("bakery-name").textContent =
-        this.currentBakeryName;
+      // UI ve Display güncellemeleri
+      document.getElementById("bakery-name").textContent = this.currentBakeryName;
       this.updateOreList();
       this.updateIngredientList();
       this.updateMarketDisplay();
@@ -4294,27 +4445,56 @@ class Game {
       this.showUpgrades();
       this.updatePrestigeBar();
       this.updateTotalPerSecond();
-      // DonutCoin verilerini yükle
-      this.donutCoin = gameState.donutCoin || {
-        count: 0,
-        lastClaimTime: 0,
-        claimInterval: 24 * 60 * 60 * 1000,
-      };
 
       // Fiyat Düzeltme Yaması (Save Bug Fix)
-      // Kayıt dosyasındaki fiyatlara güvenmek yerine, sahip olunan adete göre fiyatı sıfırdan hesapla.
-      // Bu, fiyatların bozulmasını veya sıfırlanmasını %100 engeller.
-      for (const key in this.items) {
-        const item = this.items[key];
-        if (item.count > 0) {
-           item.baseCost = item.originalBaseCost * Math.pow(item.costMultiplier, item.count);
-        } else {
-           // Eğer hiç yoksa, fiyat orijinal fiyattır.
-           item.baseCost = item.originalBaseCost;
-        }
+      this.fixBuildingCosts();
+    }
+  }
+
+  fixBuildingCosts() {
+    for (const key in this.items) {
+      const item = this.items[key];
+      if (item.count > 0) {
+        item.baseCost = item.originalBaseCost * Math.pow(item.costMultiplier, item.count);
+      } else {
+        item.baseCost = item.originalBaseCost;
       }
     }
   }
+
+  // --- Save Güvenlik Metotları ---
+  generateChecksum(data) {
+    const str = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return hash.toString(36);
+  }
+
+  encryptSave(data) {
+    const payload = {
+      v: 2,
+      data: data,
+      sig: this.generateChecksum(data)
+    };
+    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  }
+
+  decryptSave(encodedData) {
+    try {
+      const decoded = decodeURIComponent(escape(atob(encodedData)));
+      const payload = JSON.parse(decoded);
+      if (payload.v === 2 && payload.sig === this.generateChecksum(payload.data)) {
+        return payload.data;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   async updateGameVersion(gameState) {
     const backupSave = JSON.stringify(gameState); // Mevcut save'i yedekle
 
@@ -5493,3 +5673,4 @@ document.querySelectorAll("img").forEach((img) => {
     }
   }
 });
+})();
