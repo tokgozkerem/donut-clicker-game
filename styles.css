@@ -321,7 +321,7 @@ body {
   padding: 8px;
   font-size: 28px;
   z-index: 30;
-  margin-top: 10px;
+  margin-top: 5px; /* Boşluğu azaltmak için */
 }
 .donut-wrapper {
   position: relative;
