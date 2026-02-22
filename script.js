@@ -3004,7 +3004,7 @@
         const scaleCurrent = recipe.scaling?.ingredients?.current || 1;
         const ingredientsHTML = Object.entries(recipe.ingredients)
           .map(([ingredient, amount]) => {
-            const scaled = amount * scaleCurrent;
+            const scaled = Math.ceil(amount * scaleCurrent);
             const hasEnough = this.hasEnoughIngredients(ingredient, scaled);
             return `<span class="ingredient ${hasEnough ? "available" : "unavailable"}">
             <img src="img/${ingredient.toLowerCase()}.webp" alt="${ingredient}" />${scaled}x
@@ -3134,8 +3134,9 @@
 
       // Malzemeleri kullan
       Object.entries(recipe.ingredients).forEach(([ingredient, amount]) => {
-        const scaledAmount =
-          amount * (recipe.scaling?.ingredients?.current || 1);
+        const scaledAmount = Math.ceil(
+          amount * (recipe.scaling?.ingredients?.current || 1),
+        );
         this.ingredients[ingredient].count -= scaledAmount;
       });
 
@@ -3193,8 +3194,9 @@
 
       return Object.entries(recipe.ingredients).every(
         ([ingredient, amount]) => {
-          const scaledAmount =
-            amount * (recipe.scaling?.ingredients?.current || 1);
+          const scaledAmount = Math.ceil(
+            amount * (recipe.scaling?.ingredients?.current || 1),
+          );
           return this.ingredients[ingredient]?.count >= scaledAmount;
         },
       );
