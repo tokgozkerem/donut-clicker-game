@@ -1,7 +1,7 @@
 (function () {
   class Game {
     constructor() {
-      this.currentVersion = "1.4.5";
+      this.currentVersion = "1.4.6";
       this.bakeryNames = [
         "Snowfall Crust",
         "Frosted Pines",
@@ -951,9 +951,33 @@
         Diamond: { count: 0 },
       };
       this.oreTypes = [
-        { type: "Copper", rarity: 0.7, price: this.items.mine.baseCost * 0.01, basePrice: this.items.mine.baseCost * 0.01, priceHistory: [], trend: 0, volatility: 0.02 },
-        { type: "Iron", rarity: 0.2, price: this.items.mine.baseCost * 0.025, basePrice: this.items.mine.baseCost * 0.025, priceHistory: [], trend: 0, volatility: 0.035 },
-        { type: "Gold", rarity: 0.075, price: this.items.mine.baseCost * 0.05, basePrice: this.items.mine.baseCost * 0.05, priceHistory: [], trend: 0, volatility: 0.05 },
+        {
+          type: "Copper",
+          rarity: 0.7,
+          price: this.items.mine.baseCost * 0.01,
+          basePrice: this.items.mine.baseCost * 0.01,
+          priceHistory: [],
+          trend: 0,
+          volatility: 0.02,
+        },
+        {
+          type: "Iron",
+          rarity: 0.2,
+          price: this.items.mine.baseCost * 0.025,
+          basePrice: this.items.mine.baseCost * 0.025,
+          priceHistory: [],
+          trend: 0,
+          volatility: 0.035,
+        },
+        {
+          type: "Gold",
+          rarity: 0.075,
+          price: this.items.mine.baseCost * 0.05,
+          basePrice: this.items.mine.baseCost * 0.05,
+          priceHistory: [],
+          trend: 0,
+          volatility: 0.05,
+        },
         {
           type: "Diamond",
           rarity: 0.015,
@@ -3407,7 +3431,10 @@
 
       // Gradient fill
       const gradient = ctx.createLinearGradient(0, 0, 0, h);
-      gradient.addColorStop(0, isUp ? "rgba(129, 199, 132, 0.3)" : "rgba(253, 145, 147, 0.3)");
+      gradient.addColorStop(
+        0,
+        isUp ? "rgba(129, 199, 132, 0.3)" : "rgba(253, 145, 147, 0.3)",
+      );
       gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
 
       // Çizgiyi çiz

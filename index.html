@@ -102,7 +102,7 @@
       rel="stylesheet"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.4.5" />
+    <link rel="stylesheet" href="styles.css?v=1.4.6" />
     <link rel="stylesheet" href="store-visibility.css?v=1.4.4" />
     <link rel="icon" href="img/donutPixelArt.webp" type="image/webp" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
@@ -316,7 +316,10 @@
           <section id="updates-section">
             <h3>Updates</h3>
             <div class="update big-update">
-              <h4 class="big-update-title">Big Update: Version 1.4.5</h4>
+              <div class="update-header">
+                <h4 class="big-update-title">Big Update: Version 1.4.5</h4>
+                <span class="update-date">February 22, 2026</span>
+              </div>
               <ul class="big-update-text">
                 <li>
                   Your bakery now earns donuts even when you're away! Collect
@@ -569,7 +572,9 @@
               <div class="mine-content-header">
                 <img src="img/mine.webp" alt="Mine" class="mine-header-icon" />
                 <span class="mine-section-title">Mine</span>
-                <span class="mine-topbar-timer"><span id="mine-timer">60</span>s</span>
+                <span class="mine-topbar-timer"
+                  ><span id="mine-timer">60</span>s</span
+                >
               </div>
               <div class="mine-header-stats">
                 <div class="mine-stat-row">
@@ -585,7 +590,9 @@
               <div class="ore-container">
                 <ul id="oreList"></ul>
                 <div class="ore-generation-info">
-                  <span class="ore-gen-text">Each worker produces 5 ore per cycle</span>
+                  <span class="ore-gen-text"
+                    >Each worker produces 5 ore per cycle</span
+                  >
                 </div>
               </div>
             </div>
@@ -593,8 +600,16 @@
             <div class="right-section">
               <div class="market-header">
                 <h4>Ore Market</h4>
-                <span id="remainingChances" class="market-limit-badge">10 / 10</span>
-                <button id="marketGuideBtn" class="market-guide-btn" title="How does the market work?">?</button>
+                <span id="remainingChances" class="market-limit-badge"
+                  >10 / 10</span
+                >
+                <button
+                  id="marketGuideBtn"
+                  class="market-guide-btn"
+                  title="How does the market work?"
+                >
+                  ?
+                </button>
               </div>
               <div class="market-container">
                 <div id="marketList" class="market-grid"></div>
@@ -615,23 +630,41 @@
               <div class="guide-body">
                 <div class="guide-item">
                   <span class="guide-icon">&#9203;</span>
-                  <p>Ore prices update every <strong>60 seconds</strong> along with ore production.</p>
+                  <p>
+                    Ore prices update every <strong>60 seconds</strong> along
+                    with ore production.
+                  </p>
                 </div>
                 <div class="guide-item">
                   <span class="guide-icon">&#128200;</span>
-                  <p>Each ore has its own <strong>trend</strong> that shifts over time. If a price starts rising, it tends to keep rising for a while, then reverses.</p>
+                  <p>
+                    Each ore has its own <strong>trend</strong> that shifts over
+                    time. If a price starts rising, it tends to keep rising for
+                    a while, then reverses.
+                  </p>
                 </div>
                 <div class="guide-item">
                   <span class="guide-icon">&#9878;</span>
-                  <p><strong>Volatility</strong> varies by ore: Copper is the most stable, Diamond swings the hardest. Rarer ores = bigger risk & reward.</p>
+                  <p>
+                    <strong>Volatility</strong> varies by ore: Copper is the
+                    most stable, Diamond swings the hardest. Rarer ores = bigger
+                    risk & reward.
+                  </p>
                 </div>
                 <div class="guide-item">
                   <span class="guide-icon">&#128176;</span>
-                  <p>You have <strong>10 trades</strong> (buy or sell) per 60-second cycle. Use them wisely!</p>
+                  <p>
+                    You have <strong>10 trades</strong> (buy or sell) per
+                    60-second cycle. Use them wisely!
+                  </p>
                 </div>
                 <div class="guide-item">
                   <span class="guide-icon">&#128161;</span>
-                  <p><strong>Tip:</strong> Watch the sparkline charts. Buy when the trend is low and the line curves upward. Sell before a peak turns into a dip!</p>
+                  <p>
+                    <strong>Tip:</strong> Watch the sparkline charts. Buy when
+                    the trend is low and the line curves upward. Sell before a
+                    peak turns into a dip!
+                  </p>
                 </div>
               </div>
             </div>
@@ -1038,6 +1071,6 @@
     >
       <img src="img/reddit.svg" alt="Reddit" /> Join r/donutClicker
     </a>
-    <script defer src="script.js?v=1.4.5"></script>
+    <script defer src="script.js?v=1.4.6"></script>
   </body>
 </html>
