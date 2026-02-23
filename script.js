@@ -1,7 +1,7 @@
 (function () {
   class Game {
     constructor() {
-      this.currentVersion = "1.4.6";
+      this.currentVersion = "1.5.0";
       this.bakeryNames = [
         "Snowfall Crust",
         "Frosted Pines",
@@ -781,66 +781,284 @@
 
       // ---- Farm Panel State ----
       this.farmAnimalDefs = {
-        chicken: { name: "Chicken", good: "egg", prodInterval: 45, baseCost: 1500, costMult: 1.22, baseSellPrice: 60, storageCap: 30, unlockFC: 1 },
-        cow:     { name: "Cow",     good: "milk", prodInterval: 90, baseCost: 15000, costMult: 1.25, baseSellPrice: 350, storageCap: 18, unlockFC: 5 },
-        sheep:   { name: "Sheep",   good: "wool", prodInterval: 150, baseCost: 75000, costMult: 1.28, baseSellPrice: 1800, storageCap: 12, unlockFC: 10 },
-        bees:    { name: "Bees",    good: "honey", prodInterval: 30, baseCost: 600000, costMult: 1.30, baseSellPrice: 500, storageCap: 10, unlockFC: 25 },
-        pigs:    { name: "Pigs",    good: "truffle", prodInterval: 300, baseCost: 6000000, costMult: 1.35, baseSellPrice: 5000, storageCap: 8, unlockFC: 40 },
+        chicken: {
+          name: "Chicken",
+          good: "egg",
+          prodInterval: 45,
+          baseCost: 1500,
+          costMult: 1.22,
+          baseSellPrice: 60,
+          storageCap: 30,
+          unlockFC: 1,
+        },
+        cow: {
+          name: "Cow",
+          good: "milk",
+          prodInterval: 90,
+          baseCost: 15000,
+          costMult: 1.25,
+          baseSellPrice: 350,
+          storageCap: 18,
+          unlockFC: 5,
+        },
+        sheep: {
+          name: "Sheep",
+          good: "wool",
+          prodInterval: 150,
+          baseCost: 75000,
+          costMult: 1.28,
+          baseSellPrice: 1800,
+          storageCap: 12,
+          unlockFC: 10,
+        },
+        bees: {
+          name: "Bees",
+          good: "honey",
+          prodInterval: 30,
+          baseCost: 600000,
+          costMult: 1.3,
+          baseSellPrice: 500,
+          storageCap: 10,
+          unlockFC: 25,
+        },
+        pigs: {
+          name: "Pigs",
+          good: "truffle",
+          prodInterval: 300,
+          baseCost: 6000000,
+          costMult: 1.35,
+          baseSellPrice: 5000,
+          storageCap: 8,
+          unlockFC: 40,
+        },
       };
       this.farmTraitDefs = [
         // Common traits (10)
-        { id: "well_fed", name: "Well-Fed", rarity: "common", effect: { type: "prodSpeed", value: 0.08 } },
-        { id: "hardy", name: "Hardy", rarity: "common", effect: { type: "feedCost", value: -0.10 } },
-        { id: "early_riser", name: "Early Riser", rarity: "common", effect: { type: "prodSpeed", value: 0.05 } },
-        { id: "thick_coat", name: "Thick Coat", rarity: "common", effect: { type: "sellPrice", value: 0.06 } },
-        { id: "calm", name: "Calm", rarity: "common", effect: { type: "careBonus", value: 0.10 } },
-        { id: "social", name: "Social", rarity: "common", effect: { type: "socialProd", value: 0.03, max: 0.15 } },
-        { id: "alert", name: "Alert", rarity: "common", effect: { type: "careWindowDuration", value: 5 } },
-        { id: "sturdy", name: "Sturdy", rarity: "common", effect: { type: "breedCooldown", value: -0.15 } },
-        { id: "keen_eye", name: "Keen Eye", rarity: "common", effect: { type: "crateChance", value: 0.05 } },
-        { id: "generous", name: "Generous", rarity: "common", effect: { type: "bonusGood", value: 10 } },
+        {
+          id: "well_fed",
+          name: "Well-Fed",
+          rarity: "common",
+          effect: { type: "prodSpeed", value: 0.08 },
+        },
+        {
+          id: "hardy",
+          name: "Hardy",
+          rarity: "common",
+          effect: { type: "feedCost", value: -0.1 },
+        },
+        {
+          id: "early_riser",
+          name: "Early Riser",
+          rarity: "common",
+          effect: { type: "prodSpeed", value: 0.05 },
+        },
+        {
+          id: "thick_coat",
+          name: "Thick Coat",
+          rarity: "common",
+          effect: { type: "sellPrice", value: 0.06 },
+        },
+        {
+          id: "calm",
+          name: "Calm",
+          rarity: "common",
+          effect: { type: "careBonus", value: 0.1 },
+        },
+        {
+          id: "social",
+          name: "Social",
+          rarity: "common",
+          effect: { type: "socialProd", value: 0.03, max: 0.15 },
+        },
+        {
+          id: "alert",
+          name: "Alert",
+          rarity: "common",
+          effect: { type: "careWindowDuration", value: 5 },
+        },
+        {
+          id: "sturdy",
+          name: "Sturdy",
+          rarity: "common",
+          effect: { type: "breedCooldown", value: -0.15 },
+        },
+        {
+          id: "keen_eye",
+          name: "Keen Eye",
+          rarity: "common",
+          effect: { type: "crateChance", value: 0.05 },
+        },
+        {
+          id: "generous",
+          name: "Generous",
+          rarity: "common",
+          effect: { type: "bonusGood", value: 10 },
+        },
         // Rare traits (6)
-        { id: "golden_touch", name: "Golden Touch", rarity: "rare", effect: { type: "sellPrice", value: 0.15 } },
-        { id: "prolific", name: "Prolific", rarity: "rare", effect: { type: "prodSpeed", value: 0.12 } },
-        { id: "efficient", name: "Efficient", rarity: "rare", effect: { type: "feedCost", value: -0.25 } },
-        { id: "mentor", name: "Mentor", rarity: "rare", effect: { type: "mentorTrait", value: 1 } },
-        { id: "tireless", name: "Tireless", rarity: "rare", effect: { type: "storageCap", value: 0.20 } },
-        { id: "diplomat", name: "Diplomat", rarity: "rare", effect: { type: "contractReq", value: -0.10 } },
+        {
+          id: "golden_touch",
+          name: "Golden Touch",
+          rarity: "rare",
+          effect: { type: "sellPrice", value: 0.15 },
+        },
+        {
+          id: "prolific",
+          name: "Prolific",
+          rarity: "rare",
+          effect: { type: "prodSpeed", value: 0.12 },
+        },
+        {
+          id: "efficient",
+          name: "Efficient",
+          rarity: "rare",
+          effect: { type: "feedCost", value: -0.25 },
+        },
+        {
+          id: "mentor",
+          name: "Mentor",
+          rarity: "rare",
+          effect: { type: "mentorTrait", value: 1 },
+        },
+        {
+          id: "tireless",
+          name: "Tireless",
+          rarity: "rare",
+          effect: { type: "storageCap", value: 0.2 },
+        },
+        {
+          id: "diplomat",
+          name: "Diplomat",
+          rarity: "rare",
+          effect: { type: "contractReq", value: -0.1 },
+        },
         // Epic traits (2)
-        { id: "legendary_producer", name: "Legendary Producer", rarity: "epic", effect: { type: "legendaryProd", prodSpeed: 0.25, sellPrice: 0.10 } },
-        { id: "contract_star", name: "Contract Star", rarity: "epic", effect: { type: "contractStar", contractSpeed: 0.20, buffDuration: 0.15 } },
+        {
+          id: "legendary_producer",
+          name: "Legendary Producer",
+          rarity: "epic",
+          effect: { type: "legendaryProd", prodSpeed: 0.25, sellPrice: 0.1 },
+        },
+        {
+          id: "contract_star",
+          name: "Contract Star",
+          rarity: "epic",
+          effect: {
+            type: "contractStar",
+            contractSpeed: 0.2,
+            buffDuration: 0.15,
+          },
+        },
       ];
       this.farmBreedPrograms = {
-        quick:    { name: "Quick",    duration: 1800, costMult: 3, traitSlots: 2, rareBonus: 0 },
-        standard: { name: "Standard", duration: 7200, costMult: 5, traitSlots: 2, rareBonus: 0.05 },
-        long:     { name: "Long",     duration: 14400, costMult: 8, traitSlots: 3, rareBonus: 0.10 },
+        quick: {
+          name: "Quick",
+          duration: 1800,
+          costMult: 3,
+          traitSlots: 2,
+          rareBonus: 0,
+        },
+        standard: {
+          name: "Standard",
+          duration: 7200,
+          costMult: 5,
+          traitSlots: 2,
+          rareBonus: 0.05,
+        },
+        long: {
+          name: "Long",
+          duration: 14400,
+          costMult: 8,
+          traitSlots: 3,
+          rareBonus: 0.1,
+        },
       };
       this.farmContractNames = {
-        rush: ["Quick Delivery", "Express Order", "Urgent Supply", "Speed Run", "Flash Sale"],
-        standard: ["Bakery Supply Run", "Breakfast Feast", "Market Day", "Village Order", "Festival Prep", "Kitchen Restock"],
-        longhaul: ["Grand Feast", "Royal Banquet", "Harvest Festival", "Winter Stockpile", "Merchant Caravan", "Export Contract"],
+        rush: [
+          "Quick Delivery",
+          "Express Order",
+          "Urgent Supply",
+          "Speed Run",
+          "Flash Sale",
+        ],
+        standard: [
+          "Bakery Supply Run",
+          "Breakfast Feast",
+          "Market Day",
+          "Village Order",
+          "Festival Prep",
+          "Kitchen Restock",
+        ],
+        longhaul: [
+          "Grand Feast",
+          "Royal Banquet",
+          "Harvest Festival",
+          "Winter Stockpile",
+          "Merchant Caravan",
+          "Export Contract",
+        ],
       };
       this.farmAffixDefs = [
-        { id: "urgent", name: "Urgent", rarity: 0.25, effect: { durationMult: 0.7, rewardMult: 0.8 } },
-        { id: "generous", name: "Generous", rarity: 0.15, effect: { rewardMult: 1.4 } },
-        { id: "demanding", name: "Demanding", rarity: 0.15, effect: { reqMult: 1.5, rewardMult: 1.6 } },
-        { id: "focused", name: "Focused", rarity: 0.20, effect: { singleGood: true, buffDurationMult: 1.2 } },
-        { id: "volatile", name: "Volatile", rarity: 0.08, effect: { volatileReward: true } },
-        { id: "vip", name: "VIP", rarity: 0.07, effect: { buffStrengthMult: 1.3 }, masteryReq: 8 },
-        { id: "chain", name: "Chain", rarity: 0.06, effect: { chain: true, chainRewardMult: 1.5 } },
-        { id: "legendary", name: "Legendary", rarity: 0.04, effect: { rewardMult: 1.8, reqMult: 3, reqGoods: 2 } },
+        {
+          id: "urgent",
+          name: "Urgent",
+          rarity: 0.25,
+          effect: { durationMult: 0.7, rewardMult: 0.8 },
+        },
+        {
+          id: "generous",
+          name: "Generous",
+          rarity: 0.15,
+          effect: { rewardMult: 1.4 },
+        },
+        {
+          id: "demanding",
+          name: "Demanding",
+          rarity: 0.15,
+          effect: { reqMult: 1.5, rewardMult: 1.6 },
+        },
+        {
+          id: "focused",
+          name: "Focused",
+          rarity: 0.2,
+          effect: { singleGood: true, buffDurationMult: 1.2 },
+        },
+        {
+          id: "volatile",
+          name: "Volatile",
+          rarity: 0.08,
+          effect: { volatileReward: true },
+        },
+        {
+          id: "vip",
+          name: "VIP",
+          rarity: 0.07,
+          effect: { buffStrengthMult: 1.3 },
+          masteryReq: 8,
+        },
+        {
+          id: "chain",
+          name: "Chain",
+          rarity: 0.06,
+          effect: { chain: true, chainRewardMult: 1.5 },
+        },
+        {
+          id: "legendary",
+          name: "Legendary",
+          rarity: 0.04,
+          effect: { rewardMult: 1.8, reqMult: 3, reqGoods: 2 },
+        },
       ];
       this.farmBuffCategories = {
-        PROD:    { baseStrength: 1.05, baseDuration: 300 },
-        COST:    { baseStrength: 0.92, baseDuration: 300 },
-        OFFLINE: { baseStrength: 1.5,  baseDuration: 600 },
-        QOL:     { baseStrength: 1,    baseDuration: 600 },
-        EVENT:   { baseStrength: 1,    baseDuration: 180 },
+        PROD: { baseStrength: 1.05, baseDuration: 300 },
+        COST: { baseStrength: 0.92, baseDuration: 300 },
+        OFFLINE: { baseStrength: 1.5, baseDuration: 600 },
+        QOL: { baseStrength: 1, baseDuration: 600 },
+        EVENT: { baseStrength: 1, baseDuration: 180 },
       };
       this.farmVariants = {
         chicken: [
-          { name: "Silkie", effect: { prodSpeed: 0.10 } },
-          { name: "Golden", effect: { sellPrice: 0.20 } },
+          { name: "Silkie", effect: { prodSpeed: 0.1 } },
+          { name: "Golden", effect: { sellPrice: 0.2 } },
           { name: "Phoenix", effect: { traitSlot: 1 } },
         ],
         cow: [
@@ -854,23 +1072,23 @@
           { name: "Mystic", effect: { traitSlot: 1 } },
         ],
         bees: [
-          { name: "Bumblebee", effect: { prodSpeed: 0.20 } },
-          { name: "Royal", effect: { sellPrice: 0.30 } },
+          { name: "Bumblebee", effect: { prodSpeed: 0.2 } },
+          { name: "Royal", effect: { sellPrice: 0.3 } },
           { name: "Crystal", effect: { traitSlot: 1 } },
         ],
         pigs: [
-          { name: "Iberian", effect: { prodSpeed: 0.20 } },
-          { name: "Truffle King", effect: { sellPrice: 0.30 } },
+          { name: "Iberian", effect: { prodSpeed: 0.2 } },
+          { name: "Truffle King", effect: { sellPrice: 0.3 } },
           { name: "Shadow", effect: { traitSlot: 1 } },
         ],
       };
       this.farmPassports = [
-        { id: "nomad", name: "Nomad", effect: { breedCooldown: -0.50 } },
-        { id: "artisan", name: "Artisan", effect: { contractContrib: 0.20 } },
-        { id: "merchant", name: "Merchant", effect: { sellPrice: 0.30 } },
-        { id: "pioneer", name: "Pioneer", effect: { prodSpeed: 0.20 } },
+        { id: "nomad", name: "Nomad", effect: { breedCooldown: -0.5 } },
+        { id: "artisan", name: "Artisan", effect: { contractContrib: 0.2 } },
+        { id: "merchant", name: "Merchant", effect: { sellPrice: 0.3 } },
+        { id: "pioneer", name: "Pioneer", effect: { prodSpeed: 0.2 } },
         { id: "scholar", name: "Scholar", effect: { inheritBest: true } },
-        { id: "golden", name: "Golden", effect: { allEffects: 0.10 } },
+        { id: "golden", name: "Golden", effect: { allEffects: 0.1 } },
       ];
       this.farmState = this.createDefaultFarmState();
       this.farmActiveTab = "barn";
@@ -2538,7 +2756,11 @@
         basePerSecond *= 1.05;
       }
       // Farm COST buff: reduce effective cost (reflected as production boost here)
-      if (this.farmState && this.farmState.buffs.PROD && this.farmState.buffs.PROD.remaining > 0) {
+      if (
+        this.farmState &&
+        this.farmState.buffs.PROD &&
+        this.farmState.buffs.PROD.remaining > 0
+      ) {
         // PROD buff already applied per-animal in farm tick, this is for main game CpS
         // Only apply if mastery >= certain level to make it meaningful
       }
@@ -2577,7 +2799,10 @@
       // Farm production tick
       this.tickFarm(deltaTime);
       // Farm display update (throttled — faster for contracts tab)
-      const farmUpdateInterval = (this.farmActiveTab === "contracts" || this.farmActiveTab === "breeding") ? 4 : 15;
+      const farmUpdateInterval =
+        this.farmActiveTab === "contracts" || this.farmActiveTab === "breeding"
+          ? 4
+          : 15;
       if (this.renderFrameCount % farmUpdateInterval === 0) {
         this.updateFarmDisplay();
       }
@@ -2685,17 +2910,48 @@
         farmVersion: 1,
         animals: [],
         storage: { egg: 0, milk: 0, wool: 0, honey: 0, truffle: 0 },
-        feedPlans: { chicken: "standard", cow: "standard", sheep: "standard", bees: "standard", pigs: "standard" },
+        feedPlans: {
+          chicken: "standard",
+          cow: "standard",
+          sheep: "standard",
+          bees: "standard",
+          pigs: "standard",
+        },
         contracts: { board: [], active: [], lastRefresh: 0, rerollsUsed: 0 },
         breeding: {
           slots: [
-            { active: false, parentA: null, parentB: null, program: "quick", progress: 0, duration: 0 },
-            { active: false, parentA: null, parentB: null, program: "quick", progress: 0, duration: 0 },
+            {
+              active: false,
+              parentA: null,
+              parentB: null,
+              program: "quick",
+              progress: 0,
+              duration: 0,
+            },
+            {
+              active: false,
+              parentA: null,
+              parentB: null,
+              program: "quick",
+              progress: 0,
+              duration: 0,
+            },
           ],
         },
         mastery: { xp: 0, level: 0 },
-        buffs: { PROD: null, COST: null, OFFLINE: null, QOL: null, EVENT: null },
-        careWindow: { nextTrigger: Date.now() + 720000, active: false, expiresAt: 0, lateUntil: 0 },
+        buffs: {
+          PROD: null,
+          COST: null,
+          OFFLINE: null,
+          QOL: null,
+          EVENT: null,
+        },
+        careWindow: {
+          nextTrigger: Date.now() + 720000,
+          active: false,
+          expiresAt: 0,
+          lateUntil: 0,
+        },
         careBonus: { modifier: 1, cyclesRemaining: 0 },
         crates: [],
         rumors: { active: null },
@@ -2709,16 +2965,20 @@
     }
 
     getEffectiveStorageCap(good) {
-      const animalType = Object.keys(this.farmAnimalDefs).find(k => this.farmAnimalDefs[k].good === good);
+      const animalType = Object.keys(this.farmAnimalDefs).find(
+        (k) => this.farmAnimalDefs[k].good === good,
+      );
       if (!animalType) return 30;
       const baseCap = this.farmAnimalDefs[animalType].storageCap;
       const masteryBonus = this.farmState.mastery.level * 5;
       let cap = baseCap + masteryBonus;
       // Tireless trait bonus per animal
-      const animals = this.farmState.animals.filter(a => a.type === animalType);
+      const animals = this.farmState.animals.filter(
+        (a) => a.type === animalType,
+      );
       for (const animal of animals) {
         if (animal.traits.includes("tireless")) {
-          cap = Math.ceil(cap * 1.20);
+          cap = Math.ceil(cap * 1.2);
           break; // only once per good
         }
       }
@@ -2727,37 +2987,47 @@
 
     getAnimalCost(type) {
       const def = this.farmAnimalDefs[type];
-      const owned = this.farmState.animals.filter(a => a.type === type).length;
+      const owned = this.farmState.animals.filter(
+        (a) => a.type === type,
+      ).length;
       return Math.floor(def.baseCost * Math.pow(def.costMult, owned));
     }
 
     getSellPrice(good) {
-      const animalType = Object.keys(this.farmAnimalDefs).find(k => this.farmAnimalDefs[k].good === good);
+      const animalType = Object.keys(this.farmAnimalDefs).find(
+        (k) => this.farmAnimalDefs[k].good === good,
+      );
       if (!animalType) return 0;
       const def = this.farmAnimalDefs[animalType];
       let price = def.baseSellPrice * (1 + 0.08 * this.getFarmCount());
       // Mastery sell bonuses
       const ml = this.farmState.mastery.level;
       if (ml >= 3) price *= 1.05;
-      if (ml >= 10) price *= 1.10;
-      if (ml >= 19) price *= 1.20;
+      if (ml >= 10) price *= 1.1;
+      if (ml >= 19) price *= 1.2;
       // Trait sell bonuses from animals of this type
-      const animals = this.farmState.animals.filter(a => a.type === animalType);
+      const animals = this.farmState.animals.filter(
+        (a) => a.type === animalType,
+      );
       for (const animal of animals) {
         for (const traitId of animal.traits) {
-          const tdef = this.farmTraitDefs.find(t => t.id === traitId);
-          if (tdef && tdef.effect.type === "sellPrice") price *= (1 + tdef.effect.value);
-          if (tdef && tdef.effect.type === "legendaryProd") price *= (1 + tdef.effect.sellPrice);
+          const tdef = this.farmTraitDefs.find((t) => t.id === traitId);
+          if (tdef && tdef.effect.type === "sellPrice")
+            price *= 1 + tdef.effect.value;
+          if (tdef && tdef.effect.type === "legendaryProd")
+            price *= 1 + tdef.effect.sellPrice;
         }
         // Variant sell bonus
         if (animal.variant) {
           const vdefs = this.farmVariants[animalType];
-          const vdef = vdefs ? vdefs.find(v => v.name === animal.variant) : null;
-          if (vdef && vdef.effect.sellPrice) price *= (1 + vdef.effect.sellPrice);
+          const vdef = vdefs
+            ? vdefs.find((v) => v.name === animal.variant)
+            : null;
+          if (vdef && vdef.effect.sellPrice) price *= 1 + vdef.effect.sellPrice;
         }
         // Passport sell bonus
-        if (animal.passport === "merchant") price *= 1.30;
-        if (animal.passport === "golden") price *= 1.10;
+        if (animal.passport === "merchant") price *= 1.3;
+        if (animal.passport === "golden") price *= 1.1;
       }
       // PROD buff sell boost doesn't apply to sell prices per spec, only prod buff
       return Math.floor(price);
@@ -2770,7 +3040,7 @@
       else if (feedPlan === "premium") mod *= 1.4;
       // Mastery production bonuses
       const ml = this.farmState.mastery.level;
-      if (ml >= 5) mod *= 1.10;
+      if (ml >= 5) mod *= 1.1;
       if (ml >= 14) mod *= 1.15;
       // Care bonus
       if (this.farmState.careBonus.cyclesRemaining > 0) {
@@ -2782,32 +3052,42 @@
         mod *= prodBuff.strength;
       }
       // Trait bonuses
-      const animals = this.farmState.animals.filter(a => a.type === animalType);
+      const animals = this.farmState.animals.filter(
+        (a) => a.type === animalType,
+      );
       let traitProdBonus = 0;
       for (const animal of animals) {
         for (const traitId of animal.traits) {
-          const tdef = this.farmTraitDefs.find(t => t.id === traitId);
+          const tdef = this.farmTraitDefs.find((t) => t.id === traitId);
           if (!tdef) continue;
-          if (tdef.effect.type === "prodSpeed") traitProdBonus += tdef.effect.value;
-          if (tdef.effect.type === "legendaryProd") traitProdBonus += tdef.effect.prodSpeed;
+          if (tdef.effect.type === "prodSpeed")
+            traitProdBonus += tdef.effect.value;
+          if (tdef.effect.type === "legendaryProd")
+            traitProdBonus += tdef.effect.prodSpeed;
           if (tdef.effect.type === "socialProd") {
             const sameCount = animals.length;
-            traitProdBonus += Math.min(tdef.effect.value * (sameCount - 1), tdef.effect.max);
+            traitProdBonus += Math.min(
+              tdef.effect.value * (sameCount - 1),
+              tdef.effect.max,
+            );
           }
         }
         // Variant production bonus
         if (animal.variant) {
           const vdefs = this.farmVariants[animalType];
-          const vdef = vdefs ? vdefs.find(v => v.name === animal.variant) : null;
-          if (vdef && vdef.effect.prodSpeed) traitProdBonus += vdef.effect.prodSpeed;
+          const vdef = vdefs
+            ? vdefs.find((v) => v.name === animal.variant)
+            : null;
+          if (vdef && vdef.effect.prodSpeed)
+            traitProdBonus += vdef.effect.prodSpeed;
         }
         // Passport production bonus
-        if (animal.passport === "pioneer") traitProdBonus += 0.20;
-        if (animal.passport === "golden") traitProdBonus += 0.10;
+        if (animal.passport === "pioneer") traitProdBonus += 0.2;
+        if (animal.passport === "golden") traitProdBonus += 0.1;
       }
       // Average the trait bonuses across all animals of this type
       if (animals.length > 0) {
-        mod *= (1 + traitProdBonus / animals.length);
+        mod *= 1 + traitProdBonus / animals.length;
       }
       return mod;
     }
@@ -2822,7 +3102,7 @@
       // 1. Produce goods per animal type
       try {
         for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-          const animals = fs.animals.filter(a => a.type === type);
+          const animals = fs.animals.filter((a) => a.type === type);
           if (animals.length === 0) continue;
           const good = def.good;
           const cap = this.getEffectiveStorageCap(good);
@@ -2834,35 +3114,58 @@
           const produced = totalRate * deltaSeconds;
           fs.storage[good] = Math.min(fs.storage[good] + produced, cap);
         }
-      } catch (e) { console.error("[Farm] production error:", e); }
+      } catch (e) {
+        console.error("[Farm] production error:", e);
+      }
 
       // 2. Feed costs
-      try { this.applyFarmFeedCosts(deltaSeconds); }
-      catch (e) { console.error("[Farm] feed cost error:", e); }
+      try {
+        this.applyFarmFeedCosts(deltaSeconds);
+      } catch (e) {
+        console.error("[Farm] feed cost error:", e);
+      }
 
       // 3. Care window
-      try { this.tickCareWindow(Date.now()); }
-      catch (e) { console.error("[Farm] care window error:", e); }
+      try {
+        this.tickCareWindow(Date.now());
+      } catch (e) {
+        console.error("[Farm] care window error:", e);
+      }
 
       // 4. Contract refresh
-      try { this.tickContractRefresh(Date.now()); }
-      catch (e) { console.error("[Farm] contract refresh error:", e); }
+      try {
+        this.tickContractRefresh(Date.now());
+      } catch (e) {
+        console.error("[Farm] contract refresh error:", e);
+      }
 
       // 5. Progress active contracts
-      try { this.tickActiveContracts(deltaSeconds); }
-      catch (e) { console.error("[Farm] active contracts error:", e); }
+      try {
+        this.tickActiveContracts(deltaSeconds);
+      } catch (e) {
+        console.error("[Farm] active contracts error:", e);
+      }
 
       // 6. Breeding
-      try { this.tickBreeding(deltaSeconds); }
-      catch (e) { console.error("[Farm] breeding error:", e); }
+      try {
+        this.tickBreeding(deltaSeconds);
+      } catch (e) {
+        console.error("[Farm] breeding error:", e);
+      }
 
       // 7. Buff expiry
-      try { this.tickBuffExpiry(deltaSeconds); }
-      catch (e) { console.error("[Farm] buff expiry error:", e); }
+      try {
+        this.tickBuffExpiry(deltaSeconds);
+      } catch (e) {
+        console.error("[Farm] buff expiry error:", e);
+      }
 
       // 8. Auto-collect (FC 60 + Mastery 13)
-      try { this.tickAutoCollect(); }
-      catch (e) { console.error("[Farm] auto-collect error:", e); }
+      try {
+        this.tickAutoCollect();
+      } catch (e) {
+        console.error("[Farm] auto-collect error:", e);
+      }
 
       // 9. Care bonus cycle tracking
       if (fs.careBonus && fs.careBonus.cyclesRemaining > 0) {
@@ -2875,12 +3178,13 @@
       const fs = this.farmState;
       const plan = fs.feedPlans[type] || "standard";
       if (plan === "standard") return 0;
-      const animals = fs.animals.filter(a => a.type === type);
+      const animals = fs.animals.filter((a) => a.type === type);
       if (animals.length === 0) return 0;
 
       // Base cost: flat rate from animal price (meaningful early game)
       const costPercent = plan === "ration" ? 0.005 : 0.02;
-      const baseCost = (def.baseCost * costPercent * animals.length) / def.prodInterval;
+      const baseCost =
+        (def.baseCost * costPercent * animals.length) / def.prodInterval;
 
       // CpS-scaled cost: % of total income (meaningful late game)
       // Ration: 0.08% CpS per type (5 types all ration = 0.4% total)
@@ -2892,12 +3196,13 @@
       let feedDiscount = 0;
       for (const animal of animals) {
         for (const traitId of animal.traits) {
-          const tdef = this.farmTraitDefs.find(t => t.id === traitId);
-          if (tdef && tdef.effect.type === "feedCost") feedDiscount += tdef.effect.value;
+          const tdef = this.farmTraitDefs.find((t) => t.id === traitId);
+          if (tdef && tdef.effect.type === "feedCost")
+            feedDiscount += tdef.effect.value;
         }
       }
       // feedDiscount is negative (e.g. -0.10, -0.25), cap at -50%
-      feedDiscount = Math.max(feedDiscount, -0.50);
+      feedDiscount = Math.max(feedDiscount, -0.5);
 
       return Math.max(baseCost, scaledCost) * (1 + feedDiscount);
     }
@@ -2915,7 +3220,9 @@
         } else {
           fs.feedPlans[type] = "standard";
           this._forceBarnFullRender();
-          this.showFarmNotification("Not enough donuts for " + plan + " feed. Switched to Standard.");
+          this.showFarmNotification(
+            "Not enough donuts for " + plan + " feed. Switched to Standard.",
+          );
         }
       }
     }
@@ -2948,7 +3255,7 @@
       if (!fs.careWindow.active && Date.now() <= fs.careWindow.lateUntil) {
         // Late actions
         if (action === "pet") {
-          fs.careBonus = { modifier: 1.10, cyclesRemaining: 1 };
+          fs.careBonus = { modifier: 1.1, cyclesRemaining: 1 };
         } else {
           const cost = this.donutCount * 0.0005;
           if (this.donutCount >= cost) {
@@ -2963,15 +3270,15 @@
           const cost = this.donutCount * 0.001;
           if (this.donutCount >= cost) {
             this.donutCount -= cost;
-            fs.careBonus = { modifier: 1.40, cyclesRemaining: 3 };
+            fs.careBonus = { modifier: 1.4, cyclesRemaining: 3 };
           }
         }
         this.gainMasteryXP(15);
       }
       // Calm trait bonus
-      const hasCalm = fs.animals.some(a => a.traits.includes("calm"));
+      const hasCalm = fs.animals.some((a) => a.traits.includes("calm"));
       if (hasCalm) {
-        fs.careBonus.modifier *= 1.10;
+        fs.careBonus.modifier *= 1.1;
       }
       const overlay = document.getElementById("farm-care-overlay");
       if (overlay) overlay.classList.add("hidden");
@@ -2983,7 +3290,10 @@
       const fs = this.farmState;
       const fc = this.getFarmCount();
       if (fc < 5) return;
-      if (now - fs.contracts.lastRefresh >= 600000 || fs.contracts.board.length === 0) {
+      if (
+        now - fs.contracts.lastRefresh >= 600000 ||
+        fs.contracts.board.length === 0
+      ) {
         this.generateContractBoard();
         fs.contracts.lastRefresh = now;
         fs.contracts.rerollsUsed = 0;
@@ -2996,15 +3306,18 @@
       const board = [];
       // Rush contracts (2 slots, unlock at FC 5)
       if (fc >= 5) {
-        for (let i = 0; i < 2; i++) board.push(this.generateContract("rush", fc, ml));
+        for (let i = 0; i < 2; i++)
+          board.push(this.generateContract("rush", fc, ml));
       }
       // Standard contracts (3 slots, unlock at FC 10)
       if (fc >= 10) {
-        for (let i = 0; i < 3; i++) board.push(this.generateContract("standard", fc, ml));
+        for (let i = 0; i < 3; i++)
+          board.push(this.generateContract("standard", fc, ml));
       }
       // Long haul (2 slots, unlock at FC 25)
       if (fc >= 25) {
-        for (let i = 0; i < 2; i++) board.push(this.generateContract("longhaul", fc, ml));
+        for (let i = 0; i < 2; i++)
+          board.push(this.generateContract("longhaul", fc, ml));
       }
       this.farmState.contracts.board = board;
     }
@@ -3023,11 +3336,17 @@
       } else if (type === "standard") {
         duration = 480 + Math.floor(Math.random() * 420); // 8-15min
         reqCount = 4 + Math.floor(Math.random() * 6);
-        goodCount = Math.min(1 + Math.floor(Math.random() * 2), availableGoods.length);
+        goodCount = Math.min(
+          1 + Math.floor(Math.random() * 2),
+          availableGoods.length,
+        );
       } else {
         duration = 2700 + Math.floor(Math.random() * 2700); // 45-90min
         reqCount = 8 + Math.floor(Math.random() * 8);
-        goodCount = Math.min(2 + Math.floor(Math.random() * 2), availableGoods.length);
+        goodCount = Math.min(
+          2 + Math.floor(Math.random() * 2),
+          availableGoods.length,
+        );
       }
 
       // Pick random goods
@@ -3061,11 +3380,15 @@
       let rewardMult = 1;
       let durationMult = 1;
       for (const affixId of affixes) {
-        const affix = this.farmAffixDefs.find(a => a.id === affixId);
+        const affix = this.farmAffixDefs.find((a) => a.id === affixId);
         if (affix.effect.rewardMult) rewardMult *= affix.effect.rewardMult;
-        if (affix.effect.durationMult) durationMult *= affix.effect.durationMult;
+        if (affix.effect.durationMult)
+          durationMult *= affix.effect.durationMult;
         if (affix.effect.reqMult) {
-          for (const good in requirements) requirements[good] = Math.ceil(requirements[good] * affix.effect.reqMult);
+          for (const good in requirements)
+            requirements[good] = Math.ceil(
+              requirements[good] * affix.effect.reqMult,
+            );
         }
       }
       duration = Math.floor(duration * durationMult);
@@ -3086,14 +3409,19 @@
       }
 
       const names = this.farmContractNames[type];
-      const id = "contract_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      const id =
+        "contract_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
       return {
-        id, type,
+        id,
+        type,
         title: names[Math.floor(Math.random() * names.length)],
         requirements,
-        progress: Object.fromEntries(Object.keys(requirements).map(g => [g, 0])),
-        duration, elapsed: 0,
+        progress: Object.fromEntries(
+          Object.keys(requirements).map((g) => [g, 0]),
+        ),
+        duration,
+        elapsed: 0,
         reward: { donuts: donutReward, buff: buffReward },
         affixes,
         expiresAt: Date.now() + duration * 1000 + 600000,
@@ -3117,13 +3445,16 @@
         this.showFarmNotification("Max 2 active contracts!");
         return;
       }
-      const idx = fs.contracts.board.findIndex(c => c && c.id === contractId);
+      const idx = fs.contracts.board.findIndex((c) => c && c.id === contractId);
       if (idx === -1) return;
       const contract = fs.contracts.board.splice(idx, 1)[0];
       // Check if we have the goods
       let canFulfill = true;
       for (const [good, qty] of Object.entries(contract.requirements)) {
-        if ((fs.storage[good] || 0) < qty) { canFulfill = false; break; }
+        if ((fs.storage[good] || 0) < qty) {
+          canFulfill = false;
+          break;
+        }
       }
       if (!canFulfill) {
         this.showFarmNotification("Not enough goods!");
@@ -3144,7 +3475,12 @@
       if (!fs.contracts || !Array.isArray(fs.contracts.active)) return;
       const toComplete = [];
       for (const contract of fs.contracts.active) {
-        if (!contract || typeof contract.elapsed !== 'number' || typeof contract.duration !== 'number') continue;
+        if (
+          !contract ||
+          typeof contract.elapsed !== "number" ||
+          typeof contract.duration !== "number"
+        )
+          continue;
         contract.elapsed += deltaSeconds;
         // Contract speed bonus from mastery
         if (fs.mastery.level >= 11) contract.elapsed += deltaSeconds * 0.05;
@@ -3158,7 +3494,9 @@
         } catch (e) {
           console.error("[Farm] completeContract error:", e);
           // Force-remove broken contract
-          fs.contracts.active = fs.contracts.active.filter(c => c.id !== contract.id);
+          fs.contracts.active = fs.contracts.active.filter(
+            (c) => c.id !== contract.id,
+          );
         }
       }
     }
@@ -3166,7 +3504,9 @@
     completeContract(contract) {
       const fs = this.farmState;
       // Remove from active
-      fs.contracts.active = fs.contracts.active.filter(c => c.id !== contract.id);
+      fs.contracts.active = fs.contracts.active.filter(
+        (c) => c.id !== contract.id,
+      );
 
       // Award donuts
       let donuts = contract.reward.donuts;
@@ -3175,11 +3515,13 @@
         donuts = Math.floor(donuts * (0.5 + Math.random() * 1.5));
       }
       // Mastery contract reward bonus
-      if (fs.mastery.level >= 16) donuts = Math.floor(donuts * 1.10);
+      if (fs.mastery.level >= 16) donuts = Math.floor(donuts * 1.1);
 
       this.donutCount += donuts;
       this.totalDonutsEarned += donuts;
-      this.showFarmNotification("Contract complete! +" + this.formatNumber(donuts) + " donuts");
+      this.showFarmNotification(
+        "Contract complete! +" + this.formatNumber(donuts) + " donuts",
+      );
 
       // Award buff
       if (contract.reward.buff) {
@@ -3194,9 +3536,15 @@
 
       // Chain affix
       if (contract.affixes.includes("chain")) {
-        const chainContract = this.generateContract(contract.type, this.getFarmCount(), fs.mastery.level);
+        const chainContract = this.generateContract(
+          contract.type,
+          this.getFarmCount(),
+          fs.mastery.level,
+        );
         if (chainContract) {
-          chainContract.reward.donuts = Math.floor(chainContract.reward.donuts * 1.5);
+          chainContract.reward.donuts = Math.floor(
+            chainContract.reward.donuts * 1.5,
+          );
           chainContract.title = "Chain: " + chainContract.title;
           fs.contracts.board.push(chainContract);
         }
@@ -3209,7 +3557,7 @@
 
     deliverContract(contractId) {
       const fs = this.farmState;
-      const contract = fs.contracts.active.find(c => c.id === contractId);
+      const contract = fs.contracts.active.find((c) => c.id === contractId);
       if (!contract) return;
       if (contract.elapsed < contract.duration) {
         this.showFarmNotification("Contract not ready yet!");
@@ -3235,12 +3583,16 @@
       // Replace check: new must be >10% stronger
       const newScore = newBuff.strength * newBuff.remaining;
       const curScore = current.strength * current.remaining;
-      if (newScore > curScore * 1.10) {
+      if (newScore > curScore * 1.1) {
         fs.buffs[cat] = newBuff;
       } else {
         const consolation = Math.floor(this.donutCount * 0.001);
         this.donutCount += consolation;
-        this.showFarmNotification("Buff blocked. +" + this.formatNumber(consolation) + " donuts instead.");
+        this.showFarmNotification(
+          "Buff blocked. +" +
+            this.formatNumber(consolation) +
+            " donuts instead.",
+        );
       }
     }
 
@@ -3261,7 +3613,7 @@
       const def = this.farmAnimalDefs[type];
       if (!def) return;
       if (this.getFarmCount() < def.unlockFC) return;
-      const owned = this.farmState.animals.filter(a => a.type === type);
+      const owned = this.farmState.animals.filter((a) => a.type === type);
       if (owned.length >= 20) {
         this.showFarmNotification("Max 20 " + def.name + " reached!");
         return;
@@ -3299,20 +3651,31 @@
       let pool;
       if (roll < 0.005) {
         // Epic (0.5% — rareBonus does NOT affect epic chance)
-        pool = this.farmTraitDefs.filter(t => t.rarity === "epic" && !ex.includes(t.id));
-        if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)].id;
+        pool = this.farmTraitDefs.filter(
+          (t) => t.rarity === "epic" && !ex.includes(t.id),
+        );
+        if (pool.length > 0)
+          return pool[Math.floor(Math.random() * pool.length)].id;
       }
       if (roll < 0.015 + rareBonus) {
         // Rare (1.5% base + rareBonus from program/feed)
-        pool = this.farmTraitDefs.filter(t => t.rarity === "rare" && !ex.includes(t.id));
-        if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)].id;
+        pool = this.farmTraitDefs.filter(
+          (t) => t.rarity === "rare" && !ex.includes(t.id),
+        );
+        if (pool.length > 0)
+          return pool[Math.floor(Math.random() * pool.length)].id;
       }
       // Common
-      pool = this.farmTraitDefs.filter(t => t.rarity === "common" && !ex.includes(t.id));
-      if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)].id;
+      pool = this.farmTraitDefs.filter(
+        (t) => t.rarity === "common" && !ex.includes(t.id),
+      );
+      if (pool.length > 0)
+        return pool[Math.floor(Math.random() * pool.length)].id;
       // Fallback: any trait not already owned
-      pool = this.farmTraitDefs.filter(t => !ex.includes(t.id));
-      return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)].id : null;
+      pool = this.farmTraitDefs.filter((t) => !ex.includes(t.id));
+      return pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)].id
+        : null;
     }
 
     // --- Selling Goods ---
@@ -3327,7 +3690,15 @@
       this.totalDonutsEarned += total;
       fs.stats.totalGoodsSold += amount;
       this.gainMasteryXP(3);
-      this.showFarmNotification("Sold " + amount + " " + good + " for " + this.formatNumber(total) + " donuts!");
+      this.showFarmNotification(
+        "Sold " +
+          amount +
+          " " +
+          good +
+          " for " +
+          this.formatNumber(total) +
+          " donuts!",
+      );
       // Crate drop chance on collect/sell
       this.rollFarmCrate();
       this.updateFarmDisplay();
@@ -3342,8 +3713,8 @@
       const slot = fs.breeding.slots[slotIndex];
       if (slot.active) return;
 
-      const parentA = fs.animals.find(a => a.id === parentAId);
-      const parentB = fs.animals.find(a => a.id === parentBId);
+      const parentA = fs.animals.find((a) => a.id === parentAId);
+      const parentB = fs.animals.find((a) => a.id === parentBId);
       if (!parentA || !parentB) return;
       if (parentA.type !== parentB.type) {
         this.showFarmNotification("Parents must be the same type!");
@@ -3385,15 +3756,25 @@
         this.showFarmNotification("Parents must be different animals!");
         return;
       }
-      const parentA = this.farmState.animals.find(a => a.id === sel.a);
+      const parentA = this.farmState.animals.find((a) => a.id === sel.a);
       if (parentA) {
-        const owned = this.farmState.animals.filter(a => a.type === parentA.type).length;
+        const owned = this.farmState.animals.filter(
+          (a) => a.type === parentA.type,
+        ).length;
         if (owned >= 20) {
-          this.showFarmNotification("Max 20 " + (this.farmAnimalDefs[parentA.type]?.name || parentA.type) + "! Free up space first.");
+          this.showFarmNotification(
+            "Max 20 " +
+              (this.farmAnimalDefs[parentA.type]?.name || parentA.type) +
+              "! Free up space first.",
+          );
           return;
         }
         if (owned >= 18) {
-          this.showFarmNotification("Warning: " + owned + "/20 slots used. Offspring may be lost if full!");
+          this.showFarmNotification(
+            "Warning: " +
+              owned +
+              "/20 slots used. Offspring may be lost if full!",
+          );
         }
       }
       const program = this._breedProgram || "quick";
@@ -3405,33 +3786,46 @@
     // Build breeding preview showing possible trait outcomes
     getBreedingPreview(parentAId, parentBId, programKey) {
       const fs = this.farmState;
-      const parentA = fs.animals.find(a => a.id === parentAId);
-      const parentB = fs.animals.find(a => a.id === parentBId);
-      if (!parentA || !parentB) return '';
-      if (parentA.type !== parentB.type) return '<div class="breed-preview-warn">Parents must be same type!</div>';
+      const parentA = fs.animals.find((a) => a.id === parentAId);
+      const parentB = fs.animals.find((a) => a.id === parentBId);
+      if (!parentA || !parentB) return "";
+      if (parentA.type !== parentB.type)
+        return '<div class="breed-preview-warn">Parents must be same type!</div>';
 
-      const prog = this.farmBreedPrograms[programKey] || this.farmBreedPrograms.quick;
+      const prog =
+        this.farmBreedPrograms[programKey] || this.farmBreedPrograms.quick;
       const def = this.farmAnimalDefs[parentA.type];
-      const owned = fs.animals.filter(a => a.type === parentA.type).length;
+      const owned = fs.animals.filter((a) => a.type === parentA.type).length;
       const cost = Math.floor(def.baseCost * prog.costMult);
-      const hasMentor = parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
+      const hasMentor =
+        parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
       const isPremium = fs.feedPlans[parentA.type] === "premium";
       const traitSlots = Math.min(prog.traitSlots + (hasMentor ? 1 : 0), 4);
       const rareBonus = prog.rareBonus + (isPremium ? 0.05 : 0);
       const variantChance = programKey === "long" ? 0.15 : 0.08;
 
       const inheritPool = [...new Set([...parentA.traits, ...parentB.traits])];
-      const inheritDefs = inheritPool.map(t => this.farmTraitDefs.find(x => x.id === t)).filter(Boolean);
-      const rarityColors = { common: '#81c784', rare: '#64b5f6', epic: '#ce93d8' };
+      const inheritDefs = inheritPool
+        .map((t) => this.farmTraitDefs.find((x) => x.id === t))
+        .filter(Boolean);
+      const rarityColors = {
+        common: "#81c784",
+        rare: "#64b5f6",
+        epic: "#ce93d8",
+      };
 
       // Variant info
-      let variantInfo = '';
-      if (parentA.variant && parentB.variant && parentA.variant === parentB.variant) {
+      let variantInfo = "";
+      if (
+        parentA.variant &&
+        parentB.variant &&
+        parentA.variant === parentB.variant
+      ) {
         variantInfo = `<span style="color:#fccb72;">Guaranteed: ${parentA.variant}</span>`;
       } else if (parentA.variant || parentB.variant) {
         variantInfo = `<span style="color:rgba(255,234,182,0.6);">50%: ${parentA.variant || parentB.variant}</span>`;
       } else {
-        variantInfo = `<span style="color:rgba(255,234,182,0.3);">${(variantChance * 100)}% random</span>`;
+        variantInfo = `<span style="color:rgba(255,234,182,0.3);">${variantChance * 100}% random</span>`;
       }
 
       // Program-specific mechanic description
@@ -3451,17 +3845,23 @@
       };
 
       // Trait slot breakdown per program
-      let slotBreakdown = '';
+      let slotBreakdown = "";
       if (programKey === "long") {
         const bestA = this._getBestTrait(parentA.traits);
-        const bestB = this._getBestTrait(parentB.traits.filter(t => t !== bestA));
-        const bestADef = bestA ? this.farmTraitDefs.find(t => t.id === bestA) : null;
-        const bestBDef = bestB ? this.farmTraitDefs.find(t => t.id === bestB) : null;
+        const bestB = this._getBestTrait(
+          parentB.traits.filter((t) => t !== bestA),
+        );
+        const bestADef = bestA
+          ? this.farmTraitDefs.find((t) => t.id === bestA)
+          : null;
+        const bestBDef = bestB
+          ? this.farmTraitDefs.find((t) => t.id === bestB)
+          : null;
         slotBreakdown = `<div class="breed-preview-slots">
-          <div class="breed-slot-plan"><span class="breed-slot-num">1</span> ${bestADef ? `<span style="color:${rarityColors[bestADef.rarity]}">${bestADef.name}</span> <span class="breed-slot-guaranteed">guaranteed</span>` : 'Random (no parent A traits)'}</div>
-          <div class="breed-slot-plan"><span class="breed-slot-num">2</span> ${bestBDef ? `<span style="color:${rarityColors[bestBDef.rarity]}">${bestBDef.name}</span> <span class="breed-slot-guaranteed">guaranteed</span>` : 'Random (no parent B traits)'}</div>
+          <div class="breed-slot-plan"><span class="breed-slot-num">1</span> ${bestADef ? `<span style="color:${rarityColors[bestADef.rarity]}">${bestADef.name}</span> <span class="breed-slot-guaranteed">guaranteed</span>` : "Random (no parent A traits)"}</div>
+          <div class="breed-slot-plan"><span class="breed-slot-num">2</span> ${bestBDef ? `<span style="color:${rarityColors[bestBDef.rarity]}">${bestBDef.name}</span> <span class="breed-slot-guaranteed">guaranteed</span>` : "Random (no parent B traits)"}</div>
           <div class="breed-slot-plan"><span class="breed-slot-num">3</span> Mutation <span style="color:#64b5f6;">(${((rareBonus + 0.02 + 0.015) * 100).toFixed(1)}% rare+)</span></div>
-          ${hasMentor ? `<div class="breed-slot-plan"><span class="breed-slot-num">4</span> Mentor bonus — Mutation</div>` : ''}
+          ${hasMentor ? `<div class="breed-slot-plan"><span class="breed-slot-num">4</span> Mentor bonus — Mutation</div>` : ""}
         </div>`;
       } else if (programKey === "quick") {
         slotBreakdown = `<div class="breed-preview-slots">`;
@@ -3480,7 +3880,7 @@
       let html = `<div class="breed-preview">
         <div class="breed-preview-header">Outcome Preview</div>
 
-        ${mechanicHtml[programKey] || ''}
+        ${mechanicHtml[programKey] || ""}
 
         <div class="breed-preview-grid">
           <div class="breed-preview-cell">
@@ -3489,11 +3889,11 @@
           </div>
           <div class="breed-preview-cell">
             <span class="breed-preview-label">Slots</span>
-            <span class="breed-preview-value">${traitSlots}${hasMentor ? ' <small>(+1 Mentor)</small>' : ''}</span>
+            <span class="breed-preview-value">${traitSlots}${hasMentor ? " <small>(+1 Mentor)</small>" : ""}</span>
           </div>
           <div class="breed-preview-cell">
             <span class="breed-preview-label">Capacity</span>
-            <span class="breed-preview-value" style="color:${owned >= 19 ? '#fd9193' : owned >= 17 ? '#fccb72' : '#81c784'}">${owned}/20</span>
+            <span class="breed-preview-value" style="color:${owned >= 19 ? "#fd9193" : owned >= 17 ? "#fccb72" : "#81c784"}">${owned}/20</span>
           </div>
           <div class="breed-preview-cell">
             <span class="breed-preview-label">Variant</span>
@@ -3506,22 +3906,28 @@
           ${slotBreakdown}
         </div>
 
-        ${inheritDefs.length > 0 ? `<div class="breed-preview-section">
+        ${
+          inheritDefs.length > 0
+            ? `<div class="breed-preview-section">
           <div class="breed-preview-subtitle">Parent Traits in Pool</div>
-          ${inheritDefs.map(td => {
-            const fromA = parentA.traits.includes(td.id);
-            const fromB = parentB.traits.includes(td.id);
-            return `<div class="breed-preview-trait">
+          ${inheritDefs
+            .map((td) => {
+              const fromA = parentA.traits.includes(td.id);
+              const fromB = parentB.traits.includes(td.id);
+              return `<div class="breed-preview-trait">
               <span class="breed-preview-trait-dot" style="background:${rarityColors[td.rarity]}"></span>
               <span class="breed-preview-trait-name" style="color:${rarityColors[td.rarity]}">${td.name}</span>
               <span class="breed-preview-trait-rarity">${td.rarity}</span>
-              <span class="breed-preview-trait-from">${fromA && fromB ? 'A+B' : fromA ? 'A' : 'B'}</span>
+              <span class="breed-preview-trait-from">${fromA && fromB ? "A+B" : fromA ? "A" : "B"}</span>
               <span class="breed-preview-trait-desc">${this.getTraitDescription(td)}</span>
             </div>`;
-          }).join('')}
-        </div>` : '<div class="breed-preview-empty">No parent traits. All slots will be random.</div>'}
+            })
+            .join("")}
+        </div>`
+            : '<div class="breed-preview-empty">No parent traits. All slots will be random.</div>'
+        }
 
-        ${isPremium ? `<div class="breed-preview-bonus">Premium Feed: +5% rare chance on mutations</div>` : ''}
+        ${isPremium ? `<div class="breed-preview-bonus">Premium Feed: +5% rare chance on mutations</div>` : ""}
       </div>`;
 
       return html;
@@ -3531,8 +3937,15 @@
       const container = document.getElementById("breed-preview-" + slotIndex);
       if (!container) return;
       const sel = this._breedSelection && this._breedSelection[slotIndex];
-      if (!sel || !sel.a || !sel.b) { container.innerHTML = ''; return; }
-      container.innerHTML = this.getBreedingPreview(sel.a, sel.b, this._breedProgram || "quick");
+      if (!sel || !sel.a || !sel.b) {
+        container.innerHTML = "";
+        return;
+      }
+      container.innerHTML = this.getBreedingPreview(
+        sel.a,
+        sel.b,
+        this._breedProgram || "quick",
+      );
     }
 
     tickBreeding(deltaSeconds) {
@@ -3540,7 +3953,10 @@
       // Reduce breed cooldowns
       for (const animal of fs.animals) {
         if (animal.breedCooldown > 0) {
-          animal.breedCooldown = Math.max(0, animal.breedCooldown - deltaSeconds);
+          animal.breedCooldown = Math.max(
+            0,
+            animal.breedCooldown - deltaSeconds,
+          );
         }
       }
       for (let i = 0; i < fs.breeding.slots.length; i++) {
@@ -3556,14 +3972,17 @@
     completeBreeding(slotIndex) {
       const fs = this.farmState;
       const slot = fs.breeding.slots[slotIndex];
-      const parentA = fs.animals.find(a => a.id === slot.parentA);
-      const parentB = fs.animals.find(a => a.id === slot.parentB);
-      if (!parentA || !parentB) { slot.active = false; return; }
+      const parentA = fs.animals.find((a) => a.id === slot.parentA);
+      const parentB = fs.animals.find((a) => a.id === slot.parentB);
+      if (!parentA || !parentB) {
+        slot.active = false;
+        return;
+      }
 
       const prog = this.farmBreedPrograms[slot.program];
       const type = parentA.type;
       const def = this.farmAnimalDefs[type];
-      const owned = fs.animals.filter(a => a.type === type);
+      const owned = fs.animals.filter((a) => a.type === type);
       if (owned.length >= 20) {
         this.showFarmNotification("Max 20 " + def.name + "! Offspring lost.");
         slot.active = false;
@@ -3595,7 +4014,7 @@
 
       // Check for rare/epic traits for extra XP
       for (const traitId of traits) {
-        const tdef = this.farmTraitDefs.find(t => t.id === traitId);
+        const tdef = this.farmTraitDefs.find((t) => t.id === traitId);
         if (tdef && tdef.rarity === "rare") this.gainMasteryXP(30);
         if (tdef && tdef.rarity === "epic") this.gainMasteryXP(100);
       }
@@ -3606,7 +4025,7 @@
     }
 
     _getTraitRarityWeight(traitId) {
-      const td = this.farmTraitDefs.find(t => t.id === traitId);
+      const td = this.farmTraitDefs.find((t) => t.id === traitId);
       if (!td) return 1;
       if (td.rarity === "epic") return 6;
       if (td.rarity === "rare") return 3;
@@ -3616,7 +4035,7 @@
     _pickWeightedTrait(traitList) {
       // Pick from a list of trait IDs, weighted by rarity (higher rarity = more likely to be inherited)
       if (!traitList || traitList.length === 0) return null;
-      const weights = traitList.map(t => this._getTraitRarityWeight(t));
+      const weights = traitList.map((t) => this._getTraitRarityWeight(t));
       const totalWeight = weights.reduce((a, b) => a + b, 0);
       let roll = Math.random() * totalWeight;
       for (let i = 0; i < traitList.length; i++) {
@@ -3633,41 +4052,55 @@
       let best = traitList[0];
       let bestRank = 0;
       for (const t of traitList) {
-        const td = this.farmTraitDefs.find(d => d.id === t);
-        const rank = td ? (order[td.rarity] || 0) : 0;
-        if (rank > bestRank) { best = t; bestRank = rank; }
+        const td = this.farmTraitDefs.find((d) => d.id === t);
+        const rank = td ? order[td.rarity] || 0 : 0;
+        if (rank > bestRank) {
+          best = t;
+          bestRank = rank;
+        }
       }
       return best;
     }
 
     rollBreedingTraits(parentA, parentB, program) {
-      const hasMentor = parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
+      const hasMentor =
+        parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
       let slots = Math.min(program.traitSlots + (hasMentor ? 1 : 0), 4);
       const traits = [];
       const isPremium = this.farmState.feedPlans[parentA.type] === "premium";
       const rareBonus = program.rareBonus + (isPremium ? 0.05 : 0);
-      const programKey = program === this.farmBreedPrograms.quick ? "quick"
-                       : program === this.farmBreedPrograms.long ? "long" : "standard";
+      const programKey =
+        program === this.farmBreedPrograms.quick
+          ? "quick"
+          : program === this.farmBreedPrograms.long
+            ? "long"
+            : "standard";
 
-      const allParentTraits = [...new Set([...parentA.traits, ...parentB.traits])];
+      const allParentTraits = [
+        ...new Set([...parentA.traits, ...parentB.traits]),
+      ];
 
       if (programKey === "quick") {
         // QUICK: High inherit (80%), NO mutation — predictable trait transfer
         for (let i = 0; i < slots; i++) {
           let candidate = null;
-          if (allParentTraits.length > 0 && Math.random() < 0.80) {
+          if (allParentTraits.length > 0 && Math.random() < 0.8) {
             // Weighted pick from parent pool (rarer traits more likely to be picked)
-            const pool = allParentTraits.filter(t => !traits.includes(t));
+            const pool = allParentTraits.filter((t) => !traits.includes(t));
             candidate = pool.length > 0 ? this._pickWeightedTrait(pool) : null;
           }
           if (!candidate) {
             // Random common only (no mutation to rare/epic in Quick)
-            const commons = this.farmTraitDefs.filter(t => t.rarity === "common" && !traits.includes(t.id));
-            candidate = commons.length > 0 ? commons[Math.floor(Math.random() * commons.length)].id : null;
+            const commons = this.farmTraitDefs.filter(
+              (t) => t.rarity === "common" && !traits.includes(t.id),
+            );
+            candidate =
+              commons.length > 0
+                ? commons[Math.floor(Math.random() * commons.length)].id
+                : null;
           }
           if (candidate && !traits.includes(candidate)) traits.push(candidate);
         }
-
       } else if (programKey === "long") {
         // LONG: Guaranteed best from each parent + mutation slots
         // Slot 1: Best trait from Parent A (guaranteed)
@@ -3675,12 +4108,15 @@
         if (bestA) traits.push(bestA);
 
         // Slot 2: Best trait from Parent B (not already taken)
-        const bestB = this._getBestTrait(parentB.traits.filter(t => !traits.includes(t)));
+        const bestB = this._getBestTrait(
+          parentB.traits.filter((t) => !traits.includes(t)),
+        );
         if (bestB) traits.push(bestB);
         else if (parentB.traits.length > 0) {
           // If bestB was duplicate, pick next best
-          const remaining = parentB.traits.filter(t => !traits.includes(t));
-          if (remaining.length > 0) traits.push(this._pickWeightedTrait(remaining));
+          const remaining = parentB.traits.filter((t) => !traits.includes(t));
+          if (remaining.length > 0)
+            traits.push(this._pickWeightedTrait(remaining));
         }
 
         // Remaining slots: pure mutation with boosted rates
@@ -3690,14 +4126,13 @@
           if (mutation) traits.push(mutation);
           else break;
         }
-
       } else {
         // STANDARD: Balanced — inherit with rarity weighting + mutation chance
         for (let i = 0; i < slots; i++) {
           let candidate = null;
-          if (allParentTraits.length > 0 && Math.random() < 0.60) {
+          if (allParentTraits.length > 0 && Math.random() < 0.6) {
             // 60% inherit from parents, weighted by rarity
-            const pool = allParentTraits.filter(t => !traits.includes(t));
+            const pool = allParentTraits.filter((t) => !traits.includes(t));
             candidate = pool.length > 0 ? this._pickWeightedTrait(pool) : null;
           }
           if (!candidate) {
@@ -3714,7 +4149,11 @@
     rollVariant(parentA, parentB, type, variantChance) {
       const baseChance = variantChance || 0.08;
       // Both parents same variant → guaranteed
-      if (parentA.variant && parentB.variant && parentA.variant === parentB.variant) {
+      if (
+        parentA.variant &&
+        parentB.variant &&
+        parentA.variant === parentB.variant
+      ) {
         return parentA.variant;
       }
       // Both parents have different variants → 50% either
@@ -3745,7 +4184,9 @@
         if (fs.mastery.xp >= required) {
           fs.mastery.xp -= required;
           fs.mastery.level++;
-          this.showFarmNotification("Farm Mastery Level " + fs.mastery.level + "!");
+          this.showFarmNotification(
+            "Farm Mastery Level " + fs.mastery.level + "!",
+          );
           // Level 20 bonus: +5% CpS permanently
           if (fs.mastery.level === 20) {
             this.showFarmNotification("Master Farmer! +5% CpS permanently!");
@@ -3763,12 +4204,16 @@
       const fs = this.farmState;
       const level = fs.mastery.level;
       const xp = fs.mastery.xp;
-      const nextXp = level >= 20 ? 0 : Math.floor(100 * Math.pow(level + 1, 1.8));
+      const nextXp =
+        level >= 20 ? 0 : Math.floor(100 * Math.pow(level + 1, 1.8));
       const prevXp = level >= 1 ? Math.floor(100 * Math.pow(level, 1.8)) : 0;
-      const pct = level >= 20 ? 100 : Math.min(100, ((xp - prevXp) / (nextXp - prevXp)) * 100);
-      badge.innerHTML = `<span title="${this.getFarmTooltip('mastery')}">Lv. ${level}</span>
+      const pct =
+        level >= 20
+          ? 100
+          : Math.min(100, ((xp - prevXp) / (nextXp - prevXp)) * 100);
+      badge.innerHTML = `<span title="${this.getFarmTooltip("mastery")}">Lv. ${level}</span>
         <div class="farm-mastery-xp-bar"><div class="farm-mastery-xp-fill" style="width:${pct}%"></div></div>
-        <span class="farm-mastery-xp-text" style="font-size:0.52rem;color:rgba(255,234,182,0.4);">${level >= 20 ? 'MAX' : this.formatNumber(xp) + '/' + this.formatNumber(nextXp)}</span>`;
+        <span class="farm-mastery-xp-text" style="font-size:0.52rem;color:rgba(255,234,182,0.4);">${level >= 20 ? "MAX" : this.formatNumber(xp) + "/" + this.formatNumber(nextXp)}</span>`;
     }
 
     // --- Crate System ---
@@ -3786,7 +4231,7 @@
 
     openFarmCrate(crateId) {
       const fs = this.farmState;
-      const idx = fs.crates.findIndex(c => c.id === crateId);
+      const idx = fs.crates.findIndex((c) => c.id === crateId);
       if (idx === -1) return;
       const crate = fs.crates.splice(idx, 1)[0];
 
@@ -3799,14 +4244,18 @@
       } else if (crate.tier === "silver") {
         donutReward = Math.floor(cps * 300);
         this.addRandomGoods(3, 6);
-        if (Math.random() < 0.20) this.applyFarmBuff(this.generateBuffReward(fs.mastery.level));
+        if (Math.random() < 0.2)
+          this.applyFarmBuff(this.generateBuffReward(fs.mastery.level));
         this.gainMasteryXP(25);
       } else if (crate.tier === "gold") {
         donutReward = Math.floor(cps * 900);
         this.addRandomGoods(5, 10);
-        if (Math.random() < 0.50) {
+        if (Math.random() < 0.5) {
           // Award random passport
-          const passport = this.farmPassports[Math.floor(Math.random() * this.farmPassports.length)];
+          const passport =
+            this.farmPassports[
+              Math.floor(Math.random() * this.farmPassports.length)
+            ];
           this.showFarmNotification("Found passport: " + passport.name + "!");
         }
         this.gainMasteryXP(60);
@@ -3818,7 +4267,9 @@
       }
       this.donutCount += donutReward;
       this.totalDonutsEarned += donutReward;
-      this.showFarmNotification("Crate opened! +" + this.formatNumber(donutReward) + " donuts");
+      this.showFarmNotification(
+        "Crate opened! +" + this.formatNumber(donutReward) + " donuts",
+      );
       this.updateFarmDisplay();
     }
 
@@ -3874,7 +4325,7 @@
     // --- Contract Cancel ---
     cancelContract(contractId) {
       const fs = this.farmState;
-      const idx = fs.contracts.active.findIndex(c => c.id === contractId);
+      const idx = fs.contracts.active.findIndex((c) => c.id === contractId);
       if (idx === -1) return;
       const contract = fs.contracts.active.splice(idx, 1)[0];
       // Return 80% of submitted goods
@@ -3892,8 +4343,10 @@
       const tips = {
         // Feed plans
         feedStandard: "Standard Feed: Free. Normal production speed (1x).",
-        feedRation: "Ration Feed: 0.7x production. Cost scales with your income (~0.08% CpS per type). Efficient trait reduces cost.",
-        feedPremium: "Premium Feed: 1.4x production + 5% rare breed chance. Cost scales with your income (~0.35% CpS per type). Efficient trait reduces cost.",
+        feedRation:
+          "Ration Feed: 0.7x production. Cost scales with your income (~0.08% CpS per type). Efficient trait reduces cost.",
+        feedPremium:
+          "Premium Feed: 1.4x production + 5% rare breed chance. Cost scales with your income (~0.35% CpS per type). Efficient trait reduces cost.",
         // Buffs
         PROD: "Production Buff: Increases all farm animal production speed.",
         COST: "Cost Buff: Reduces building purchase costs.",
@@ -3903,29 +4356,40 @@
         // Care
         care: "Care Window: Every 12 min, a 90s window opens. Pet or feed your animals for production boosts!",
         carePet: "Pet & Groom: +25% production for 2 production cycles. Free!",
-        careTreat: "Feed Treat: +40% production for 3 cycles. Costs 0.1% of your donuts.",
+        careTreat:
+          "Feed Treat: +40% production for 3 cycles. Costs 0.1% of your donuts.",
         // Mastery
-        mastery: "Farm Mastery: Earn XP by selling goods, completing contracts, and breeding. Each level gives +5 storage and unlocks new features!",
+        mastery:
+          "Farm Mastery: Earn XP by selling goods, completing contracts, and breeding. Each level gives +5 storage and unlocks new features!",
         // Contracts
         contractRush: "Rush: 3-5 min, small reward. Quick and easy.",
         contractStandard: "Standard: 8-15 min, medium reward + possible buff.",
         contractLonghaul: "Long Haul: 45-90 min, big reward + guaranteed buff.",
         // Breeding
-        breeding: "Breeding: Select 2 animals of the same type to breed. Offspring inherit traits from parents!",
-        breedQuick: "Quick: 30min, 3x cost, 2 slots. 80% inherit from parents, no mutation. Predictable trait transfer.",
-        breedStandard: "Standard: 2h, 5x cost, 2 slots. 60% inherit, 40% mutation with rare/epic chance. Balanced.",
-        breedLong: "Long: 4h, 8x cost, 3 slots. Guaranteed best trait from each parent + mutation slot. 15% variant chance.",
+        breeding:
+          "Breeding: Select 2 animals of the same type to breed. Offspring inherit traits from parents!",
+        breedQuick:
+          "Quick: 30min, 3x cost, 2 slots. 80% inherit from parents, no mutation. Predictable trait transfer.",
+        breedStandard:
+          "Standard: 2h, 5x cost, 2 slots. 60% inherit, 40% mutation with rare/epic chance. Balanced.",
+        breedLong:
+          "Long: 4h, 8x cost, 3 slots. Guaranteed best trait from each parent + mutation slot. 15% variant chance.",
         // Animals
-        chicken: "Chicken: Produces 1 egg every 45s. Fast & cheap, bread-and-butter income.",
+        chicken:
+          "Chicken: Produces 1 egg every 45s. Fast & cheap, bread-and-butter income.",
         cow: "Cow: Produces 1 milk every 90s. Balanced; milk used in most contracts.",
-        sheep: "Sheep: Produces 1 wool every 150s. Slow but high-value for premium contracts.",
+        sheep:
+          "Sheep: Produces 1 wool every 150s. Slow but high-value for premium contracts.",
         bees: "Bees: Produces 1 honey every 30s. Fastest producer but tiny storage!",
         pigs: "Pigs: Produces 1 truffle every 300s. Slowest but premium value.",
         // Buff tooltips (with buff_ prefix for contract/collection display)
-        buff_PROD: "Production Buff: Increases all farm animal production speed.",
+        buff_PROD:
+          "Production Buff: Increases all farm animal production speed.",
         buff_COST: "Cost Buff: Reduces building purchase costs.",
-        buff_OFFLINE: "Offline Buff: Boosts offline donut production efficiency.",
-        buff_QOL: "Quality of Life Buff: Auto-collect, instant breed queue, etc.",
+        buff_OFFLINE:
+          "Offline Buff: Boosts offline donut production efficiency.",
+        buff_QOL:
+          "Quality of Life Buff: Auto-collect, instant breed queue, etc.",
         buff_EVENT: "Event Buff: Special effects like 2x click value.",
       };
       return tips[key] || "";
@@ -3937,9 +4401,12 @@
       if (fc < 1) return;
       // Only update the active tab for performance
       if (this.farmActiveTab === "barn") this.updateFarmBarnTab();
-      else if (this.farmActiveTab === "contracts") this.updateFarmContractsTab();
-      else if (this.farmActiveTab === "breeding") this.updateFarmBreedingTabSmart();
-      else if (this.farmActiveTab === "collection") this.updateFarmCollectionTab();
+      else if (this.farmActiveTab === "contracts")
+        this.updateFarmContractsTab();
+      else if (this.farmActiveTab === "breeding")
+        this.updateFarmBreedingTabSmart();
+      else if (this.farmActiveTab === "collection")
+        this.updateFarmCollectionTab();
       this.updateFarmKPIs();
     }
 
@@ -3949,7 +4416,7 @@
       if (!grid || !storageSection) return;
 
       // If DOM already has content, try partial update (preserves scroll, inputs, focus)
-      if (grid.children.length > 0 && grid.querySelector('.farm-type-block')) {
+      if (grid.children.length > 0 && grid.querySelector(".farm-type-block")) {
         this._partialUpdateBarnTab(grid, storageSection);
         return;
       }
@@ -3965,7 +4432,7 @@
 
       let animalHtml = "";
       for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-        const owned = fs.animals.filter(a => a.type === type);
+        const owned = fs.animals.filter((a) => a.type === type);
         const unlocked = fc >= def.unlockFC;
         const cost = this.getAnimalCost(type);
         const canAfford = this.donutCount >= cost;
@@ -3980,50 +4447,76 @@
 
         const good = def.good;
         const cap = this.getEffectiveStorageCap(good);
-        const storagePct = cap > 0 ? Math.min(100, (fs.storage[good] / cap) * 100) : 0;
-        const prodPerMin = owned.length > 0 ? ((owned.length / def.prodInterval) * this.getProductionModifier(type) * 60).toFixed(1) : "0";
+        const storagePct =
+          cap > 0 ? Math.min(100, (fs.storage[good] / cap) * 100) : 0;
+        const prodPerMin =
+          owned.length > 0
+            ? (
+                (owned.length / def.prodInterval) *
+                this.getProductionModifier(type) *
+                60
+              ).toFixed(1)
+            : "0";
 
         const plan = fs.feedPlans[type] || "standard";
         let feedCostStr = "";
         if (plan !== "standard" && owned.length > 0) {
           const costPerSec = this.getFeedCostPerSecond(type);
-          const cpsPct = this.totalPerSecond > 0 ? ((costPerSec / this.totalPerSecond) * 100).toFixed(2) : '0';
+          const cpsPct =
+            this.totalPerSecond > 0
+              ? ((costPerSec / this.totalPerSecond) * 100).toFixed(2)
+              : "0";
           feedCostStr = `<span class="farm-feed-cost" data-feed-cost="${type}">-${this.formatNumber(Math.ceil(costPerSec))}/s <span class="farm-feed-pct">(${cpsPct}%)</span></span>`;
         }
 
         animalHtml += `
           <div class="farm-type-block" data-type="${type}">
-            <div class="farm-animal-card ${!unlocked ? 'locked' : ''}" data-animal="${type}" title="${this.getFarmTooltip(type)}">
+            <div class="farm-animal-card ${!unlocked ? "locked" : ""}" data-animal="${type}" title="${this.getFarmTooltip(type)}">
               <img src="img/farm${type.charAt(0).toUpperCase() + type.slice(1)}.webp" alt="${def.name}" class="farm-animal-icon" />
               <div class="farm-animal-info">
                 <div class="farm-animal-header-row">
-                  <span class="farm-animal-name">${def.name}${!unlocked ? ' (Need ' + def.unlockFC + ' farms)' : ''}</span>
-                  ${owned.length > 0 ? `<span class="farm-roster-toggle" onclick="event.stopPropagation();window._game.toggleAnimalRoster('${type}')" title="View individual animals">${isExpanded ? '▾' : '▸'} ${owned.length}</span>` : ''}
+                  <span class="farm-animal-name">${def.name}${!unlocked ? " (Need " + def.unlockFC + " farms)" : ""}</span>
+                  ${owned.length > 0 ? `<span class="farm-roster-toggle" onclick="event.stopPropagation();window._game.toggleAnimalRoster('${type}')" title="View individual animals">${isExpanded ? "▾" : "▸"} ${owned.length}</span>` : ""}
                 </div>
-                <span class="farm-animal-count" data-count="${type}">${owned.length > 0 ? `<strong>${owned.length}</strong>/20 | ${prodPerMin} ${def.good}/min` : 'Owned: 0'}</span>
-                ${uniqueTraits.length > 0 ? `<div class="farm-animal-traits">
-                  ${uniqueTraits.slice(0, 5).map(t => {
-                    const tdef = this.farmTraitDefs.find(td => td.id === t);
-                    return tdef ? `<span class="farm-trait-badge ${tdef.rarity}" title="${tdef.name}: ${this.getTraitDescription(tdef)}">${tdef.name}</span>` : '';
-                  }).join('')}${uniqueTraits.length > 5 ? `<span class="farm-trait-badge more">+${uniqueTraits.length - 5}</span>` : ''}
-                </div>` : ''}
+                <span class="farm-animal-count" data-count="${type}">${owned.length > 0 ? `<strong>${owned.length}</strong>/20 | ${prodPerMin} ${def.good}/min` : "Owned: 0"}</span>
+                ${
+                  uniqueTraits.length > 0
+                    ? `<div class="farm-animal-traits">
+                  ${uniqueTraits
+                    .slice(0, 5)
+                    .map((t) => {
+                      const tdef = this.farmTraitDefs.find((td) => td.id === t);
+                      return tdef
+                        ? `<span class="farm-trait-badge ${tdef.rarity}" title="${tdef.name}: ${this.getTraitDescription(tdef)}">${tdef.name}</span>`
+                        : "";
+                    })
+                    .join(
+                      "",
+                    )}${uniqueTraits.length > 5 ? `<span class="farm-trait-badge more">+${uniqueTraits.length - 5}</span>` : ""}
+                </div>`
+                    : ""
+                }
                 <div class="farm-progress"><div class="farm-progress-bar" data-bar="${type}" style="width:${storagePct}%"></div></div>
               </div>
               <div class="farm-animal-actions">
-                <button class="farm-btn farm-btn-buy" data-buy="${type}" onclick="window._game.buyAnimal('${type}')" ${!unlocked || !canAfford || owned.length >= 20 ? 'disabled' : ''}>
+                <button class="farm-btn farm-btn-buy" data-buy="${type}" onclick="window._game.buyAnimal('${type}')" ${!unlocked || !canAfford || owned.length >= 20 ? "disabled" : ""}>
                   <img src="img/donutMoney.webp" class="donut-money-icon" /> ${this.formatNumber(cost)}
                 </button>
-                ${unlocked && owned.length > 0 ? `
+                ${
+                  unlocked && owned.length > 0
+                    ? `
                   <div class="farm-feed-select">
-                    <button class="farm-feed-btn ${plan === 'standard' ? 'active' : ''}" onclick="window._game.setFeedPlan('${type}','standard')" title="Free. Normal 1x production.">Std</button>
-                    ${fc >= 15 ? `<button class="farm-feed-btn ${plan === 'ration' ? 'active' : ''}" onclick="window._game.setFeedPlan('${type}','ration')" title="0.5% cost, 0.7x prod">Ration</button>` : ''}
-                    ${fc >= 40 ? `<button class="farm-feed-btn ${plan === 'premium' ? 'active' : ''}" onclick="window._game.setFeedPlan('${type}','premium')" title="2% cost, 1.4x prod, +5% rare breed">Prem</button>` : ''}
+                    <button class="farm-feed-btn ${plan === "standard" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','standard')" title="Free. Normal 1x production.">Std</button>
+                    ${fc >= 15 ? `<button class="farm-feed-btn ${plan === "ration" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','ration')" title="0.5% cost, 0.7x prod">Ration</button>` : ""}
+                    ${fc >= 40 ? `<button class="farm-feed-btn ${plan === "premium" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','premium')" title="2% cost, 1.4x prod, +5% rare breed">Prem</button>` : ""}
                   </div>
                   ${feedCostStr}
-                ` : ''}
+                `
+                    : ""
+                }
               </div>
             </div>
-            ${isExpanded ? this.renderAnimalRoster(type, owned) : ''}
+            ${isExpanded ? this.renderAnimalRoster(type, owned) : ""}
           </div>
         `;
       }
@@ -4036,19 +4529,31 @@
       const fs = this.farmState;
 
       for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-        const owned = fs.animals.filter(a => a.type === type);
+        const owned = fs.animals.filter((a) => a.type === type);
         const good = def.good;
         const cap = this.getEffectiveStorageCap(good);
-        const storagePct = cap > 0 ? Math.min(100, (fs.storage[good] / cap) * 100) : 0;
-        const prodPerMin = owned.length > 0 ? ((owned.length / def.prodInterval) * this.getProductionModifier(type) * 60).toFixed(1) : "0";
+        const storagePct =
+          cap > 0 ? Math.min(100, (fs.storage[good] / cap) * 100) : 0;
+        const prodPerMin =
+          owned.length > 0
+            ? (
+                (owned.length / def.prodInterval) *
+                this.getProductionModifier(type) *
+                60
+              ).toFixed(1)
+            : "0";
 
         // Update progress bar
         const bar = grid.querySelector(`[data-bar="${type}"]`);
-        if (bar) bar.style.width = storagePct + '%';
+        if (bar) bar.style.width = storagePct + "%";
 
         // Update count & prod/min
         const countEl = grid.querySelector(`[data-count="${type}"]`);
-        if (countEl) countEl.innerHTML = owned.length > 0 ? `<strong>${owned.length}</strong>/20 | ${prodPerMin} ${def.good}/min` : 'Owned: 0';
+        if (countEl)
+          countEl.innerHTML =
+            owned.length > 0
+              ? `<strong>${owned.length}</strong>/20 | ${prodPerMin} ${def.good}/min`
+              : "Owned: 0";
 
         // Update buy button cost & affordability
         const buyBtn = grid.querySelector(`[data-buy="${type}"]`);
@@ -4058,7 +4563,7 @@
           const unlocked = fc >= def.unlockFC;
           buyBtn.disabled = !unlocked || !canAfford || owned.length >= 20;
           const textNode = buyBtn.lastChild;
-          if (textNode) textNode.textContent = ' ' + this.formatNumber(cost);
+          if (textNode) textNode.textContent = " " + this.formatNumber(cost);
         }
 
         // Update feed cost (scales with CpS so must refresh every tick)
@@ -4066,17 +4571,27 @@
         const feedCostEl = grid.querySelector(`[data-feed-cost="${type}"]`);
         if (feedCostEl && plan !== "standard" && owned.length > 0) {
           const costPerSec = this.getFeedCostPerSecond(type);
-          const cpsPct = this.totalPerSecond > 0 ? ((costPerSec / this.totalPerSecond) * 100).toFixed(2) : '0';
+          const cpsPct =
+            this.totalPerSecond > 0
+              ? ((costPerSec / this.totalPerSecond) * 100).toFixed(2)
+              : "0";
           feedCostEl.innerHTML = `-${this.formatNumber(Math.ceil(costPerSec))}/s <span class="farm-feed-pct">(${cpsPct}%)</span>`;
         }
 
         // Update cooldown tags in roster (lightweight, no re-render)
-        const roster = grid.querySelector(`.farm-type-block[data-type="${type}"] .farm-roster`);
+        const roster = grid.querySelector(
+          `.farm-type-block[data-type="${type}"] .farm-roster`,
+        );
         if (roster) {
           for (const animal of owned) {
             if (animal.breedCooldown > 0) {
-              const row = roster.querySelector(`[data-animal-id="${animal.id}"] .farm-cooldown-tag`);
-              if (row) row.textContent = this.formatDuration(Math.ceil(animal.breedCooldown));
+              const row = roster.querySelector(
+                `[data-animal-id="${animal.id}"] .farm-cooldown-tag`,
+              );
+              if (row)
+                row.textContent = this.formatDuration(
+                  Math.ceil(animal.breedCooldown),
+                );
             }
           }
         }
@@ -4100,7 +4615,7 @@
           <div class="farm-storage-row">
             <span class="farm-storage-label">${good}</span>
             <div class="farm-storage-bar-wrap">
-              <div class="farm-storage-bar-fill ${isFull ? 'full' : ''}" style="width:${pct}%"></div>
+              <div class="farm-storage-bar-fill ${isFull ? "full" : ""}" style="width:${pct}%"></div>
             </div>
             <span class="farm-storage-text">${current} / ${cap}</span>
           </div>
@@ -4111,7 +4626,7 @@
 
     _forceBarnFullRender() {
       const grid = document.getElementById("farm-animal-grid");
-      if (grid) grid.innerHTML = '';
+      if (grid) grid.innerHTML = "";
       this.updateFarmBarnTab();
     }
 
@@ -4122,49 +4637,67 @@
     }
 
     renderAnimalRoster(type, animals) {
-      if (!animals || animals.length === 0) return '';
+      if (!animals || animals.length === 0) return "";
       let html = '<div class="farm-roster">';
       for (const animal of animals) {
         const tdef = this.farmAnimalDefs[type];
-        const cooldownLeft = animal.breedCooldown > 0 ? Math.ceil(animal.breedCooldown) : 0;
-        const variantDef = animal.variant ? (this.farmVariants && this.farmVariants[type] ? this.farmVariants[type].find(v => v.name === animal.variant) : null) : null;
+        const cooldownLeft =
+          animal.breedCooldown > 0 ? Math.ceil(animal.breedCooldown) : 0;
+        const variantDef = animal.variant
+          ? this.farmVariants && this.farmVariants[type]
+            ? this.farmVariants[type].find((v) => v.name === animal.variant)
+            : null
+          : null;
 
         html += `
           <div class="farm-roster-row" data-animal-id="${animal.id}">
             <div class="farm-roster-name-wrap">
-              <span class="farm-roster-name" onclick="window._game.startRenameAnimal('${animal.id}')" title="Click to rename">${animal.name || (tdef.name + ' #' + animal.id.split('_').pop())}</span>
-              ${animal.variant ? `<span class="farm-variant-tag" title="${variantDef ? variantDef.name + ': ' + this.getVariantDescription(variantDef) : animal.variant}">${animal.variant}</span>` : ''}
-              ${animal.passport ? `<span class="farm-passport-tag" title="${animal.passport}">${animal.passport}</span>` : ''}
-              ${cooldownLeft > 0 ? `<span class="farm-cooldown-tag">${this.formatDuration(cooldownLeft)}</span>` : ''}
+              <span class="farm-roster-name" onclick="window._game.startRenameAnimal('${animal.id}')" title="Click to rename">${animal.name || tdef.name + " #" + animal.id.split("_").pop()}</span>
+              ${animal.variant ? `<span class="farm-variant-tag" title="${variantDef ? variantDef.name + ": " + this.getVariantDescription(variantDef) : animal.variant}">${animal.variant}</span>` : ""}
+              ${animal.passport ? `<span class="farm-passport-tag" title="${animal.passport}">${animal.passport}</span>` : ""}
+              ${cooldownLeft > 0 ? `<span class="farm-cooldown-tag">${this.formatDuration(cooldownLeft)}</span>` : ""}
             </div>
             <div class="farm-roster-traits">
-              ${animal.traits.length > 0 ? animal.traits.map(t => {
-                const td = this.farmTraitDefs.find(d => d.id === t);
-                return td ? `<span class="farm-trait-badge ${td.rarity}" title="${td.name}: ${this.getTraitDescription(td)}">${td.name}</span>` : '';
-              }).join('') : '<span class="farm-roster-no-traits">No traits</span>'}
+              ${
+                animal.traits.length > 0
+                  ? animal.traits
+                      .map((t) => {
+                        const td = this.farmTraitDefs.find((d) => d.id === t);
+                        return td
+                          ? `<span class="farm-trait-badge ${td.rarity}" title="${td.name}: ${this.getTraitDescription(td)}">${td.name}</span>`
+                          : "";
+                      })
+                      .join("")
+                  : '<span class="farm-roster-no-traits">No traits</span>'
+              }
             </div>
           </div>
         `;
       }
-      html += '</div>';
+      html += "</div>";
       return html;
     }
 
     startRenameAnimal(animalId) {
-      const animal = this.farmState.animals.find(a => a.id === animalId);
+      const animal = this.farmState.animals.find((a) => a.id === animalId);
       if (!animal) return;
-      const row = document.querySelector(`.farm-roster-row[data-animal-id="${animalId}"]`);
+      const row = document.querySelector(
+        `.farm-roster-row[data-animal-id="${animalId}"]`,
+      );
       if (!row) return;
-      const nameEl = row.querySelector('.farm-roster-name');
+      const nameEl = row.querySelector(".farm-roster-name");
       if (!nameEl) return;
       const currentName = animal.name || animal.id;
       nameEl.outerHTML = `<input class="farm-rename-input" type="text" value="${currentName}" maxlength="20" onblur="window._game.finishRenameAnimal('${animalId}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" />`;
-      const input = row.querySelector('.farm-rename-input');
-      if (input) { input.focus(); input.select(); }
+      const input = row.querySelector(".farm-rename-input");
+      if (input) {
+        input.focus();
+        input.select();
+      }
     }
 
     finishRenameAnimal(animalId, newName) {
-      const animal = this.farmState.animals.find(a => a.id === animalId);
+      const animal = this.farmState.animals.find((a) => a.id === animalId);
       if (!animal) return;
       const trimmed = newName.trim().slice(0, 20);
       if (trimmed.length > 0) animal.name = trimmed;
@@ -4172,20 +4705,20 @@
     }
 
     getVariantDescription(vdef) {
-      if (!vdef || !vdef.effect) return '';
+      if (!vdef || !vdef.effect) return "";
       const e = vdef.effect;
-      if (e.prodSpeed) return '+' + (e.prodSpeed * 100) + '% prod speed';
-      if (e.sellPrice) return '+' + (e.sellPrice * 100) + '% sell price';
-      if (e.traitSlot) return '+1 trait slot';
-      return '';
+      if (e.prodSpeed) return "+" + e.prodSpeed * 100 + "% prod speed";
+      if (e.sellPrice) return "+" + e.sellPrice * 100 + "% sell price";
+      if (e.traitSlot) return "+1 trait slot";
+      return "";
     }
 
     formatDuration(seconds) {
-      if (seconds <= 0) return '';
+      if (seconds <= 0) return "";
       const m = Math.floor(seconds / 60);
       const s = Math.floor(seconds % 60);
-      if (m > 60) return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
-      return m > 0 ? m + 'm ' + s + 's' : s + 's';
+      if (m > 60) return Math.floor(m / 60) + "h " + (m % 60) + "m";
+      return m > 0 ? m + "m " + s + "s" : s + "s";
     }
 
     updateFarmContractsTab() {
@@ -4198,8 +4731,12 @@
 
       // Refresh timer
       if (refreshTimer) {
-        const remaining = Math.max(0, 600000 - (Date.now() - fs.contracts.lastRefresh));
-        refreshTimer.textContent = "Refresh: " + Math.ceil(remaining / 1000) + "s";
+        const remaining = Math.max(
+          0,
+          600000 - (Date.now() - fs.contracts.lastRefresh),
+        );
+        refreshTimer.textContent =
+          "Refresh: " + Math.ceil(remaining / 1000) + "s";
       }
 
       // Board
@@ -4207,34 +4744,37 @@
       for (const contract of fs.contracts.board) {
         if (!contract) continue;
         boardHtml += `
-          <div class="contract-card ${contract.type}" title="${this.getFarmTooltip('contract' + contract.type.charAt(0).toUpperCase() + contract.type.slice(1))}">
+          <div class="contract-card ${contract.type}" title="${this.getFarmTooltip("contract" + contract.type.charAt(0).toUpperCase() + contract.type.slice(1))}">
             <div class="contract-header">
-              <span class="contract-type-label">${contract.type === 'rush' ? 'Rush' : contract.type === 'standard' ? 'Standard' : 'Long Haul'}</span>
+              <span class="contract-type-label">${contract.type === "rush" ? "Rush" : contract.type === "standard" ? "Standard" : "Long Haul"}</span>
               <span class="contract-title">${contract.title}</span>
-              ${contract.affixes.map(a => {
-                const affix = this.farmAffixDefs.find(ad => ad.id === a);
-                if (!affix) return '';
-                const affixTips = {
-                  urgent: "Urgent: 30% less time, 20% less reward",
-                  generous: "Generous: +40% reward",
-                  demanding: "Demanding: +50% required goods, +60% reward",
-                  focused: "Focused: Single good type, +20% buff duration",
-                  volatile: "Volatile: Random reward multiplier (0.5x-3x)",
-                  vip: "VIP: +30% buff strength (req. Mastery 8)",
-                  chain: "Chain: Follow-up contract with 1.5x reward",
-                  legendary: "Legendary: +80% reward, 3x requirements, 2 good types"
-                };
-                return `<span class="contract-affix ${a}" title="${affixTips[a] || ''}">${affix.name}</span>`;
-              }).join('')}
+              ${contract.affixes
+                .map((a) => {
+                  const affix = this.farmAffixDefs.find((ad) => ad.id === a);
+                  if (!affix) return "";
+                  const affixTips = {
+                    urgent: "Urgent: 30% less time, 20% less reward",
+                    generous: "Generous: +40% reward",
+                    demanding: "Demanding: +50% required goods, +60% reward",
+                    focused: "Focused: Single good type, +20% buff duration",
+                    volatile: "Volatile: Random reward multiplier (0.5x-3x)",
+                    vip: "VIP: +30% buff strength (req. Mastery 8)",
+                    chain: "Chain: Follow-up contract with 1.5x reward",
+                    legendary:
+                      "Legendary: +80% reward, 3x requirements, 2 good types",
+                  };
+                  return `<span class="contract-affix ${a}" title="${affixTips[a] || ""}">${affix.name}</span>`;
+                })
+                .join("")}
             </div>
             <div class="contract-requirements">
-              ${Object.entries(contract.requirements).map(([good, qty]) =>
-                `<span>${good}: ${qty}</span>`
-              ).join('')}
+              ${Object.entries(contract.requirements)
+                .map(([good, qty]) => `<span>${good}: ${qty}</span>`)
+                .join("")}
             </div>
             <div class="contract-reward">
               <img src="img/donutMoney.webp" class="donut-money-icon" /> ${this.formatNumber(contract.reward.donuts)}
-              ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip('buff_' + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ''}
+              ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ""}
             </div>
             <div class="contract-actions">
               <button class="farm-btn farm-btn-buy" onclick="window._game.acceptContract('${contract.id}')">Accept</button>
@@ -4242,62 +4782,82 @@
           </div>
         `;
       }
-      board.innerHTML = boardHtml || '<div style="color:rgba(255,234,182,0.3);font-size:0.72rem;text-align:center;padding:20px;">No contracts available yet</div>';
+      board.innerHTML =
+        boardHtml ||
+        '<div style="color:rgba(255,234,182,0.3);font-size:0.72rem;text-align:center;padding:20px;">No contracts available yet</div>';
 
       // Active contracts
       if (activeList) {
         let activeHtml = "";
         for (const contract of fs.contracts.active) {
-          const pct = Math.min(100, (contract.elapsed / contract.duration) * 100);
+          const pct = Math.min(
+            100,
+            (contract.elapsed / contract.duration) * 100,
+          );
           const isReady = contract.elapsed >= contract.duration;
           const remaining = Math.max(0, contract.duration - contract.elapsed);
           const mins = Math.floor(remaining / 60);
           const secs = Math.ceil(remaining % 60);
           activeHtml += `
-            <div class="contract-active-card ${isReady ? 'contract-ready' : ''}">
+            <div class="contract-active-card ${isReady ? "contract-ready" : ""}">
               <div class="contract-header">
                 <span class="contract-title">${contract.title}</span>
-                <span style="margin-left:auto;font-size:0.62rem;color:${isReady ? '#81c784' : 'rgba(255,234,182,0.45)'}">${isReady ? 'READY!' : mins + 'm ' + secs + 's'}</span>
+                <span style="margin-left:auto;font-size:0.62rem;color:${isReady ? "#81c784" : "rgba(255,234,182,0.45)"}">${isReady ? "READY!" : mins + "m " + secs + "s"}</span>
               </div>
               <div class="contract-reward" style="font-size:0.62rem;">
                 <img src="img/donutMoney.webp" class="donut-money-icon" style="width:12px;height:12px;" /> ${this.formatNumber(contract.reward.donuts)}
-                ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip('buff_' + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ''}
+                ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ""}
               </div>
               <div class="contract-active-progress">
-                <div class="farm-progress"><div class="farm-progress-bar ${isReady ? 'bar-ready' : ''}" style="width:${pct}%"></div></div>
+                <div class="farm-progress"><div class="farm-progress-bar ${isReady ? "bar-ready" : ""}" style="width:${pct}%"></div></div>
               </div>
               <div class="contract-active-actions">
-                ${isReady
-                  ? `<button class="farm-btn farm-btn-buy farm-btn-deliver" onclick="window._game.deliverContract('${contract.id}')">Deliver!</button>`
-                  : `<button class="farm-btn farm-btn-small farm-btn-cancel" onclick="window._game.cancelContract('${contract.id}')" title="Cancel (80% goods returned)">Cancel</button>`
+                ${
+                  isReady
+                    ? `<button class="farm-btn farm-btn-buy farm-btn-deliver" onclick="window._game.deliverContract('${contract.id}')">Deliver!</button>`
+                    : `<button class="farm-btn farm-btn-small farm-btn-cancel" onclick="window._game.cancelContract('${contract.id}')" title="Cancel (80% goods returned)">Cancel</button>`
                 }
               </div>
             </div>
           `;
         }
-        activeList.innerHTML = activeHtml || '<div style="color:rgba(255,234,182,0.3);font-size:0.68rem;text-align:center;">No active contracts</div>';
+        activeList.innerHTML =
+          activeHtml ||
+          '<div style="color:rgba(255,234,182,0.3);font-size:0.68rem;text-align:center;">No active contracts</div>';
       }
-      if (activeCount) activeCount.textContent = fs.contracts.active.length + " / 2";
+      if (activeCount)
+        activeCount.textContent = fs.contracts.active.length + " / 2";
     }
 
     getTraitDescription(tdef) {
       if (!tdef) return "";
       const e = tdef.effect;
       const descs = {
-        prodSpeed: "+" + (e.value * 100) + "% production speed",
-        feedCost: (e.value * 100) + "% feed cost",
-        sellPrice: "+" + (e.value * 100) + "% sell price",
-        careBonus: "+" + (e.value * 100) + "% care window bonus",
-        socialProd: "+" + (e.value * 100) + "% prod per same-type animal (max " + (e.max * 100) + "%)",
+        prodSpeed: "+" + e.value * 100 + "% production speed",
+        feedCost: e.value * 100 + "% feed cost",
+        sellPrice: "+" + e.value * 100 + "% sell price",
+        careBonus: "+" + e.value * 100 + "% care window bonus",
+        socialProd:
+          "+" +
+          e.value * 100 +
+          "% prod per same-type animal (max " +
+          e.max * 100 +
+          "%)",
         careWindowDuration: "+" + e.value + "s care window",
-        breedCooldown: (e.value * 100) + "% breed cooldown",
-        crateChance: "+" + (e.value * 100) + "% crate drop chance",
+        breedCooldown: e.value * 100 + "% breed cooldown",
+        crateChance: "+" + e.value * 100 + "% crate drop chance",
         bonusGood: "+1 extra good every " + e.value + "th collect",
         mentorTrait: "Offspring inherit +" + e.value + " extra trait",
-        storageCap: "+" + (e.value * 100) + "% storage cap for this good",
-        contractReq: (e.value * 100) + "% contract requirements",
-        legendaryProd: "+" + (e.prodSpeed * 100) + "% prod, +" + (e.sellPrice * 100) + "% sell",
-        contractStar: "+" + (e.contractSpeed * 100) + "% contract speed, +" + (e.buffDuration * 100) + "% buff duration",
+        storageCap: "+" + e.value * 100 + "% storage cap for this good",
+        contractReq: e.value * 100 + "% contract requirements",
+        legendaryProd:
+          "+" + e.prodSpeed * 100 + "% prod, +" + e.sellPrice * 100 + "% sell",
+        contractStar:
+          "+" +
+          e.contractSpeed * 100 +
+          "% contract speed, +" +
+          e.buffDuration * 100 +
+          "% buff duration",
       };
       return descs[e.type] || "";
     }
@@ -4306,7 +4866,10 @@
       const fs = this.farmState;
       const container = document.getElementById("farm-breeding-slots");
       if (!container) return;
-      if (!container.dataset.rendered) { this.updateFarmBreedingTab(); return; }
+      if (!container.dataset.rendered) {
+        this.updateFarmBreedingTab();
+        return;
+      }
       // Partial update: only progress bars/timers for active slots
       for (let i = 0; i < fs.breeding.slots.length; i++) {
         const slot = fs.breeding.slots[i];
@@ -4316,10 +4879,14 @@
         const statusEl = card.querySelector(".breed-slot-status");
         const barEl = card.querySelector(".farm-progress-bar");
         if (statusEl) {
-          const remaining = Math.ceil(Math.max(0, slot.duration - slot.progress));
+          const remaining = Math.ceil(
+            Math.max(0, slot.duration - slot.progress),
+          );
           statusEl.textContent = this.formatDuration(remaining) + " remaining";
         }
-        if (barEl) barEl.style.width = Math.min(100, (slot.progress / slot.duration) * 100) + "%";
+        if (barEl)
+          barEl.style.width =
+            Math.min(100, (slot.progress / slot.duration) * 100) + "%";
       }
     }
 
@@ -4329,47 +4896,69 @@
       const isSelectedA = slotSel && slotSel.a === animal.id;
       const isSelectedB = slotSel && slotSel.b === animal.id;
       const isSelected = isSelectedA || isSelectedB;
-      const otherSlotUsed = sel && Object.values(sel).some((s, idx) => idx !== slotIndex && s && (s.a === animal.id || s.b === animal.id));
+      const otherSlotUsed =
+        sel &&
+        Object.values(sel).some(
+          (s, idx) =>
+            idx !== slotIndex && s && (s.a === animal.id || s.b === animal.id),
+        );
       const onCooldown = animal.breedCooldown > 0;
       const disabled = otherSlotUsed || onCooldown;
 
-      const rarityColors = { common: '#81c784', rare: '#64b5f6', epic: '#ce93d8' };
-      const traitDots = animal.traits.map(t => {
-        const td = this.farmTraitDefs.find(d => d.id === t);
-        return td ? `<span class="breed-card-dot" style="background:${rarityColors[td.rarity]}" title="${td.name} (${td.rarity}): ${this.getTraitDescription(td)}"></span>` : '';
-      }).join('');
+      const rarityColors = {
+        common: "#81c784",
+        rare: "#64b5f6",
+        epic: "#ce93d8",
+      };
+      const traitDots = animal.traits
+        .map((t) => {
+          const td = this.farmTraitDefs.find((d) => d.id === t);
+          return td
+            ? `<span class="breed-card-dot" style="background:${rarityColors[td.rarity]}" title="${td.name} (${td.rarity}): ${this.getTraitDescription(td)}"></span>`
+            : "";
+        })
+        .join("");
 
-      return `<div class="breed-animal-card ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}"
-        onclick="${disabled ? '' : `window._game.selectBreedParent(${slotIndex},'${animal.id}')`}"
-        title="${animal.name}${animal.variant ? ' (' + animal.variant + ')' : ''}${onCooldown ? ' — Cooldown: ' + this.formatDuration(Math.ceil(animal.breedCooldown)) : ''}">
-        <div class="breed-card-name">${animal.name}${isSelectedA ? ' [A]' : ''}${isSelectedB ? ' [B]' : ''}</div>
+      return `<div class="breed-animal-card ${isSelected ? "selected" : ""} ${disabled ? "disabled" : ""}"
+        onclick="${disabled ? "" : `window._game.selectBreedParent(${slotIndex},'${animal.id}')`}"
+        title="${animal.name}${animal.variant ? " (" + animal.variant + ")" : ""}${onCooldown ? " — Cooldown: " + this.formatDuration(Math.ceil(animal.breedCooldown)) : ""}">
+        <div class="breed-card-name">${animal.name}${isSelectedA ? " [A]" : ""}${isSelectedB ? " [B]" : ""}</div>
         <div class="breed-card-meta">
           ${traitDots}
-          ${animal.variant ? `<span class="breed-card-variant">${animal.variant}</span>` : ''}
-          ${onCooldown ? `<span class="breed-card-cd">${this.formatDuration(Math.ceil(animal.breedCooldown))}</span>` : ''}
+          ${animal.variant ? `<span class="breed-card-variant">${animal.variant}</span>` : ""}
+          ${onCooldown ? `<span class="breed-card-cd">${this.formatDuration(Math.ceil(animal.breedCooldown))}</span>` : ""}
         </div>
       </div>`;
     }
 
     selectBreedParent(slotIndex, animalId) {
       if (!this._breedSelection) this._breedSelection = {};
-      if (!this._breedSelection[slotIndex]) this._breedSelection[slotIndex] = { a: null, b: null };
+      if (!this._breedSelection[slotIndex])
+        this._breedSelection[slotIndex] = { a: null, b: null };
       const sel = this._breedSelection[slotIndex];
 
       // If already selected as A → deselect
-      if (sel.a === animalId) { sel.a = null; this.updateFarmBreedingTab(); return; }
+      if (sel.a === animalId) {
+        sel.a = null;
+        this.updateFarmBreedingTab();
+        return;
+      }
       // If already selected as B → deselect
-      if (sel.b === animalId) { sel.b = null; this.updateFarmBreedingTab(); return; }
+      if (sel.b === animalId) {
+        sel.b = null;
+        this.updateFarmBreedingTab();
+        return;
+      }
 
       // Same animal can't be both parents
-      const animal = this.farmState.animals.find(a => a.id === animalId);
+      const animal = this.farmState.animals.find((a) => a.id === animalId);
       if (!animal) return;
 
       // Fill A first, then B (must be same type as A)
       if (!sel.a) {
         sel.a = animalId;
       } else if (!sel.b) {
-        const parentA = this.farmState.animals.find(a => a.id === sel.a);
+        const parentA = this.farmState.animals.find((a) => a.id === sel.a);
         if (parentA && parentA.type !== animal.type) {
           this.showFarmNotification("Both parents must be the same type!");
           return;
@@ -4377,7 +4966,7 @@
         sel.b = animalId;
       } else {
         // Both filled → replace B
-        const parentA = this.farmState.animals.find(a => a.id === sel.a);
+        const parentA = this.farmState.animals.find((a) => a.id === sel.a);
         if (parentA && parentA.type !== animal.type) {
           // Different type: reset both and start fresh
           sel.a = animalId;
@@ -4397,7 +4986,7 @@
       if (!this._breedSelection) this._breedSelection = {};
       if (!this._breedProgram) this._breedProgram = "quick";
 
-      let html = '';
+      let html = "";
 
       for (let i = 0; i < 2; i++) {
         const slot = fs.breeding.slots[i];
@@ -4417,9 +5006,11 @@
         // Active breeding — show progress
         if (slot.active) {
           const pct = Math.min(100, (slot.progress / slot.duration) * 100);
-          const remaining = Math.ceil(Math.max(0, slot.duration - slot.progress));
-          const parentA = fs.animals.find(a => a.id === slot.parentA);
-          const parentB = fs.animals.find(a => a.id === slot.parentB);
+          const remaining = Math.ceil(
+            Math.max(0, slot.duration - slot.progress),
+          );
+          const parentA = fs.animals.find((a) => a.id === slot.parentA);
+          const parentB = fs.animals.find((a) => a.id === slot.parentB);
           const progDef = this.farmBreedPrograms[slot.program];
           html += `<div class="breed-slot-card active" data-breed-slot="${i}">
             <div class="breed-slot-header">
@@ -4428,9 +5019,9 @@
             </div>
             <div class="breed-slot-body">
               <div class="breed-active-parents">
-                <span class="breed-active-name">${parentA ? parentA.name : '?'}</span>
+                <span class="breed-active-name">${parentA ? parentA.name : "?"}</span>
                 <span class="breed-active-x">×</span>
-                <span class="breed-active-name">${parentB ? parentB.name : '?'}</span>
+                <span class="breed-active-name">${parentB ? parentB.name : "?"}</span>
               </div>
               <div class="farm-progress"><div class="farm-progress-bar" style="width:${pct}%"></div></div>
             </div>
@@ -4439,14 +5030,17 @@
         }
 
         // Ready slot — parent selection + program + preview
-        if (!this._breedSelection[i]) this._breedSelection[i] = { a: null, b: null };
+        if (!this._breedSelection[i])
+          this._breedSelection[i] = { a: null, b: null };
         const sel = this._breedSelection[i];
-        const parentA = sel.a ? fs.animals.find(a => a.id === sel.a) : null;
-        const parentB = sel.b ? fs.animals.find(a => a.id === sel.b) : null;
+        const parentA = sel.a ? fs.animals.find((a) => a.id === sel.a) : null;
+        const parentB = sel.b ? fs.animals.find((a) => a.id === sel.b) : null;
 
         // Collect available animals (not on cooldown, not used in other slot)
         const otherSel = this._breedSelection[1 - i];
-        const otherUsed = otherSel ? [otherSel.a, otherSel.b].filter(Boolean) : [];
+        const otherUsed = otherSel
+          ? [otherSel.a, otherSel.b].filter(Boolean)
+          : [];
         const available = {};
         for (const animal of fs.animals) {
           if (animal.breedCooldown > 0) continue;
@@ -4465,12 +5059,12 @@
           <div class="breed-slot-body">
             <!-- Parent slots -->
             <div class="breed-parent-slots">
-              <div class="breed-parent-slot ${sel.a ? 'filled' : 'empty'}" onclick="${sel.a ? `window._game.selectBreedParent(${i},'${sel.a}')` : ''}">
+              <div class="breed-parent-slot ${sel.a ? "filled" : "empty"}" onclick="${sel.a ? `window._game.selectBreedParent(${i},'${sel.a}')` : ""}">
                 <div class="breed-parent-label">Parent A</div>
                 ${parentA ? this._renderParentCard(parentA) : '<div class="breed-parent-placeholder">Click an animal below</div>'}
               </div>
               <div class="breed-parent-x">×</div>
-              <div class="breed-parent-slot ${sel.b ? 'filled' : 'empty'}" onclick="${sel.b ? `window._game.selectBreedParent(${i},'${sel.b}')` : ''}">
+              <div class="breed-parent-slot ${sel.b ? "filled" : "empty"}" onclick="${sel.b ? `window._game.selectBreedParent(${i},'${sel.b}')` : ""}">
                 <div class="breed-parent-label">Parent B</div>
                 ${parentB ? this._renderParentCard(parentB) : '<div class="breed-parent-placeholder">${!sel.a ? "Select A first" : "Click same type"}</div>'}
               </div>
@@ -4485,28 +5079,35 @@
 
             <!-- Preview (only when both parents selected) -->
             <div id="breed-preview-${i}" class="breed-preview-container">
-              ${parentA && parentB ? this.getBreedingPreview(sel.a, sel.b, this._breedProgram) : ''}
+              ${parentA && parentB ? this.getBreedingPreview(sel.a, sel.b, this._breedProgram) : ""}
             </div>
 
             <!-- Start button -->
-            ${parentA && parentB ? `
+            ${
+              parentA && parentB
+                ? `
               <button class="farm-btn breed-start-btn" onclick="window._game.startBreedingFromUI(${i})">
                 Start Breeding
               </button>
-            ` : ''}
+            `
+                : ""
+            }
 
             <!-- Animal picker -->
-            <div class="breed-picker-label">Available Animals ${filterType ? `(${this.farmAnimalDefs[filterType].name})` : ''}</div>
+            <div class="breed-picker-label">Available Animals ${filterType ? `(${this.farmAnimalDefs[filterType].name})` : ""}</div>
             <div class="breed-animal-picker">
-              ${Object.entries(available).filter(([type]) => !filterType || type === filterType).map(([type, animals]) => {
-                if (animals.length < 2 && !filterType) return '';
-                return `<div class="breed-picker-group">
+              ${Object.entries(available)
+                .filter(([type]) => !filterType || type === filterType)
+                .map(([type, animals]) => {
+                  if (animals.length < 2 && !filterType) return "";
+                  return `<div class="breed-picker-group">
                   <div class="breed-picker-type">${this.farmAnimalDefs[type].name}</div>
                   <div class="breed-picker-cards">
-                    ${animals.map(a => this._breedRenderAnimalCard(a, i, null)).join('')}
+                    ${animals.map((a) => this._breedRenderAnimalCard(a, i, null)).join("")}
                   </div>
                 </div>`;
-              }).join('')}
+                })
+                .join("")}
             </div>
           </div>
         </div>`;
@@ -4517,22 +5118,28 @@
     }
 
     _renderParentCard(animal) {
-      const rarityColors = { common: '#81c784', rare: '#64b5f6', epic: '#ce93d8' };
-      const traits = animal.traits.map(t => {
-        const td = this.farmTraitDefs.find(d => d.id === t);
-        if (!td) return '';
-        return `<span class="breed-parent-trait" style="color:${rarityColors[td.rarity]};border-color:${rarityColors[td.rarity]}">${td.name}</span>`;
-      }).join('');
+      const rarityColors = {
+        common: "#81c784",
+        rare: "#64b5f6",
+        epic: "#ce93d8",
+      };
+      const traits = animal.traits
+        .map((t) => {
+          const td = this.farmTraitDefs.find((d) => d.id === t);
+          if (!td) return "";
+          return `<span class="breed-parent-trait" style="color:${rarityColors[td.rarity]};border-color:${rarityColors[td.rarity]}">${td.name}</span>`;
+        })
+        .join("");
       return `<div class="breed-parent-info">
         <div class="breed-parent-name">${animal.name}</div>
-        ${animal.variant ? `<span class="farm-variant-tag">${animal.variant}</span>` : ''}
+        ${animal.variant ? `<span class="farm-variant-tag">${animal.variant}</span>` : ""}
         <div class="breed-parent-traits">${traits || '<span style="color:rgba(255,234,182,0.25);font-size:0.55rem;">No traits</span>'}</div>
       </div>`;
     }
 
     _renderProgramCard(key, slotIndex, fc) {
       const prog = this.farmBreedPrograms[key];
-      if (!prog) return '';
+      if (!prog) return "";
       if (key === "long" && fc < 25) {
         return `<div class="breed-prog-card locked" title="Unlocks at 25 farms">
           <div class="breed-prog-name">${prog.name}</div>
@@ -4546,12 +5153,22 @@
         long: "Best trait from each parent + mutation slot. 15% variant.",
       };
       const sel = this._breedSelection[slotIndex];
-      const parentA = sel && sel.a ? this.farmState.animals.find(a => a.id === sel.a) : null;
-      const costStr = parentA ? this.formatNumber(Math.floor(this.farmAnimalDefs[parentA.type].baseCost * prog.costMult)) : '—';
+      const parentA =
+        sel && sel.a
+          ? this.farmState.animals.find((a) => a.id === sel.a)
+          : null;
+      const costStr = parentA
+        ? this.formatNumber(
+            Math.floor(
+              this.farmAnimalDefs[parentA.type].baseCost * prog.costMult,
+            ),
+          )
+        : "—";
       const durMin = Math.floor(prog.duration / 60);
-      const durStr = durMin >= 60 ? Math.floor(durMin / 60) + 'h' : durMin + 'm';
+      const durStr =
+        durMin >= 60 ? Math.floor(durMin / 60) + "h" : durMin + "m";
 
-      return `<div class="breed-prog-card ${isActive ? 'active' : ''}" onclick="window._game._breedProgram='${key}';window._game.updateFarmBreedingTab();">
+      return `<div class="breed-prog-card ${isActive ? "active" : ""}" onclick="window._game._breedProgram='${key}';window._game.updateFarmBreedingTab();">
         <div class="breed-prog-name">${prog.name}</div>
         <div class="breed-prog-stats">${durStr} · ${prog.traitSlots} slots · ${costStr}</div>
         <div class="breed-prog-mechanic">${mechanics[key]}</div>
@@ -4578,7 +5195,7 @@
               <span class="farm-sell-count">${count} in storage</span>
               <span class="farm-sell-price">${this.formatNumber(price)} each</span>
             </div>
-            <button class="farm-btn farm-btn-sell" onclick="window._game.sellGoods('${good}')" ${count <= 0 ? 'disabled' : ''}>
+            <button class="farm-btn farm-btn-sell" onclick="window._game.sellGoods('${good}')" ${count <= 0 ? "disabled" : ""}>
               Sell All
             </button>
           </div>
@@ -4594,9 +5211,9 @@
           if (buff && buff.remaining > 0) {
             const mins = Math.floor(buff.remaining / 60);
             const secs = Math.ceil(buff.remaining % 60);
-            buffHtml += `<div class="farm-buff-slot active" title="${this.getFarmTooltip('buff_' + cat)}">${cat}: x${buff.strength.toFixed(2)} <span class="farm-buff-timer">${mins}m ${secs}s</span></div>`;
+            buffHtml += `<div class="farm-buff-slot active" title="${this.getFarmTooltip("buff_" + cat)}">${cat}: x${buff.strength.toFixed(2)} <span class="farm-buff-timer">${mins}m ${secs}s</span></div>`;
           } else {
-            buffHtml += `<div class="farm-buff-slot" title="${this.getFarmTooltip('buff_' + cat)}">${cat}: --</div>`;
+            buffHtml += `<div class="farm-buff-slot" title="${this.getFarmTooltip("buff_" + cat)}">${cat}: --</div>`;
           }
         }
         buffSlots.innerHTML = buffHtml;
@@ -4608,7 +5225,9 @@
         for (const crate of fs.crates) {
           crateHtml += `<div class="farm-crate-item ${crate.tier}" onclick="window._game.openFarmCrate('${crate.id}')">${crate.tier}</div>`;
         }
-        crateList.innerHTML = crateHtml || '<span style="font-size:0.62rem;color:rgba(255,234,182,0.3);">No crates</span>';
+        crateList.innerHTML =
+          crateHtml ||
+          '<span style="font-size:0.62rem;color:rgba(255,234,182,0.3);">No crates</span>';
       }
     }
 
@@ -4621,9 +5240,12 @@
       if (outputEl) {
         let totalPerMin = 0;
         for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-          const animals = fs.animals.filter(a => a.type === type);
+          const animals = fs.animals.filter((a) => a.type === type);
           if (animals.length === 0) continue;
-          const rate = (animals.length / def.prodInterval) * this.getProductionModifier(type) * 60;
+          const rate =
+            (animals.length / def.prodInterval) *
+            this.getProductionModifier(type) *
+            60;
           totalPerMin += rate;
         }
         outputEl.textContent = totalPerMin.toFixed(1) + "/min";
@@ -4640,24 +5262,33 @@
             count++;
           }
         }
-        storageEl.textContent = "Storage: " + (count > 0 ? Math.floor(totalPct / count) : 0) + "%";
+        storageEl.textContent =
+          "Storage: " + (count > 0 ? Math.floor(totalPct / count) : 0) + "%";
       }
 
       if (careEl) {
         const fc = this.getFarmCount();
         if (fc < 10) {
           careEl.textContent = "Care: " + (10 - fc) + " farms needed";
-          careEl.title = "Care Windows unlock when you have 10 farms. You have " + fc + ".";
+          careEl.title =
+            "Care Windows unlock when you have 10 farms. You have " + fc + ".";
         } else if (fs.careWindow.active) {
-          const remaining = Math.max(0, Math.ceil((fs.careWindow.expiresAt - Date.now()) / 1000));
+          const remaining = Math.max(
+            0,
+            Math.ceil((fs.careWindow.expiresAt - Date.now()) / 1000),
+          );
           careEl.textContent = "Care: " + remaining + "s ✦";
-          careEl.title = "Care window ACTIVE! Click to open farm panel and use it.";
+          careEl.title =
+            "Care window ACTIVE! Click to open farm panel and use it.";
         } else {
-          const next = Math.max(0, Math.ceil((fs.careWindow.nextTrigger - Date.now()) / 1000));
+          const next = Math.max(
+            0,
+            Math.ceil((fs.careWindow.nextTrigger - Date.now()) / 1000),
+          );
           const mins = Math.floor(next / 60);
           const secs = next % 60;
           careEl.textContent = "Care: " + mins + "m " + secs + "s";
-          careEl.title = this.getFarmTooltip('care');
+          careEl.title = this.getFarmTooltip("care");
         }
       }
     }
@@ -4680,18 +5311,20 @@
     // --- Farm Panel Tab switching ---
     setupFarmTabs() {
       const tabs = document.querySelectorAll(".farm-tab");
-      tabs.forEach(tab => {
+      tabs.forEach((tab) => {
         tab.addEventListener("click", () => {
-          tabs.forEach(t => t.classList.remove("active"));
+          tabs.forEach((t) => t.classList.remove("active"));
           tab.classList.add("active");
           const tabName = tab.dataset.tab;
           this.farmActiveTab = tabName;
-          document.querySelectorAll(".farm-tab-content").forEach(tc => {
+          document.querySelectorAll(".farm-tab-content").forEach((tc) => {
             tc.classList.toggle("hidden", tc.dataset.tab !== tabName);
           });
           // Reset breeding rendered flag so it does a fresh render when tab opens
           if (tabName === "breeding") {
-            const breedContainer = document.getElementById("farm-breeding-slots");
+            const breedContainer = document.getElementById(
+              "farm-breeding-slots",
+            );
             if (breedContainer) delete breedContainer.dataset.rendered;
           }
           // Immediately update the newly visible tab
@@ -5861,12 +6494,19 @@
       // Care window buttons
       const carePetBtn = document.getElementById("care-pet-btn");
       const careTreatBtn = document.getElementById("care-treat-btn");
-      if (carePetBtn) carePetBtn.addEventListener("click", () => this.performCareAction("pet"));
-      if (careTreatBtn) careTreatBtn.addEventListener("click", () => this.performCareAction("treat"));
+      if (carePetBtn)
+        carePetBtn.addEventListener("click", () =>
+          this.performCareAction("pet"),
+        );
+      if (careTreatBtn)
+        careTreatBtn.addEventListener("click", () =>
+          this.performCareAction("treat"),
+        );
 
       // Contract reroll
       const rerollBtn = document.getElementById("contract-reroll-btn");
-      if (rerollBtn) rerollBtn.addEventListener("click", () => this.rerollContracts());
+      if (rerollBtn)
+        rerollBtn.addEventListener("click", () => this.rerollContracts());
 
       // Farm tabs
       this.setupFarmTabs();
@@ -5876,10 +6516,14 @@
       const farmGuideOverlay = document.getElementById("farm-guide-overlay");
       const farmGuideClose = document.getElementById("farm-guide-close");
       if (farmGuideBtn && farmGuideOverlay) {
-        farmGuideBtn.addEventListener("click", () => farmGuideOverlay.classList.toggle("hidden"));
+        farmGuideBtn.addEventListener("click", () =>
+          farmGuideOverlay.classList.toggle("hidden"),
+        );
       }
       if (farmGuideClose && farmGuideOverlay) {
-        farmGuideClose.addEventListener("click", () => farmGuideOverlay.classList.add("hidden"));
+        farmGuideClose.addEventListener("click", () =>
+          farmGuideOverlay.classList.add("hidden"),
+        );
       }
 
       // Expose game instance for inline onclick handlers
@@ -6378,20 +7022,25 @@
       if (this.farmState && this.getFarmCount() >= 1) {
         const offlineFarmSeconds = offlineSeconds * this.OFFLINE_EFFICIENCY;
         for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-          const animals = this.farmState.animals.filter(a => a.type === type);
+          const animals = this.farmState.animals.filter((a) => a.type === type);
           if (animals.length === 0) continue;
           const good = def.good;
           const cap = this.getEffectiveStorageCap(good);
           const baseRate = animals.length / def.prodInterval;
           const produced = baseRate * offlineFarmSeconds;
-          this.farmState.storage[good] = Math.min(this.farmState.storage[good] + produced, cap);
+          this.farmState.storage[good] = Math.min(
+            this.farmState.storage[good] + produced,
+            cap,
+          );
         }
         // Offline breeding progresses at 100%
         for (const slot of this.farmState.breeding.slots) {
           if (slot.active) {
             slot.progress += offlineSeconds;
             if (slot.progress >= slot.duration) {
-              this.completeBreeding(this.farmState.breeding.slots.indexOf(slot));
+              this.completeBreeding(
+                this.farmState.breeding.slots.indexOf(slot),
+              );
             }
           }
         }
@@ -6400,8 +7049,11 @@
         for (const contract of offlineContracts) {
           contract.elapsed += offlineFarmSeconds;
           if (contract.elapsed >= contract.duration) {
-            try { this.completeContract(contract); }
-            catch (e) { console.error("[Farm] offline contract error:", e); }
+            try {
+              this.completeContract(contract);
+            } catch (e) {
+              console.error("[Farm] offline contract error:", e);
+            }
           }
         }
       }
@@ -7032,17 +7684,40 @@
           const defaults = this.createDefaultFarmState();
           this.farmState = { ...defaults, ...gameState.farmState };
           // Ensure nested objects have defaults
-          this.farmState.storage = { ...defaults.storage, ...gameState.farmState.storage };
-          this.farmState.feedPlans = { ...defaults.feedPlans, ...gameState.farmState.feedPlans };
-          this.farmState.contracts = { ...defaults.contracts, ...gameState.farmState.contracts };
-          this.farmState.breeding = gameState.farmState.breeding || defaults.breeding;
-          this.farmState.mastery = { ...defaults.mastery, ...gameState.farmState.mastery };
-          this.farmState.buffs = { ...defaults.buffs, ...gameState.farmState.buffs };
-          this.farmState.careWindow = { ...defaults.careWindow, ...gameState.farmState.careWindow };
-          this.farmState.careBonus = gameState.farmState.careBonus || defaults.careBonus;
+          this.farmState.storage = {
+            ...defaults.storage,
+            ...gameState.farmState.storage,
+          };
+          this.farmState.feedPlans = {
+            ...defaults.feedPlans,
+            ...gameState.farmState.feedPlans,
+          };
+          this.farmState.contracts = {
+            ...defaults.contracts,
+            ...gameState.farmState.contracts,
+          };
+          this.farmState.breeding =
+            gameState.farmState.breeding || defaults.breeding;
+          this.farmState.mastery = {
+            ...defaults.mastery,
+            ...gameState.farmState.mastery,
+          };
+          this.farmState.buffs = {
+            ...defaults.buffs,
+            ...gameState.farmState.buffs,
+          };
+          this.farmState.careWindow = {
+            ...defaults.careWindow,
+            ...gameState.farmState.careWindow,
+          };
+          this.farmState.careBonus =
+            gameState.farmState.careBonus || defaults.careBonus;
           this.farmState.crates = gameState.farmState.crates || [];
           this.farmState.rumors = gameState.farmState.rumors || defaults.rumors;
-          this.farmState.stats = { ...defaults.stats, ...gameState.farmState.stats };
+          this.farmState.stats = {
+            ...defaults.stats,
+            ...gameState.farmState.stats,
+          };
         }
         if (gameState.farmNextAnimalId) {
           this.farmNextAnimalId = gameState.farmNextAnimalId;

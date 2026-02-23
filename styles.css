@@ -630,7 +630,7 @@ body {
 
 .store-top-ad {
   width: 100%;
-  min-height: 250px;
+  min-height: 125px;
   text-align: center;
   margin-bottom: 10px;
   overflow: hidden;
