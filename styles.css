@@ -325,7 +325,7 @@ body {
   padding: 8px;
   font-size: 28px;
   z-index: 30;
-  margin-top: 5px; /* Boşluğu azaltmak için */
+  margin-top: 0px; /* Boşluğu azaltmak için */
 }
 .donut-wrapper {
   position: relative;
@@ -624,7 +624,7 @@ body {
 .store {
   position: relative;
   width: 100%;
-  padding-top: 10px;
+  padding-top: 0px;
   padding-bottom: 10px;
 }
 
@@ -632,7 +632,7 @@ body {
   width: 100%;
   min-height: 125px;
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
   overflow: hidden;
   display: flex;
   justify-content: center;
