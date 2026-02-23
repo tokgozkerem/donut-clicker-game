@@ -102,7 +102,7 @@
       rel="stylesheet"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.4.6" />
+    <link rel="stylesheet" href="styles.css?v=1.5.0" />
     <link rel="stylesheet" href="store-visibility.css?v=1.4.4" />
     <link rel="icon" href="img/donutPixelArt.webp" type="image/webp" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
@@ -670,6 +670,267 @@
             </div>
           </div>
         </div>
+        <!-- Farm Panel -->
+        <div id="farm-panel" class="footer-panel hidden">
+          <span id="close-farm-panel" class="close-btn">&times;</span>
+          <div class="farm-topbar">
+            <img src="img/farm.webp" alt="Farm" class="farm-header-icon" />
+            <span class="farm-section-title">Farm</span>
+            <div class="farm-kpi-bar">
+              <span class="farm-kpi" id="farm-kpi-output">0/min</span>
+              <span class="farm-kpi" id="farm-kpi-storage">Storage: 0%</span>
+              <span class="farm-kpi" id="farm-kpi-care">Care: --</span>
+            </div>
+            <span class="farm-mastery-badge" id="farm-mastery-badge"
+              >Lv. 0</span
+            >
+            <button
+              class="farm-guide-btn"
+              id="farm-guide-btn"
+              title="Farm Guide"
+            >
+              ?
+            </button>
+          </div>
+          <!-- Farm Guide Overlay -->
+          <div id="farm-guide-overlay" class="farm-guide-overlay hidden">
+            <div class="farm-guide-content">
+              <span class="farm-guide-close" id="farm-guide-close"
+                >&times;</span
+              >
+              <h3 style="color: #fccb72; margin: 0 0 10px">Farm Guide</h3>
+              <div class="farm-guide-sections">
+                <div class="farm-guide-section">
+                  <h4>Barn</h4>
+                  <p>
+                    Buy and manage animals. Each animal produces goods
+                    automatically over time. Use <b>Feed Plans</b> to adjust
+                    production speed vs cost:
+                  </p>
+                  <ul>
+                    <li><b>Standard</b> — Free, normal speed (1x)</li>
+                    <li>
+                      <b>Ration</b> — Costs 0.5%/cycle, slower (0.7x) but faster
+                      breed cooldown
+                    </li>
+                    <li>
+                      <b>Premium</b> — Costs 2%/cycle, faster (1.4x) and better
+                      trait chance
+                    </li>
+                  </ul>
+                </div>
+                <div class="farm-guide-section">
+                  <h4>Breeding</h4>
+                  <p>
+                    Pick two animals of the same type and start a breeding
+                    program. Offspring inherit traits from parents with chance
+                    of mutation. Three programs:
+                  </p>
+                  <ul>
+                    <li><b>Quick</b> — 30 min, 2 trait slots</li>
+                    <li><b>Standard</b> — 2 hours, 2 slots + rare chance</li>
+                    <li>
+                      <b>Long</b> — 4 hours, 3 slots + variant chance (unlocks
+                      FC 25)
+                    </li>
+                  </ul>
+                </div>
+                <div class="farm-guide-section">
+                  <h4>Contracts</h4>
+                  <p>
+                    Accept contracts to deliver goods for donut rewards. Three
+                    types:
+                  </p>
+                  <ul>
+                    <li><b>Rush</b> — 3-5 min, small reward</li>
+                    <li>
+                      <b>Standard</b> — 8-15 min, medium reward + possible buff
+                    </li>
+                    <li>
+                      <b>Long Haul</b> — 45-90 min, big reward + guaranteed buff
+                    </li>
+                  </ul>
+                  <p>
+                    Buffs boost various things (production, offline, costs). Max
+                    2 active contracts.
+                  </p>
+                </div>
+                <div class="farm-guide-section">
+                  <h4>Collection</h4>
+                  <p>
+                    Sell stored goods for donuts. View active buffs and open
+                    crates dropped from selling.
+                  </p>
+                </div>
+                <div class="farm-guide-section">
+                  <h4>Care Windows</h4>
+                  <p>
+                    Every 12 min, a 90s care window opens (unlocks at FC 10 +
+                    Mastery 2). Choose:
+                  </p>
+                  <ul>
+                    <li>
+                      <b>Pet & Groom</b> — +25% production for 2 cycles (free)
+                    </li>
+                    <li>
+                      <b>Feed Treat</b> — +40% production for 3 cycles (costs
+                      0.1% donuts)
+                    </li>
+                  </ul>
+                </div>
+                <div class="farm-guide-section">
+                  <h4>Mastery</h4>
+                  <p>
+                    Earn XP from selling goods, completing contracts, and
+                    breeding. Each of 20 levels gives +5 storage capacity and
+                    unlocks new features. Level 20 gives +5% permanent CpS!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="farm-tabs">
+            <button class="farm-tab active" data-tab="barn">Barn</button>
+            <button class="farm-tab" data-tab="breeding">Breeding</button>
+            <button class="farm-tab" data-tab="contracts">Contracts</button>
+            <button class="farm-tab" data-tab="collection">Collection</button>
+          </div>
+          <div class="farm-content">
+            <!-- Barn Tab -->
+            <div class="farm-tab-content" data-tab="barn">
+              <div class="farm-barn-layout">
+                <div class="farm-animal-grid" id="farm-animal-grid"></div>
+                <div
+                  class="farm-storage-section"
+                  id="farm-storage-section"
+                ></div>
+              </div>
+            </div>
+            <!-- Breeding Tab -->
+            <div class="farm-tab-content hidden" data-tab="breeding">
+              <div class="farm-breeding-slots" id="farm-breeding-slots">
+                <div class="breed-slot-card" id="breed-slot-0">
+                  <div class="breed-slot-header">
+                    <span class="breed-slot-title">Breeding Slot 1</span>
+                    <span class="breed-slot-status">Empty</span>
+                  </div>
+                  <div class="breed-slot-body">
+                    <div class="breed-parent-select">
+                      <button
+                        class="farm-btn farm-btn-small breed-select-btn"
+                        data-slot="0"
+                        data-parent="a"
+                      >
+                        Parent A
+                      </button>
+                      <span class="breed-x">x</span>
+                      <button
+                        class="farm-btn farm-btn-small breed-select-btn"
+                        data-slot="0"
+                        data-parent="b"
+                      >
+                        Parent B
+                      </button>
+                    </div>
+                    <div class="breed-program-select">
+                      <button
+                        class="farm-btn farm-btn-small breed-program-btn active"
+                        data-program="quick"
+                      >
+                        Quick (30m)
+                      </button>
+                      <button
+                        class="farm-btn farm-btn-small breed-program-btn"
+                        data-program="standard"
+                      >
+                        Standard (2h)
+                      </button>
+                      <button
+                        class="farm-btn farm-btn-small breed-program-btn"
+                        data-program="long"
+                      >
+                        Long (4h)
+                      </button>
+                    </div>
+                    <div class="breed-progress">
+                      <div class="farm-progress">
+                        <div class="farm-progress-bar" style="width: 0%"></div>
+                      </div>
+                    </div>
+                    <button
+                      class="farm-btn farm-btn-buy breed-start-btn"
+                      data-slot="0"
+                    >
+                      Start Breeding
+                    </button>
+                  </div>
+                </div>
+                <div class="breed-slot-card locked" id="breed-slot-1">
+                  <div class="breed-slot-header">
+                    <span class="breed-slot-title">Breeding Slot 2</span>
+                    <span class="breed-slot-status">Locked (FC 60)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Contracts Tab -->
+            <div class="farm-tab-content hidden" data-tab="contracts">
+              <div class="contract-board-header">
+                <h4>Contract Board</h4>
+                <span class="contract-refresh-timer" id="contract-refresh-timer"
+                  >Refresh: --</span
+                >
+                <button
+                  class="farm-btn farm-btn-small"
+                  id="contract-reroll-btn"
+                >
+                  Reroll
+                </button>
+              </div>
+              <div class="contract-board" id="contract-board"></div>
+              <div class="contract-active-header">
+                <h4>Active Contracts</h4>
+                <span id="contract-active-count">0 / 2</span>
+              </div>
+              <div class="contract-active-list" id="contract-active-list"></div>
+            </div>
+            <!-- Collection Tab -->
+            <div class="farm-tab-content hidden" data-tab="collection">
+              <div class="farm-collection-layout">
+                <div class="farm-sell-grid" id="farm-sell-grid"></div>
+                <div class="farm-buff-status" id="farm-buff-status">
+                  <h4>Active Buffs</h4>
+                  <div class="farm-buff-slots" id="farm-buff-slots"></div>
+                </div>
+                <div class="farm-crate-section" id="farm-crate-section">
+                  <h4>Crates</h4>
+                  <div class="farm-crate-list" id="farm-crate-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Care Window Overlay -->
+          <div class="farm-care-overlay hidden" id="farm-care-overlay">
+            <div class="farm-care-content">
+              <h4>Care Window</h4>
+              <p class="farm-care-timer" id="farm-care-timer">90s remaining</p>
+              <div class="farm-care-actions">
+                <button class="farm-care-btn" id="care-pet-btn">
+                  <span class="care-icon">&#128054;</span>
+                  <span>Pet & Groom</span>
+                  <span class="care-desc">+25% prod, 2 cycles</span>
+                </button>
+                <button class="farm-care-btn" id="care-treat-btn">
+                  <span class="care-icon">&#127854;</span>
+                  <span>Feed Treat</span>
+                  <span class="care-desc"
+                    >+40% prod, 3 cycles (0.1% donuts)</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div id="donut-coin" class="donut-coin">
         <div class="coin-image-wrapper">
@@ -1071,6 +1332,28 @@
     >
       <img src="img/reddit.svg" alt="Reddit" /> Join r/donutClicker
     </a>
-    <script defer src="script.js?v=1.4.6"></script>
+
+    <!-- Feedback Pop-up -->
+    <div id="feedback-popup" class="hidden">
+      <div class="feedback-content">
+        <span id="close-feedback" class="close-feedback-btn">&times;</span>
+        <div class="feedback-body">
+          <img src="img/farmChicken.webp" alt="Chicken" class="feedback-img" />
+          <div class="feedback-text">
+            <h4>New: Farm Panel! 🌾</h4>
+            <p>
+              We’ve added the Farm Panel — it’s still in development and may not
+              work properly yet. We’re releasing it in early access, so we’d
+              love your feedback and suggestions.
+            </p>
+            <a href="mailto:ktz@donutclicker.net" class="feedback-link"
+              >ktz@donutclicker.net</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="script.js?v=1.5.0"></script>
   </body>
 </html>
