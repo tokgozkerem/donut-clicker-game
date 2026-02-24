@@ -945,6 +945,245 @@ button {
   background-color: rgba(0, 0, 0, 0.6); /* Arkaplan için yarı saydam siyah */
 }
 
+/* ========================================
+   OFFLINE MODAL — farm-panel warm theme
+   palette: #fccb72 gold, #fd9193 salmon,
+   #ffeab6 cream, #2c1810 dark brown
+   ======================================== */
+
+.offline-modal-overlay {
+  display: none;
+  position: fixed;
+  z-index: 10001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 10, 8, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: offlineOverlayFadeIn 0.3s ease-out;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes offlineOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.offline-modal-content {
+  position: relative;
+  background: linear-gradient(165deg, rgba(44, 24, 16, 0.98) 0%, rgba(30, 18, 12, 0.98) 100%);
+  border: 1px solid rgba(252, 203, 114, 0.3);
+  border-radius: 20px;
+  padding: 0;
+  width: min(340px, 90vw);
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(252, 203, 114, 0.1),
+    inset 0 1px 0 rgba(255, 234, 182, 0.1);
+  overflow: hidden;
+  animation: offlineModalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: "Playpen Sans", cursive;
+}
+
+@keyframes offlineModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.offline-modal-header {
+  background: linear-gradient(135deg, rgba(252, 203, 114, 0.15) 0%, rgba(253, 145, 147, 0.1) 100%);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 234, 182, 0.1);
+}
+
+.offline-modal-icon {
+  font-size: 28px;
+  animation: offlineDonutBounce 2s ease-in-out infinite;
+}
+
+@keyframes offlineDonutBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(10deg); }
+}
+
+.offline-modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffeab6;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.offline-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.offline-donut-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(252, 203, 114, 0.2) 0%, transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: offlineDonutGlow 3s ease-in-out infinite;
+}
+
+@keyframes offlineDonutGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(252, 203, 114, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(252, 203, 114, 0.4); }
+}
+
+.offline-donut-img {
+  width: 64px;
+  height: 64px;
+  animation: offlineDonutSpin 8s linear infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes offlineDonutSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.offline-time-text {
+  font-size: 0.9rem;
+  color: rgba(255, 234, 182, 0.7);
+  margin: 0;
+  font-weight: 500;
+}
+
+.offline-earnings-box {
+  background: rgba(252, 203, 114, 0.08);
+  border: 1px solid rgba(252, 203, 114, 0.2);
+  border-radius: 14px;
+  padding: 16px 28px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.offline-earnings-label {
+  font-size: 0.75rem;
+  color: rgba(255, 234, 182, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.offline-earnings-amount {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fccb72;
+  text-shadow: 0 0 20px rgba(252, 203, 114, 0.4);
+  animation: offlineEarningsPulse 2s ease-in-out infinite;
+}
+
+@keyframes offlineEarningsPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.offline-efficiency-text {
+  font-size: 0.75rem;
+  color: rgba(255, 234, 182, 0.4);
+  margin: 0;
+  padding: 6px 14px;
+  background: rgba(255, 234, 182, 0.05);
+  border-radius: 20px;
+}
+
+.offline-collect-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #fccb72 0%, #e8a850 100%);
+  border: none;
+  border-radius: 0 0 20px 20px;
+  color: #2c1810;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: "Playpen Sans", cursive;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  text-shadow: none;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.offline-collect-btn:hover {
+  background: linear-gradient(135deg, #ffd685 0%, #f0b560 100%);
+  transform: translateY(-1px);
+}
+
+.offline-collect-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.offline-collect-btn .btn-icon {
+  font-size: 1.1rem;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 480px) {
+  .offline-modal-content {
+    width: 92vw;
+    border-radius: 16px;
+  }
+
+  .offline-modal-header {
+    padding: 14px 18px;
+  }
+
+  .offline-modal-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .offline-modal-body {
+    padding: 18px;
+  }
+
+  .offline-donut-wrapper {
+    width: 70px;
+    height: 70px;
+  }
+
+  .offline-donut-img {
+    width: 54px;
+    height: 54px;
+  }
+
+  .offline-earnings-amount {
+    font-size: 1.4rem;
+  }
+
+  .offline-collect-btn {
+    padding: 14px 20px;
+    border-radius: 0 0 16px 16px;
+  }
+}
+
 /* Modal içerik kutusu */
 .modal-content {
   background-color: #333;
@@ -5484,20 +5723,25 @@ img {
 
 .quest-notification {
   position: fixed;
-  bottom: max(24px, 2vh); /* En az 24px, ekran yüksekliğinin %2'si kadar */
-  right: max(24px, 2vw); /* En az 24px, ekran genişliğinin %2'si kadar */
-  background: linear-gradient(135deg, #e8d5c4, #deb887);
-  color: #2a2a2a;
-  padding: clamp(12px, 2vw, 18px) clamp(16px, 3vw, 32px); /* Responsive padding */
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  bottom: max(24px, 2vh);
+  right: max(24px, 2vw);
+  background: rgba(44, 24, 16, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffeab6;
+  padding: clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px);
+  border-radius: 14px;
+  border: 1px solid rgba(252, 203, 114, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 234, 182, 0.08);
   z-index: 10001;
   animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 12px;
   font-weight: 600;
-  font-size: clamp(14px, 2vw, 16px); /* Responsive font size */
+  font-size: clamp(13px, 2vw, 15px);
+  font-family: "Playpen Sans", cursive;
   max-width: min(90vw, 400px); /* Maksimum genişlik sınırı */
   word-break: break-word; /* Uzun metinler için */
 }
@@ -5663,9 +5907,11 @@ input:checked + .slider:before {
 }
 @media screen and (max-width: 768px) {
   .quest-notification {
-    bottom: max(12px, 1vh); /* Mobilde daha az boşluk */
-    right: max(12px, 1vw); /* Mobilde daha az boşluk */
-    padding: 12px 16px; /* Mobilde daha küçük padding */
+    bottom: max(12px, 1vh);
+    right: max(12px, 1vw);
+    left: max(12px, 1vw);
+    padding: 10px 14px;
+    font-size: 13px;
   }
 }
 .market-button {

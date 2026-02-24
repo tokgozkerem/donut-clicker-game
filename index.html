@@ -1285,21 +1285,27 @@
     </div>
 
     <!-- Offline Earnings Modal -->
-    <div id="offlineModal" class="modal">
-      <div class="modal-content">
-        <h2>Welcome Back!</h2>
-        <img
-          src="img/donutNew.webp"
-          alt="Donut"
-          style="width: 60px; height: 60px; margin: 15px 0"
-        />
-        <p id="offlineTimeText"></p>
-        <p
-          id="offlineEarningsText"
-          style="font-size: 1.2em; color: #ffd700; font-weight: bold"
-        ></p>
-        <p style="font-size: 0.8em; color: #aaa">(Efficiency: 25%)</p>
-        <button id="closeOfflineModal">Collect Donuts</button>
+    <div id="offlineModal" class="offline-modal-overlay">
+      <div class="offline-modal-content">
+        <div class="offline-modal-header">
+          <span class="offline-modal-icon">🍩</span>
+          <h2>Welcome Back!</h2>
+        </div>
+        <div class="offline-modal-body">
+          <div class="offline-donut-wrapper">
+            <img src="img/donutNew.webp" alt="Donut" class="offline-donut-img" />
+          </div>
+          <p id="offlineTimeText" class="offline-time-text"></p>
+          <div class="offline-earnings-box">
+            <span class="offline-earnings-label">Earned while away</span>
+            <p id="offlineEarningsText" class="offline-earnings-amount"></p>
+          </div>
+          <p class="offline-efficiency-text">Offline Efficiency: 25%</p>
+        </div>
+        <button id="closeOfflineModal" class="offline-collect-btn">
+          <span class="btn-icon">✨</span>
+          Collect Donuts
+        </button>
       </div>
     </div>
     <div id="game-saved">Game Saved!</div>

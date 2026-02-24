@@ -1,256 +1,309 @@
-# Quest System Redesign
+# Quest System v3.0 - Perfect Effort-Based Economics
 
 **Date:** 2026-02-24
-**Status:** Approved
-**Approach:** Clean Slate + Hybrid (Milestone + Dynamic)
+**Status:** Implemented
+**Version:** 3.0 (Final)
 
 ---
 
-## Overview
+## Core Philosophy
 
-Complete redesign of the quest system to fix broken reward scaling, inconsistent multipliers, and lack of dynamic content. Replaces all 50 existing static quests with a new hybrid system.
+**Quests are BONUSES, not primary income.**
 
-## Architecture
-
-### 1. Two Quest Categories
-
-| Category | Description | Persistence |
-|----------|-------------|-------------|
-| **Milestone** | One-time achievements (building tiers, production goals) | Run-based (reset on prestige) |
-| **Dynamic** | Slot-based rotating quests with cooldowns | Slot state persists across sessions |
-
-### 2. Dynamic Quest Slots
-
-```javascript
-dynamicSlots = {
-  slot1: { difficulty: "easy",    cooldown: 15min,  rewardMinutes: 5  },
-  slot2: { difficulty: "medium",  cooldown: 30min,  rewardMinutes: 15 },
-  slot3: { difficulty: "hard",    cooldown: 60min,  rewardMinutes: 45 },
-  slot4: { difficulty: "special", cooldown: 120min, rewardMinutes: 90 }
-}
-```
-
-### 3. Quest Types (5)
-
-- `click` - Click X times
-- `produce` - Produce X donuts
-- `buyAny` - Buy X buildings (any type)
-- `buySpecific` - Buy X of specific building
-- `timedProduce` - Produce X donuts within Y seconds
+When you click 10 times, you earn 10 donuts. The quest reward is a small thank-you bonus on top of that - not a replacement for your earnings.
 
 ---
 
-## Reward System
+## Game Economics Baseline
 
-### Milestone Rewards (Building)
+Understanding these numbers is critical for balanced quest design:
 
-```javascript
-function calculateBuildingQuestReward(buildingType, targetTier) {
-  // Use tier-specific tracked spending
-  const spent = this.items[buildingType].spentAtTier[targetTier] || 0;
+| Building | Cost    | Production | ROI Time |
+| -------- | ------- | ---------- | -------- |
+| Cursor   | 15      | 0.1/s      | 150 sec  |
+| Baker    | 115     | 1/s        | 115 sec  |
+| Farm     | 1,400   | 7/s        | 200 sec  |
+| Mine     | 16,000  | 50/s       | 320 sec  |
+| Factory  | 176,000 | 255/s      | 690 sec  |
 
-  // Tier-based refund rate (decreasing)
-  const refundRates = { 1: 0.25, 10: 0.20, 25: 0.15, 50: 0.12, 100: 0.10 };
-  const rate = refundRates[targetTier] || 0.10;
+**Click Value:** 1 donut (base) + 0.5% of CPS
 
-  let reward = Math.floor(spent * rate);
+---
 
-  // Cap: 30% of next tier building cost
-  const nextCost = this.getNextTierBuildingCost(buildingType);
-  const cap = Math.floor(nextCost * 0.30);
+## Reward Formula
 
-  return Math.min(reward, cap);
-}
+```
+Reward = (Natural Effort Value) × (Bonus Rate)
 ```
 
-**Tracking:** `spentAtTier[tier]` snapshots cumulative spending at each milestone tier.
+### Bonus Rates by Difficulty
 
-### Dynamic Rewards (CPS-based)
+| Difficulty | Bonus Rate | Philosophy                   |
+| ---------- | ---------- | ---------------------------- |
+| Easy       | 5%         | Quick task, tiny bonus       |
+| Medium     | 8%         | More effort, slightly better |
+| Hard       | 12%        | Significant investment       |
+| Special    | 15%        | Maximum effort               |
+
+### Example Calculations
+
+#### Early Game (0 CPS, 0 buildings)
+
+| Quest        | Target    | Natural Earnings | Bonus Rate | Reward            |
+| ------------ | --------- | ---------------- | ---------- | ----------------- |
+| Easy Click   | 10 clicks | 10 donuts        | 5%         | **1 donut**       |
+| Easy Produce | 50 donuts | 50 donuts        | 5%         | **1 donut** (min) |
+| Medium Click | 20 clicks | 20 donuts        | 8%         | **1 donut**       |
+| Hard Click   | 40 clicks | 40 donuts        | 12%        | **2 donuts**      |
+
+#### Early-Mid Game (5 CPS, 10 buildings)
+
+| Quest          | Target     | Time/Effort       | Bonus Rate | Reward         |
+| -------------- | ---------- | ----------------- | ---------- | -------------- |
+| Easy Click     | 30 clicks  | 30 donuts clicked | 5%         | **1-2 donuts** |
+| Easy Produce   | 300 donuts | 60 sec effort     | 5%         | **15 donuts**  |
+| Medium Produce | 600 donuts | 120 sec effort    | 8%         | **48 donuts**  |
+| Hard Buy (2)   | ~250 spent | 250 donut cost    | 12%        | **15 donuts**  |
+
+#### Mid Game (100 CPS, 30 buildings)
+
+| Quest          | Target            | Time/Effort | Bonus Rate | Reward          |
+| -------------- | ----------------- | ----------- | ---------- | --------------- |
+| Easy Produce   | 6,000             | 60 sec      | 5%         | **300 donuts**  |
+| Medium Produce | 12,000            | 120 sec     | 8%         | **960 donuts**  |
+| Hard Timed     | 4,500             | 45 sec      | 12%        | **648 donuts**  |
+| Special Combo  | 50 clicks + 3,000 | Combined    | 15%        | **~700 donuts** |
+
+---
+
+## Reward System by Quest Type
+
+### Click Quests
 
 ```javascript
-function calculateDynamicReward(slot) {
-  const cps = this.getStableCPS();  // 120s rolling median
-  const minutes = slot.rewardMultiplier;
+naturalEarnings = clicks × clickValue;  // clickValue ≈ 1
+reward = naturalEarnings × bonusRate;
 
-  let reward = cps * 60 * minutes;
-
-  // Floor: minimum for current game stage
-  reward = Math.max(reward, this.getMinRewardForStage());
-
-  // Cap: min(nextPurchase * 25%, CPS * 120min)
-  const nextPurchaseCap = this.getNextMeaningfulPurchaseCost() * 0.25;
-  const timeCap = cps * 60 * 120;
-
-  return Math.min(reward, Math.min(nextPurchaseCap, timeCap));
-}
+// 10 clicks at start = 10 × 1 × 0.05 = 0.5 → rounds to 1 donut
 ```
 
-**Exploit Prevention:** Uses 120-second rolling median CPS, not instantaneous.
+### Produce Quests
+
+```javascript
+timeSpent = target / CPS;  // seconds of effort
+reward = CPS × timeSpent × bonusRate;
+
+// 100 donuts at 1 CPS = 100 sec × 1 × 0.05 = 5 donuts
+```
+
+### Buy Quests
+
+```javascript
+estimatedCost = count × avgBuildingCost;
+reward = estimatedCost × bonusRate × 0.5;  // 50% penalty
+
+// Buy 1 building (15 cost) = 15 × 0.05 × 0.5 = 0.375 → 1 donut
+```
+
+### Timed Quests
+
+```javascript
+reward = normalProduceReward × 1.2;  // 20% time pressure bonus
+```
+
+### Spending Quests
+
+```javascript
+reward = amountSpent × bonusRate × 0.3;  // Tiny cashback
+
+// Spend 100 donuts = 100 × 0.05 × 0.3 = 1.5 → 1 donut
+```
+
+---
+
+## Cap System
+
+Rewards are capped to prevent breaking progression:
+
+### Two-Cap System
+
+```javascript
+cap = MIN(buildingCap, cpsCap); // Use the SMALLER one
+```
+
+| Difficulty | Building % | CPS Seconds |
+| ---------- | ---------- | ----------- |
+| Easy       | 2%         | 15 sec      |
+| Medium     | 4%         | 30 sec      |
+| Hard       | 6%         | 60 sec      |
+| Special    | 10%        | 90 sec      |
+
+### Example
+
+```
+Next building costs 1,000 donuts, CPS is 10/sec
+
+Easy quest max:
+- Building cap: 1000 × 0.02 = 20 donuts
+- CPS cap: 10 × 15 = 150 donuts
+- Final cap: MIN(20, 150) = 20 donuts
+```
+
+---
+
+## Stage System
+
+Game progression is divided into 8 stages:
+
+| Stage | Buildings | CPS    | Min Reward |
+| ----- | --------- | ------ | ---------- |
+| 1     | 0-2       | < 0.5  | 1          |
+| 2     | 3-7       | < 3    | 1          |
+| 3     | 8-14      | < 15   | 2          |
+| 4     | 15-29     | < 100  | 3          |
+| 5     | 30-59     | < 1K   | 5          |
+| 6     | 60-119    | < 10K  | 10         |
+| 7     | 120-249   | < 100K | 20         |
+| 8     | 250+      | 100K+  | 50         |
+
+Minimum rewards are INTENTIONALLY tiny - they just prevent 0.
+
+---
+
+## Quest Targets
+
+### Dynamic Quest Targets
+
+| Type          | Formula                            |
+| ------------- | ---------------------------------- |
+| Click         | `(30 + CPS×0.05) × diffMult`       |
+| Produce       | `CPS × 60 × diffMult`              |
+| Buy Any       | `2 × diffMult`                     |
+| Buy Specific  | `1.5 × diffMult`                   |
+| Timed Produce | `CPS × 45`                         |
+| Efficiency    | `(CPS + 0.5) × (1 + diffMult×0.1)` |
+| Combo Click   | `(20 + CPS×0.02) × diffMult`       |
+| Combo Produce | `CPS × 20 × diffMult`              |
+| Spending      | `nextBuilding × 0.3 × diffMult`    |
+
+### Difficulty Multipliers
+
+| Difficulty | Multiplier |
+| ---------- | ---------- |
+| Easy       | 1x         |
+| Medium     | 2x         |
+| Hard       | 3x         |
+| Special    | 5x         |
+
+---
+
+## Milestone Rewards
+
+Milestone quests use the same economic principles:
+
+### Building Milestones
+
+```javascript
+// Reward = percentage of cumulative spending at that tier
+spent = trackingData.spentAtTier[tier];
+reward = spent × tierRefundRate;
+
+tierRefundRates = [0.25, 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08, 0.06]
+```
+
+### Other Milestones
+
+```javascript
+// CPS-based with time multiplier
+minutes = 3 + (tierIndex × 2);  // 3, 5, 7, 9, 11...
+reward = CPS × 60 × minutes × 0.1;  // 10% of time value
+```
+
+---
+
+## Anti-Exploit Measures
+
+1. **Tiny Bonus Rates**: 5-15% means exploits have minimal impact
+2. **Two-Cap System**: Building AND CPS caps prevent runaway rewards
+3. **Conservative Cap Selection**: Always use the SMALLER cap
+4. **120-Second Median CPS**: Prevents spike exploitation
+5. **Stage-Based Minimums**: Can't farm stage 1 quests in late game
+
+---
+
+## Full Quest Type Reference
+
+### Active Quest Slots (5)
+
+| Slot | Difficulty | Cooldown | Quest Pool                                   |
+| ---- | ---------- | -------- | -------------------------------------------- |
+| 1    | Easy       | 10 min   | click, produce, buyAny                       |
+| 2    | Easy       | 12 min   | produce, click, efficiency                   |
+| 3    | Medium     | 25 min   | produce, buySpecific, click, combo           |
+| 4    | Hard       | 50 min   | timedProduce, buySpecific, produce, spending |
+| 5    | Special    | 90 min   | multiplier, timedProduce, combo, spending    |
+
+### Quest Types (9)
+
+| Type         | Description       | Reward Basis         |
+| ------------ | ----------------- | -------------------- |
+| click        | Click X times     | Click earnings bonus |
+| produce      | Produce X donuts  | Time spent bonus     |
+| buyAny       | Buy X buildings   | Spending cashback    |
+| buySpecific  | Buy X of type     | Spending cashback    |
+| timedProduce | Produce X in 60s  | Time bonus +20%      |
+| multiplier   | Earn CPS boost    | No donut reward      |
+| efficiency   | Reach X CPS       | CPS gain bonus       |
+| combo        | Click AND produce | Combined bonus       |
+| spending     | Spend X donuts    | Tiny cashback        |
 
 ---
 
 ## Multiplier System
 
-### Constraints
+### Nerfed Values
 
-- **Max multiplier:** 3x
-- **Max duration:** 90 seconds
-- **Queue capacity:** 1 (active + 1 queued)
+| Difficulty | Multiplier | Duration |
+| ---------- | ---------- | -------- |
+| Easy       | 1.15x      | 20 sec   |
+| Medium     | 1.25x      | 30 sec   |
+| Hard       | 1.50x      | 45 sec   |
+| Special    | 2.00x      | 60 sec   |
 
-### Queue-based System
+### Queue System
 
-```javascript
-multiplierState = {
-  active: { amount: 1.5, endTime: 1708123456789 },  // null if none
-  queued: { amount: 2.0, duration: 60000 }          // null if none
-};
-```
-
-**Rules:**
-- If no active: start immediately
-- If active but no queued: add to queue
-- If queue full: multiplier quests not offered
-
-### Multiplier Sources (Multiplicative)
-
-```javascript
-multiplierSources = {
-  prestige: 1,    // From prestige system
-  questBuff: 1,   // From quest rewards
-  farmBuff: 1,    // From farm events
-  eventBuff: 1    // From special events
-};
-
-getFinalProductionMultiplier() {
-  return prestige * questBuff * farmBuff * eventBuff;
-}
-```
-
-### Tick-based Update (No setTimeout)
-
-```javascript
-updateMultipliers() {
-  const now = Date.now();
-
-  if (this.multiplierState.active && now >= this.multiplierState.active.endTime) {
-    this.multiplierState.active = null;
-
-    if (this.multiplierState.queued) {
-      const queued = this.multiplierState.queued;
-      this.multiplierState.queued = null;
-      this.startMultiplier(queued.amount, queued.duration);
-    }
-  }
-
-  this.multiplierSources.questBuff = this.multiplierState.active?.amount || 1;
-}
-```
+- Max 1 active + 1 queued
+- When queue full, multiplier quests not offered
 
 ---
 
-## Tracking & Persistence
+## Milestone Categories
 
-### Run-based vs Lifetime
+### Building Milestones (11 buildings × 5-11 tiers each)
 
-```javascript
-questTracking = {
-  currentRun: {
-    spentAtTier: {},      // Reset on prestige
-    totalProduced: 0      // Reset on prestige
-  },
-  lifetime: {
-    totalClicks: 0,       // Never resets
-    totalPrestige: 0      // Never resets
-  }
-}
-```
+### Production Milestones (21 tiers: 100 → 1Q)
 
-### CPS Stabilization
+### Click Milestones (17 tiers: 10 → 5M)
 
-```javascript
-cpsHistory = [];  // Last 120 seconds of CPS readings
+### CPS Milestones (22 tiers: 1 → 100M)
 
-updateCPSHistory() {
-  this.cpsHistory.push({ cps: this.calculatePerSecond(), time: Date.now() });
-  this.cpsHistory = this.cpsHistory.filter(h => h.time > Date.now() - 120000);
-}
+### Total Buildings (16 tiers: 5 → 5K)
 
-getStableCPS() {
-  const sorted = [...this.cpsHistory].sort((a, b) => a.cps - b.cps);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted[mid]?.cps || this.calculatePerSecond();
-}
-```
+### Upgrades (11 tiers: 1 → 100)
+
+### Quest Completion Meta (8 tiers: 5 → 1K)
 
 ---
 
-## Architecture: Render/Logic Separation
+## Summary
 
-```javascript
-// Game loop
-gameLoop() {
-  // Phase 1: Logic/Update
-  this.updateMultipliers();
-  this.updateDynamicSlots();    // Quest generation here
-  this.updateCPSHistory();
-  this.checkMilestoneProgress();
+| Aspect             | v2.0          | v3.0                      |
+| ------------------ | ------------- | ------------------------- |
+| 10 clicks (early)  | ~3 donuts     | **1 donut**               |
+| 50 produce (early) | ~7 donuts     | **1 donut**               |
+| Bonus philosophy   | 15-40% return | **5-15% bonus**           |
+| Cap system         | Single cap    | **Dual conservative cap** |
+| Min rewards        | 3-100         | **1-50 (stage-based)**    |
+| Primary principle  | Effort return | **Bonus on earnings**     |
 
-  // Phase 2: Render (pure draw, no state changes)
-  this.renderUI();
-}
-```
-
-**Rule:** `renderDynamicSlot()` never calls `generateQuestForSlot()`.
-
----
-
-## Migration
-
-```javascript
-migrateQuestSystem(oldSave) {
-  const newState = {
-    milestones: this.initializeMilestones(),
-    dynamicSlots: this.initializeDynamicSlots(),
-    tracking: { currentRun: {}, lifetime: { totalClicks: oldSave.totalClicks } }
-  };
-
-  // Map old claimed quests to new milestones
-  for (const [id, quest] of Object.entries(oldSave.quests || {})) {
-    if (quest.claimed) {
-      const mapped = this.mapOldQuestToMilestone(id);
-      if (mapped) newState.milestones[mapped.category][mapped.id].claimed = true;
-    }
-  }
-
-  return newState;
-}
-```
-
----
-
-## UI
-
-### Slot Colors
-- **Easy:** Green border
-- **Medium:** Yellow border
-- **Hard:** Orange border
-- **Special:** Purple border + sparkle
-
-### Cooldown Display
-Shows remaining time when slot is on cooldown.
-
----
-
-## Summary of Fixes
-
-| Problem | Solution |
-|---------|----------|
-| Static rewards don't scale | CPS-based dynamic rewards |
-| Rewards too high/low | Tier-based % + meaningful caps |
-| 50x multiplier breaks game | Max 3x/90s, queue system |
-| Multiplier farming | Queue limit, no stacking |
-| CPS exploit | 120s rolling median |
-| setTimeout unreliable | endTime + tick-based check |
-| Buff overwrite | Multiplicative sources |
-| Render side effects | Logic/render separation |
-| Prestige confusion | Run-based vs lifetime tracking |
+**The quest system is now economically sound - rewarding but not game-breaking.**

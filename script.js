@@ -1342,44 +1342,70 @@
 
       // ========== YENİ QUEST SİSTEMİ ==========
 
-      // Milestone tiers for each building
+      // Milestone tiers for each building (expanded)
       this.milestoneTiers = {
-        cursor: [1, 10, 25, 50, 100, 200],
-        baker: [1, 10, 25, 50, 100],
-        farm: [1, 5, 15, 35, 50],
-        mine: [1, 3, 10, 15, 20],
-        factory: [1, 5, 15, 25, 40],
-        logisticCenter: [1, 3, 10, 15, 25],
-        powerPlant: [1, 3, 8, 15, 25],
-        nature: [1, 3, 8, 15, 20],
-        neuralNetworkBakery: [1, 3, 8, 12, 18],
-        portal: [1, 3, 6, 10, 15],
-        capitalCrest: [1, 3, 5, 8, 12],
+        cursor: [1, 10, 25, 50, 75, 100, 150, 200, 300, 400, 500],
+        baker: [1, 10, 25, 50, 75, 100, 150, 200, 300],
+        farm: [1, 5, 15, 35, 50, 75, 100, 150, 200],
+        mine: [1, 3, 10, 25, 50, 75, 100, 150],
+        factory: [1, 5, 15, 25, 50, 75, 100, 150],
+        logisticCenter: [1, 3, 10, 25, 50, 75, 100],
+        powerPlant: [1, 3, 10, 25, 50, 75, 100],
+        nature: [1, 3, 10, 25, 50, 75, 100],
+        neuralNetworkBakery: [1, 3, 10, 25, 50, 75],
+        portal: [1, 3, 10, 25, 50, 75],
+        capitalCrest: [1, 3, 10, 25, 50],
       };
 
-      // Production milestones
+      // Production milestones (expanded with early-game steps)
       this.productionMilestones = [
-        500, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000,
-        1000000000000, 1000000000000000,
+        100, 500, 1000, 5000, 10000, 50000, 100000, 500000,
+        1000000, 5000000, 10000000, 50000000, 100000000, 500000000,
+        1000000000, 10000000000, 100000000000, 1000000000000,
+        10000000000000, 100000000000000, 1000000000000000,
       ];
 
-      // Click milestones
+      // Click milestones (expanded)
       this.clickMilestones = [
-        50, 500, 2000, 5000, 10000, 25000, 50000, 100000, 1000000,
+        10, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000,
+        50000, 100000, 250000, 500000, 1000000, 2500000, 5000000,
       ];
 
-      // Refund rates by tier index
-      this.tierRefundRates = [0.25, 0.22, 0.18, 0.15, 0.12, 0.1];
+      // CPS milestones (new!)
+      this.cpsMilestones = [
+        1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500,
+        5000, 10000, 25000, 50000, 100000, 250000, 500000,
+        1000000, 5000000, 10000000, 50000000, 100000000,
+      ];
+
+      // Total buildings milestones (new!)
+      this.totalBuildingsMilestones = [
+        5, 10, 25, 50, 100, 150, 200, 300, 400, 500,
+        750, 1000, 1500, 2000, 3000, 5000,
+      ];
+
+      // Upgrade milestones (new!)
+      this.upgradeMilestones = [
+        1, 3, 5, 10, 15, 20, 30, 40, 50, 75, 100,
+      ];
+
+      // Quest completion milestones (meta-milestone, new!)
+      this.questCompletionMilestones = [
+        5, 10, 25, 50, 100, 200, 500, 1000,
+      ];
+
+      // Refund rates by tier index (extended for more tiers)
+      this.tierRefundRates = [0.25, 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08, 0.06];
 
       // Initialize milestone quests state
       this.milestoneQuests = this.initializeMilestoneQuests();
 
-      // Dynamic quest slots
+      // Dynamic quest slots (5 slots with varied difficulties)
       this.dynamicSlots = {
         slot1: {
           id: "slot1",
           difficulty: "easy",
-          cooldown: 15 * 60 * 1000, // 15 minutes
+          cooldown: 10 * 60 * 1000, // 10 minutes
           rewardMinutes: 5,
           questPool: ["click", "produce", "buyAny"],
           currentQuest: null,
@@ -1387,28 +1413,37 @@
         },
         slot2: {
           id: "slot2",
-          difficulty: "medium",
-          cooldown: 30 * 60 * 1000, // 30 minutes
-          rewardMinutes: 15,
-          questPool: ["produce", "buySpecific", "click"],
+          difficulty: "easy",
+          cooldown: 12 * 60 * 1000, // 12 minutes
+          rewardMinutes: 6,
+          questPool: ["produce", "click", "efficiency"],
           currentQuest: null,
           cooldownEnd: null,
         },
         slot3: {
           id: "slot3",
-          difficulty: "hard",
-          cooldown: 60 * 60 * 1000, // 1 hour
-          rewardMinutes: 45,
-          questPool: ["timedProduce", "buySpecific", "produce"],
+          difficulty: "medium",
+          cooldown: 25 * 60 * 1000, // 25 minutes
+          rewardMinutes: 15,
+          questPool: ["produce", "buySpecific", "click", "combo"],
           currentQuest: null,
           cooldownEnd: null,
         },
         slot4: {
           id: "slot4",
+          difficulty: "hard",
+          cooldown: 50 * 60 * 1000, // 50 minutes
+          rewardMinutes: 40,
+          questPool: ["timedProduce", "buySpecific", "produce", "spending"],
+          currentQuest: null,
+          cooldownEnd: null,
+        },
+        slot5: {
+          id: "slot5",
           difficulty: "special",
-          cooldown: 120 * 60 * 1000, // 2 hours
-          rewardMinutes: 90,
-          questPool: ["multiplier", "buySpecific", "timedProduce"],
+          cooldown: 90 * 60 * 1000, // 90 minutes
+          rewardMinutes: 75,
+          questPool: ["multiplier", "timedProduce", "combo", "spending"],
           currentQuest: null,
           cooldownEnd: null,
         },
@@ -1436,6 +1471,8 @@
         currentRun: {
           spentAtTier: {}, // { buildingType: { tier: cumulativeSpent } }
           totalProduced: 0,
+          totalSpent: 0,  // Total donuts spent on buildings
+          questsCompleted: 0, // Dynamic quests completed this run
         },
         lifetime: {
           totalClicks: 0,
@@ -6270,6 +6307,8 @@
         this.questTracking.currentRun = {
           spentAtTier: {},
           totalProduced: 0,
+          totalSpent: 0,
+          questsCompleted: 0,
         };
 
         // Update prestige multiplier source
@@ -6475,16 +6514,26 @@
       if (minutes > 0) timeString += `${minutes}m `;
       if (seconds > 0 || timeString === "") timeString += `${seconds}s`;
 
-      timeText.textContent = `You were away for ${timeString}`;
+      timeText.textContent = `You were away for ${timeString.trim()}`;
       earningsText.textContent = `+${this.formatNumber(earnings)} donuts`;
 
-      modal.style.display = "block";
+      modal.style.display = "flex";
 
       closeBtn.onclick = () => {
         modal.style.display = "none";
-        this.lastActiveTime = Date.now(); // Zamanı şimdiye sıfırla
-        this.saveGame(); // Yeni zamanı kaydet ki F5 yapınca tekrar çıkmasın
+        this.lastActiveTime = Date.now();
+        this.saveGame();
         this.updateDisplay();
+      };
+
+      // Click outside to close
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          this.lastActiveTime = Date.now();
+          this.saveGame();
+          this.updateDisplay();
+        }
       };
     }
 
@@ -7089,6 +7138,50 @@
                 }
               }
             }
+
+            // CPS milestones (new)
+            if (qs.milestoneQuests.cps && this.milestoneQuests.cps) {
+              for (const [target, quest] of Object.entries(qs.milestoneQuests.cps)) {
+                if (this.milestoneQuests.cps[target]) {
+                  this.milestoneQuests.cps[target].progress = quest.progress || 0;
+                  this.milestoneQuests.cps[target].completed = quest.completed || false;
+                  this.milestoneQuests.cps[target].claimed = quest.claimed || false;
+                }
+              }
+            }
+
+            // Total buildings milestones (new)
+            if (qs.milestoneQuests.totalBuildings && this.milestoneQuests.totalBuildings) {
+              for (const [target, quest] of Object.entries(qs.milestoneQuests.totalBuildings)) {
+                if (this.milestoneQuests.totalBuildings[target]) {
+                  this.milestoneQuests.totalBuildings[target].progress = quest.progress || 0;
+                  this.milestoneQuests.totalBuildings[target].completed = quest.completed || false;
+                  this.milestoneQuests.totalBuildings[target].claimed = quest.claimed || false;
+                }
+              }
+            }
+
+            // Upgrade milestones (new)
+            if (qs.milestoneQuests.upgrades && this.milestoneQuests.upgrades) {
+              for (const [target, quest] of Object.entries(qs.milestoneQuests.upgrades)) {
+                if (this.milestoneQuests.upgrades[target]) {
+                  this.milestoneQuests.upgrades[target].progress = quest.progress || 0;
+                  this.milestoneQuests.upgrades[target].completed = quest.completed || false;
+                  this.milestoneQuests.upgrades[target].claimed = quest.claimed || false;
+                }
+              }
+            }
+
+            // Quest completion milestones (new)
+            if (qs.milestoneQuests.questsCompleted && this.milestoneQuests.questsCompleted) {
+              for (const [target, quest] of Object.entries(qs.milestoneQuests.questsCompleted)) {
+                if (this.milestoneQuests.questsCompleted[target]) {
+                  this.milestoneQuests.questsCompleted[target].progress = quest.progress || 0;
+                  this.milestoneQuests.questsCompleted[target].completed = quest.completed || false;
+                  this.milestoneQuests.questsCompleted[target].claimed = quest.claimed || false;
+                }
+              }
+            }
           }
 
           // Load dynamic slots
@@ -7529,6 +7622,10 @@
         building: {},
         production: {},
         clicks: {},
+        cps: {},
+        totalBuildings: {},
+        upgrades: {},
+        questsCompleted: {},
       };
 
       // Building milestones
@@ -7567,6 +7664,58 @@
         quests.clicks[target] = {
           id: `clicks_${target}`,
           type: "clicks",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      // CPS milestones (new)
+      this.cpsMilestones.forEach((target, index) => {
+        quests.cps[target] = {
+          id: `cps_${target}`,
+          type: "cps",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      // Total buildings milestones (new)
+      this.totalBuildingsMilestones.forEach((target, index) => {
+        quests.totalBuildings[target] = {
+          id: `totalBuildings_${target}`,
+          type: "totalBuildings",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      // Upgrade milestones (new)
+      this.upgradeMilestones.forEach((target, index) => {
+        quests.upgrades[target] = {
+          id: `upgrades_${target}`,
+          type: "upgrades",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      // Quest completion milestones (meta-milestone, new)
+      this.questCompletionMilestones.forEach((target, index) => {
+        quests.questsCompleted[target] = {
+          id: `questsCompleted_${target}`,
+          type: "questsCompleted",
           target: target,
           tierIndex: index,
           progress: 0,
@@ -7631,58 +7780,206 @@
       return maxCost || 1000; // Minimum fallback
     }
 
-    // Calculate dynamic quest reward (CPS-based with difficulty scaling)
-    calculateDynamicReward(slot, questType = "produce") {
+    // ============================================================
+    // QUEST REWARD SYSTEM v3.0 - PERFECT EFFORT-BASED ECONOMICS
+    // ============================================================
+    //
+    // CORE PHILOSOPHY:
+    // Quests are BONUSES on top of natural earnings, NOT primary income.
+    // You should never earn more from a quest than you would just playing.
+    //
+    // GAME ECONOMICS BASELINE:
+    // - Cursor: 15 donuts, 0.1/s production (ROI: 150 sec)
+    // - Baker: 115 donuts, 1/s production (ROI: 115 sec)
+    // - Click value: 1 donut base
+    //
+    // REWARD PRINCIPLE:
+    // Reward = (Effort Value) × (Small Bonus Rate)
+    // Where bonus rate is 5-15% depending on difficulty
+    //
+    // ============================================================
+
+    calculateDynamicReward(slot, questType = "produce", questData = null) {
       const cps = this.getStableCPS();
-      const minutes = slot.rewardMinutes;
+      const stage = this.getGameStage();
+      const difficulty = slot.difficulty;
 
-      // Difficulty multipliers for reward scaling
-      const difficultyRewardMultipliers = {
-        easy: 1,
-        medium: 1.8,
-        hard: 3.2,
-        special: 5.5,
+      // Bonus rates - these are INTENTIONALLY SMALL
+      // Quests should feel rewarding but not game-breaking
+      const bonusRates = {
+        easy: 0.05,      // 5% bonus on effort
+        medium: 0.08,    // 8% bonus
+        hard: 0.12,      // 12% bonus
+        special: 0.15,   // 15% bonus
       };
-      const diffMult = difficultyRewardMultipliers[slot.difficulty] || 1;
+      const bonusRate = bonusRates[difficulty] || 0.05;
 
-      // Quest type multipliers (harder quest types give better rewards)
-      const questTypeMultipliers = {
-        click: 0.8, // Easy - just clicking
-        produce: 1.0, // Standard
-        buyAny: 1.2, // Requires resources
-        buySpecific: 1.5, // More restrictive
-        timedProduce: 1.8, // Time pressure
-        multiplier: 0, // Multiplier quests don't give donut rewards
-      };
-      const typeMult = questTypeMultipliers[questType] || 1.0;
+      let reward = 0;
 
-      // Base reward from CPS
-      let reward = cps * 60 * minutes * diffMult * typeMult;
+      switch (questType) {
+        case "click": {
+          // 10 clicks = 10 donuts earned naturally (click value = 1)
+          // Reward = small bonus on top of that
+          const clicks = questData?.target || 10;
+          const naturalEarnings = clicks * this.getClickValue();
+          reward = naturalEarnings * bonusRate;
+          break;
+        }
 
-      // Minimum floor for early game (scaled by difficulty)
-      const baseMinReward = this.getMinRewardForStage();
-      const minReward = baseMinReward * diffMult * typeMult;
+        case "produce": {
+          // Producing X donuts = you already HAVE X donuts
+          // Reward = bonus based on TIME spent, not production amount
+          const target = questData?.target || 100;
+          const timeSpent = cps > 0 ? target / cps : 60; // seconds of effort
+          // Bonus = a few extra seconds worth of production
+          reward = cps * timeSpent * bonusRate;
+          break;
+        }
+
+        case "buyAny":
+        case "buySpecific": {
+          // Buying = you SPENT donuts, you have buildings
+          // Reward = tiny cashback (not refund!)
+          const count = questData?.target || 1;
+          const estCost = this.estimateBuyQuestCost(count, questType);
+          // Cashback = 3-8% of spending
+          reward = estCost * bonusRate * 0.5;
+          break;
+        }
+
+        case "timedProduce": {
+          // Time pressure deserves slightly better bonus
+          const target = questData?.target || 100;
+          const timeSpent = cps > 0 ? target / cps : 45;
+          reward = cps * timeSpent * bonusRate * 1.2;
+          break;
+        }
+
+        case "efficiency": {
+          // Reaching higher CPS = strategic effort
+          const targetCPS = questData?.target || cps * 1.1;
+          const cpsGain = Math.max(0, targetCPS - cps);
+          // Reward = 20 seconds of the CPS gain
+          reward = cpsGain * 20 * bonusRate * 2;
+          break;
+        }
+
+        case "combo": {
+          // Combined effort of both tasks
+          const clickBonus = (questData?.clickTarget || 20) * this.getClickValue() * bonusRate;
+          const produceTime = cps > 0 ? (questData?.produceTarget || 50) / cps : 30;
+          const produceBonus = cps * produceTime * bonusRate;
+          reward = clickBonus + produceBonus;
+          break;
+        }
+
+        case "spending": {
+          // You spent donuts, tiny cashback
+          const spent = questData?.target || 100;
+          reward = spent * bonusRate * 0.3;
+          break;
+        }
+
+        case "multiplier":
+          return 0; // Multiplier IS the reward
+
+        default:
+          reward = cps * 10 * bonusRate;
+      }
+
+      // Apply stage-appropriate minimum (prevents 0 rewards, stays tiny)
+      const minReward = this.getStageMinimum(stage);
       reward = Math.max(reward, minReward);
 
-      // Cap system - but don't cap below minReward
-      const nextPurchaseCap =
-        this.getNextMeaningfulPurchaseCost() * 0.25 * diffMult;
-      const timeCap = Math.max(cps * 60 * 120 * diffMult, minReward); // Never cap below minReward
-      const cap = Math.max(Math.min(nextPurchaseCap, timeCap), minReward);
+      // Apply economic cap (NEVER break progression)
+      const maxReward = this.getEconomicCap(stage, difficulty);
+      reward = Math.min(reward, maxReward);
 
-      return Math.floor(Math.min(reward, cap));
+      return Math.floor(reward);
     }
 
-    // Get minimum reward based on game stage
-    getMinRewardForStage() {
-      const totalBuildings = Object.values(this.items).reduce(
-        (sum, item) => sum + item.count,
-        0,
-      );
-      if (totalBuildings < 5) return 50;
-      if (totalBuildings < 20) return 500;
-      if (totalBuildings < 50) return 5000;
-      return 50000;
+    // Get current game stage for scaling
+    getGameStage() {
+      const buildings = Object.values(this.items).reduce((s, i) => s + i.count, 0);
+      const cps = this.calculatePerSecond();
+
+      if (buildings < 3 || cps < 0.5) return 1;
+      if (buildings < 8 || cps < 3) return 2;
+      if (buildings < 15 || cps < 15) return 3;
+      if (buildings < 30 || cps < 100) return 4;
+      if (buildings < 60 || cps < 1000) return 5;
+      if (buildings < 120 || cps < 10000) return 6;
+      if (buildings < 250 || cps < 100000) return 7;
+      return 8;
+    }
+
+    // Minimum rewards - INTENTIONALLY TINY
+    // Just prevents 0, doesn't give free stuff
+    getStageMinimum(stage) {
+      const mins = { 1: 1, 2: 1, 3: 2, 4: 3, 5: 5, 6: 10, 7: 20, 8: 50 };
+      return mins[stage] || 1;
+    }
+
+    // Economic cap - prevents breaking game progression
+    // Cap = X% of next building cost OR Y seconds of CPS, whichever is SMALLER
+    getEconomicCap(stage, difficulty) {
+      const cps = this.calculatePerSecond();
+      const nextBuilding = this.getNextMeaningfulPurchaseCost();
+
+      // Cap as percentage of next building
+      const buildingPercent = {
+        easy: 0.02,      // 2% of next building max
+        medium: 0.04,    // 4%
+        hard: 0.06,      // 6%
+        special: 0.10,   // 10%
+      };
+
+      // Cap as seconds of CPS
+      const cpsSeconds = {
+        easy: 15,        // 15 seconds of CPS max
+        medium: 30,      // 30 seconds
+        hard: 60,        // 60 seconds
+        special: 90,     // 90 seconds
+      };
+
+      const buildingCap = nextBuilding * (buildingPercent[difficulty] || 0.02);
+      const cpsCap = cps * (cpsSeconds[difficulty] || 15);
+
+      // Use SMALLER cap (conservative approach)
+      const cap = Math.min(buildingCap, cpsCap);
+
+      // Never below stage minimum
+      return Math.max(cap, this.getStageMinimum(stage));
+    }
+
+    // Click value (base 1 + tiny CPS bonus)
+    getClickValue() {
+      return 1 + (this.calculatePerSecond() * 0.005);
+    }
+
+    // Estimate buy quest cost
+    estimateBuyQuestCost(count, questType) {
+      if (questType === "buySpecific") {
+        const cheapest = this.getCheapestBuilding();
+        return cheapest.baseCost * count;
+      }
+      return this.getAverageBuildingCost() * count;
+    }
+
+    // Get cheapest building
+    getCheapestBuilding() {
+      const buildings = Object.values(this.items);
+      const affordable = buildings.filter(b => this.donutCount >= b.baseCost * 0.2);
+      if (affordable.length === 0) return this.items.cursor;
+      return affordable.reduce((min, b) => b.baseCost < min.baseCost ? b : min);
+    }
+
+    // Average building cost
+    getAverageBuildingCost() {
+      const costs = Object.values(this.items)
+        .filter(item => item.count > 0 || this.donutCount >= item.baseCost * 0.2)
+        .map(item => item.baseCost);
+      return costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 15;
     }
 
     // Stabilized CPS (120s rolling median)
@@ -7817,37 +8114,37 @@
 
       switch (type) {
         case "click":
-          const clickTarget = Math.ceil((50 + cps * 0.1) * mult);
+          const clickTarget = Math.ceil((30 + cps * 0.05) * mult);
           quest.target = Math.max(10, clickTarget);
           quest.title = `Click ${this.formatNumber(quest.target)} times`;
           quest.description = `Click the donut ${this.formatNumber(quest.target)} times`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "click"),
+            amount: this.calculateDynamicReward(slot, "click", { target: quest.target }),
           };
           quest.startClicks = this.totalClicks;
           break;
 
         case "produce":
-          const produceTarget = Math.ceil(cps * 60 * mult * 2);
-          quest.target = Math.max(100, produceTarget);
+          const produceTarget = Math.ceil(cps * 60 * mult);
+          quest.target = Math.max(50, produceTarget);
           quest.title = `Produce ${this.formatNumber(quest.target)} donuts`;
           quest.description = `Produce ${this.formatNumber(quest.target)} donuts`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "produce"),
+            amount: this.calculateDynamicReward(slot, "produce", { target: quest.target }),
           };
           quest.startProduction = this.totalDonutsEarned;
           break;
 
         case "buyAny":
-          const buyTarget = Math.ceil(3 * mult);
+          const buyTarget = Math.ceil(2 * mult);
           quest.target = Math.max(1, buyTarget);
-          quest.title = `Buy ${quest.target} buildings`;
-          quest.description = `Purchase any ${quest.target} buildings`;
+          quest.title = `Buy ${quest.target} building${quest.target > 1 ? 's' : ''}`;
+          quest.description = `Purchase any ${quest.target} building${quest.target > 1 ? 's' : ''}`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "buyAny"),
+            amount: this.calculateDynamicReward(slot, "buyAny", { target: quest.target }),
           };
           quest.startBuildings = Object.values(this.items).reduce(
             (s, i) => s + i.count,
@@ -7864,27 +8161,27 @@
           const targetBuilding =
             buildingKeys[Math.floor(Math.random() * buildingKeys.length)] ||
             "cursor";
-          const buySpecificTarget = Math.ceil(2 * mult);
+          const buySpecificTarget = Math.ceil(1.5 * mult);
           quest.target = Math.max(1, buySpecificTarget);
           quest.buildingType = targetBuilding;
-          quest.title = `Buy ${quest.target} ${this.items[targetBuilding].name}(s)`;
-          quest.description = `Purchase ${quest.target} ${this.items[targetBuilding].name}(s)`;
+          quest.title = `Buy ${quest.target} ${this.items[targetBuilding].name}${quest.target > 1 ? 's' : ''}`;
+          quest.description = `Purchase ${quest.target} ${this.items[targetBuilding].name}${quest.target > 1 ? 's' : ''}`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "buySpecific"),
+            amount: this.calculateDynamicReward(slot, "buySpecific", { target: quest.target }),
           };
           quest.startCount = this.items[targetBuilding].count;
           break;
 
         case "timedProduce":
-          const timedTarget = Math.ceil(cps * 50);
-          quest.target = Math.max(100, timedTarget);
+          const timedTarget = Math.ceil(cps * 45);
+          quest.target = Math.max(50, timedTarget);
           quest.timeLimit = 60000; // 60 seconds
-          quest.title = `Quick production challenge`;
+          quest.title = `Quick Production`;
           quest.description = `Produce ${this.formatNumber(quest.target)} donuts in 60 seconds`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "timedProduce"),
+            amount: this.calculateDynamicReward(slot, "timedProduce", { target: quest.target }),
           };
           quest.startProduction = this.totalDonutsEarned;
           quest.timedStartTime = Date.now();
@@ -7892,26 +8189,71 @@
 
         case "multiplier":
           const multiplierAmounts = {
-            easy: 1.25,
-            medium: 1.5,
-            hard: 2.0,
-            special: 3.0,
+            easy: 1.15,
+            medium: 1.25,
+            hard: 1.5,
+            special: 2.0,
           };
           const multiplierDurations = {
-            easy: 30000,
-            medium: 45000,
-            hard: 60000,
-            special: 90000,
+            easy: 20000,
+            medium: 30000,
+            hard: 45000,
+            special: 60000,
           };
-          quest.target = Math.ceil(cps * 60 * mult * 3);
+          quest.target = Math.ceil(cps * 45 * mult);
+          quest.target = Math.max(50, quest.target);
           quest.title = `Multiplier Challenge`;
-          quest.description = `Produce ${this.formatNumber(quest.target)} donuts for a ${multiplierAmounts[difficulty]}x boost`;
+          quest.description = `Produce ${this.formatNumber(quest.target)} donuts for ${multiplierAmounts[difficulty]}x boost`;
           quest.reward = {
             type: "multiplier",
             amount: multiplierAmounts[difficulty],
             duration: multiplierDurations[difficulty],
           };
           quest.startProduction = this.totalDonutsEarned;
+          break;
+
+        case "efficiency":
+          const efficiencyTarget = Math.ceil((cps + 0.5) * (1 + mult * 0.1));
+          quest.target = Math.max(cps + 0.1, efficiencyTarget);
+          quest.title = `Efficiency Challenge`;
+          quest.description = `Reach ${this.formatNumber(quest.target)} donuts/sec`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "efficiency", { target: quest.target }),
+          };
+          quest.startCPS = cps;
+          break;
+
+        case "combo":
+          const comboClickTarget = Math.ceil((20 + cps * 0.02) * mult);
+          const comboProduceTarget = Math.ceil(cps * 20 * mult);
+          quest.clickTarget = Math.max(5, comboClickTarget);
+          quest.produceTarget = Math.max(25, comboProduceTarget);
+          quest.target = 100; // Percentage
+          quest.title = `Combo Challenge`;
+          quest.description = `Click ${this.formatNumber(quest.clickTarget)}x AND produce ${this.formatNumber(quest.produceTarget)} donuts`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "combo", {
+              clickTarget: quest.clickTarget,
+              produceTarget: quest.produceTarget
+            }),
+          };
+          quest.startClicks = this.totalClicks;
+          quest.startProduction = this.totalDonutsEarned;
+          break;
+
+        case "spending":
+          // Spend donuts on buildings - gives small rebate
+          const spendingTarget = Math.ceil(this.getNextMeaningfulPurchaseCost() * mult * 0.3);
+          quest.target = Math.max(50, spendingTarget);
+          quest.title = `Spending Spree`;
+          quest.description = `Spend ${this.formatNumber(quest.target)} donuts on buildings`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "spending", { target: quest.target }),
+          };
+          quest.startSpent = this.questTracking?.currentRun?.totalSpent || 0;
           break;
       }
 
@@ -7978,6 +8320,24 @@
             newProgress =
               this.items[quest.buildingType].count - (quest.startCount || 0);
             break;
+          case "efficiency":
+            // Track CPS progress
+            newProgress = this.calculatePerSecond();
+            break;
+          case "combo":
+            // Track both click and production progress
+            const clickProgress = this.totalClicks - (quest.startClicks || 0);
+            const produceProgress = this.totalDonutsEarned - (quest.startProduction || 0);
+            const clickPercent = Math.min((clickProgress / quest.clickTarget) * 100, 100);
+            const producePercent = Math.min((produceProgress / quest.produceTarget) * 100, 100);
+            // Both must be completed - show lower progress
+            newProgress = Math.min(clickPercent, producePercent);
+            break;
+          case "spending":
+            // Track spending progress
+            const currentSpent = this.questTracking?.currentRun?.totalSpent || 0;
+            newProgress = currentSpent - (quest.startSpent || 0);
+            break;
         }
 
         quest.progress = Math.max(0, newProgress);
@@ -7985,6 +8345,11 @@
         if (quest.progress >= quest.target && !quest.completed) {
           quest.completed = true;
           this.showNotification(`Quest completed: ${quest.title}!`);
+          // Track quest completion for meta-milestones
+          if (!this.questTracking.currentRun.questsCompleted) {
+            this.questTracking.currentRun.questsCompleted = 0;
+          }
+          this.questTracking.currentRun.questsCompleted++;
         }
       }
     }
@@ -8022,7 +8387,7 @@
       }
 
       // Click milestones
-      for (const [target, quest] of Object.entries(
+      for (const [, quest] of Object.entries(
         this.milestoneQuests.clicks,
       )) {
         if (quest.claimed) continue;
@@ -8034,6 +8399,125 @@
           );
         }
       }
+
+      // CPS milestones (new)
+      if (this.milestoneQuests.cps) {
+        const currentCPS = this.calculatePerSecond();
+        for (const [, quest] of Object.entries(this.milestoneQuests.cps)) {
+          if (quest.claimed) continue;
+          quest.progress = currentCPS;
+          if (quest.progress >= quest.target && !quest.completed) {
+            quest.completed = true;
+            this.showNotification(
+              `Milestone: ${this.formatNumber(quest.target)} donuts/sec!`,
+            );
+          }
+        }
+      }
+
+      // Total buildings milestones (new)
+      if (this.milestoneQuests.totalBuildings) {
+        const totalBuildings = Object.values(this.items).reduce((sum, item) => sum + item.count, 0);
+        for (const [, quest] of Object.entries(this.milestoneQuests.totalBuildings)) {
+          if (quest.claimed) continue;
+          quest.progress = totalBuildings;
+          if (quest.progress >= quest.target && !quest.completed) {
+            quest.completed = true;
+            this.showNotification(
+              `Milestone: Own ${this.formatNumber(quest.target)} total buildings!`,
+            );
+          }
+        }
+      }
+
+      // Upgrade milestones (new)
+      if (this.milestoneQuests.upgrades) {
+        const totalUpgrades = this.getTotalPurchasedUpgrades();
+        for (const [, quest] of Object.entries(this.milestoneQuests.upgrades)) {
+          if (quest.claimed) continue;
+          quest.progress = totalUpgrades;
+          if (quest.progress >= quest.target && !quest.completed) {
+            quest.completed = true;
+            this.showNotification(
+              `Milestone: Purchase ${quest.target} upgrades!`,
+            );
+          }
+        }
+      }
+
+      // Quest completion milestones (meta-milestone, new)
+      if (this.milestoneQuests.questsCompleted) {
+        const totalCompleted = this.getTotalCompletedQuests();
+        for (const [, quest] of Object.entries(this.milestoneQuests.questsCompleted)) {
+          if (quest.claimed) continue;
+          quest.progress = totalCompleted;
+          if (quest.progress >= quest.target && !quest.completed) {
+            quest.completed = true;
+            this.showNotification(
+              `Meta-Milestone: Complete ${quest.target} quests!`,
+            );
+          }
+        }
+      }
+    }
+
+    // Helper: Count total purchased upgrades
+    getTotalPurchasedUpgrades() {
+      let total = 0;
+      for (const key of Object.keys(this.upgrades)) {
+        if (Array.isArray(this.upgrades[key])) {
+          total += this.upgrades[key].filter(u => u.purchased).length;
+        }
+      }
+      return total;
+    }
+
+    // Helper: Count total completed (claimed) quests
+    getTotalCompletedQuests() {
+      let total = 0;
+
+      // Building quests
+      for (const tiers of Object.values(this.milestoneQuests.building)) {
+        for (const quest of Object.values(tiers)) {
+          if (quest.claimed) total++;
+        }
+      }
+
+      // Production quests
+      for (const quest of Object.values(this.milestoneQuests.production)) {
+        if (quest.claimed) total++;
+      }
+
+      // Click quests
+      for (const quest of Object.values(this.milestoneQuests.clicks)) {
+        if (quest.claimed) total++;
+      }
+
+      // CPS quests
+      if (this.milestoneQuests.cps) {
+        for (const quest of Object.values(this.milestoneQuests.cps)) {
+          if (quest.claimed) total++;
+        }
+      }
+
+      // Total buildings quests
+      if (this.milestoneQuests.totalBuildings) {
+        for (const quest of Object.values(this.milestoneQuests.totalBuildings)) {
+          if (quest.claimed) total++;
+        }
+      }
+
+      // Upgrade quests
+      if (this.milestoneQuests.upgrades) {
+        for (const quest of Object.values(this.milestoneQuests.upgrades)) {
+          if (quest.claimed) total++;
+        }
+      }
+
+      // Dynamic quest tracking
+      total += this.questTracking?.currentRun?.questsCompleted || 0;
+
+      return total;
     }
 
     // Claim milestone quest reward
@@ -8045,23 +8529,57 @@
         quest = this.milestoneQuests.production[questKey];
       } else if (questType === "clicks") {
         quest = this.milestoneQuests.clicks[questKey];
+      } else if (questType === "cps") {
+        quest = this.milestoneQuests.cps?.[questKey];
+      } else if (questType === "totalBuildings") {
+        quest = this.milestoneQuests.totalBuildings?.[questKey];
+      } else if (questType === "upgrades") {
+        quest = this.milestoneQuests.upgrades?.[questKey];
+      } else if (questType === "questsCompleted") {
+        quest = this.milestoneQuests.questsCompleted?.[questKey];
       }
 
       if (!quest || !quest.completed || quest.claimed) return;
 
-      // Calculate reward
+      // Calculate reward based on milestone type
       let reward;
+      const tierIndex = quest.tierIndex || 0;
+
       if (questType === "building") {
         reward = this.calculateBuildingQuestReward(questKey, parseInt(tierKey));
+      } else if (questType === "cps") {
+        // CPS milestones: reward scales with the CPS target achieved
+        const minutes = 3 + tierIndex * 5; // 3, 8, 13, 18...
+        reward = quest.target * 60 * minutes;
+        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.5));
+      } else if (questType === "totalBuildings") {
+        // Total buildings: reward based on total building count
+        const minutes = 5 + tierIndex * 8;
+        reward = this.getStableCPS() * 60 * minutes;
+        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.3));
+      } else if (questType === "upgrades") {
+        // Upgrades: generous rewards to encourage upgrade purchases
+        const minutes = 10 + tierIndex * 15;
+        reward = this.getStableCPS() * 60 * minutes;
+        reward = Math.max(reward, this.getMinRewardForStage() * (2 + tierIndex));
+      } else if (questType === "questsCompleted") {
+        // Meta-milestones: big rewards for quest hunters
+        const minutes = 15 + tierIndex * 20;
+        reward = this.getStableCPS() * 60 * minutes;
+        reward = Math.max(reward, this.getMinRewardForStage() * (3 + tierIndex * 2));
       } else {
         // Production/clicks: CPS-based reward
-        const tierIndex = quest.tierIndex || 0;
-        const minutes = 5 + tierIndex * 10; // 5, 15, 25, 35...
+        const minutes = 5 + tierIndex * 8;
         reward = this.getStableCPS() * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage());
-        const cap = this.getNextMeaningfulPurchaseCost() * 0.25;
-        reward = Math.min(reward, cap);
+        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.2));
       }
+
+      // Apply cap to prevent runaway rewards
+      const cap = this.getNextMeaningfulPurchaseCost() * (0.25 + tierIndex * 0.05);
+      reward = Math.min(Math.floor(reward), cap);
+
+      // Ensure minimum reward
+      reward = Math.max(reward, this.getMinRewardForStage());
 
       this.donutCount += reward;
       quest.claimed = true;
@@ -8111,6 +8629,10 @@
 
       const tracking = this.questTracking.currentRun.spentAtTier[buildingType];
       tracking.cumulative = (tracking.cumulative || 0) + cost;
+
+      // Track total spent for spending quests
+      this.questTracking.currentRun.totalSpent =
+        (this.questTracking.currentRun.totalSpent || 0) + cost;
 
       // Snapshot at tier
       const newCount = this.items[buildingType].count + 1;
@@ -8287,6 +8809,27 @@
       for (const quest of Object.values(this.milestoneQuests.clicks)) {
         if (quest.completed && !quest.claimed) milestoneReady++;
       }
+      // New milestone types
+      if (this.milestoneQuests.cps) {
+        for (const quest of Object.values(this.milestoneQuests.cps)) {
+          if (quest.completed && !quest.claimed) milestoneReady++;
+        }
+      }
+      if (this.milestoneQuests.totalBuildings) {
+        for (const quest of Object.values(this.milestoneQuests.totalBuildings)) {
+          if (quest.completed && !quest.claimed) milestoneReady++;
+        }
+      }
+      if (this.milestoneQuests.upgrades) {
+        for (const quest of Object.values(this.milestoneQuests.upgrades)) {
+          if (quest.completed && !quest.claimed) milestoneReady++;
+        }
+      }
+      if (this.milestoneQuests.questsCompleted) {
+        for (const quest of Object.values(this.milestoneQuests.questsCompleted)) {
+          if (quest.completed && !quest.claimed) milestoneReady++;
+        }
+      }
 
       activeCount.textContent = `${active} Active`;
       completedCount.textContent = `${readyToClaim + milestoneReady} Ready`;
@@ -8386,6 +8929,46 @@
         break;
       }
 
+      // CPS milestones (next unclaimed)
+      if (this.milestoneQuests.cps) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.cps)) {
+          if (quest.claimed) continue;
+          const element = this.createMilestoneElement(quest, "cps", target);
+          milestoneSection.appendChild(element);
+          break;
+        }
+      }
+
+      // Total buildings milestones (next unclaimed)
+      if (this.milestoneQuests.totalBuildings) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.totalBuildings)) {
+          if (quest.claimed) continue;
+          const element = this.createMilestoneElement(quest, "totalBuildings", target);
+          milestoneSection.appendChild(element);
+          break;
+        }
+      }
+
+      // Upgrade milestones (next unclaimed)
+      if (this.milestoneQuests.upgrades) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.upgrades)) {
+          if (quest.claimed) continue;
+          const element = this.createMilestoneElement(quest, "upgrades", target);
+          milestoneSection.appendChild(element);
+          break;
+        }
+      }
+
+      // Quest completion milestones (next unclaimed)
+      if (this.milestoneQuests.questsCompleted) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.questsCompleted)) {
+          if (quest.claimed) continue;
+          const element = this.createMilestoneElement(quest, "questsCompleted", target);
+          milestoneSection.appendChild(element);
+          break;
+        }
+      }
+
       fragment.appendChild(milestoneSection);
       container.appendChild(fragment);
     }
@@ -8425,6 +9008,42 @@
       )) {
         if (quest.claimed) {
           claimedQuests.push({ ...quest, category: "clicks", target });
+        }
+      }
+
+      // CPS milestones
+      if (this.milestoneQuests.cps) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.cps)) {
+          if (quest.claimed) {
+            claimedQuests.push({ ...quest, category: "cps", target });
+          }
+        }
+      }
+
+      // Total buildings milestones
+      if (this.milestoneQuests.totalBuildings) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.totalBuildings)) {
+          if (quest.claimed) {
+            claimedQuests.push({ ...quest, category: "totalBuildings", target });
+          }
+        }
+      }
+
+      // Upgrade milestones
+      if (this.milestoneQuests.upgrades) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.upgrades)) {
+          if (quest.claimed) {
+            claimedQuests.push({ ...quest, category: "upgrades", target });
+          }
+        }
+      }
+
+      // Quest completion milestones
+      if (this.milestoneQuests.questsCompleted) {
+        for (const [target, quest] of Object.entries(this.milestoneQuests.questsCompleted)) {
+          if (quest.claimed) {
+            claimedQuests.push({ ...quest, category: "questsCompleted", target });
+          }
         }
       }
 
@@ -8577,6 +9196,14 @@
         return `Produce ${this.formatNumber(quest.target)} donuts`;
       } else if (quest.category === "clicks") {
         return `Click ${this.formatNumber(quest.target)} times`;
+      } else if (quest.category === "cps") {
+        return `Reach ${this.formatNumber(quest.target)} donuts/sec`;
+      } else if (quest.category === "totalBuildings") {
+        return `Own ${this.formatNumber(quest.target)} total buildings`;
+      } else if (quest.category === "upgrades") {
+        return `Purchase ${quest.target} upgrades`;
+      } else if (quest.category === "questsCompleted") {
+        return `Complete ${quest.target} quests`;
       }
       return "Unknown Quest";
     }
