@@ -1,7 +1,7 @@
 (function () {
   class Game {
     constructor() {
-      this.currentVersion = "1.5.0";
+      this.currentVersion = "1.5.1";
       this.bakeryNames = [
         "Snowfall Crust",
         "Frosted Pines",
@@ -1339,773 +1339,111 @@
         currentPage: 1,
         totalPages: 1,
       };
-      // Quest sistemi için yeni özellikler
-      this.quests = {
-        beginnerClicker: {
-          id: "beginnerClicker",
-          title: "Beginner Clicker",
-          description: "Click 50 times",
-          target: 50,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "donuts",
-            amount: 250,
-          },
-        },
-        firstProduction: {
-          id: "firstProduction",
-          title: "First Steps",
-          description: "Produce 500 donuts",
-          target: 500,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "multiplier",
-            amount: 1.25,
-            duration: 20000,
-          },
-        },
 
-        cursorNovice: {
-          id: "cursorNovice",
-          title: "Cursor Novice",
-          description: "Own 5 Cursors",
-          target: 5,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "cursor",
-          reward: {
-            type: "donuts",
-            amount: 35, // calculateBuildingReward(15, 1.155, 5)
-          },
-        },
-        cursorAdept: {
-          id: "cursorAdept",
-          title: "Cursor Adept",
-          description: "Own 25 Cursors",
-          target: 25,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "cursor",
-          reward: {
-            type: "multiplier",
-            amount: 1.3,
-            duration: 30000,
-          },
-        },
+      // ========== YENİ QUEST SİSTEMİ ==========
 
-        bakerApprentice: {
-          id: "bakerApprentice",
-          title: "Baker Apprentice",
-          description: "Own 3 Bakers",
-          target: 3,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "baker",
-          reward: {
-            type: "donuts",
-            amount: 75,
-          },
-        },
-        bakerJourneyman: {
-          id: "bakerJourneyman",
-          title: "Baker Journeyman",
-          description: "Own 10 Bakers",
-          target: 10,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "baker",
-          reward: {
-            type: "multiplier",
-            amount: 1.3,
-            duration: 30000,
-          },
-        },
+      // Milestone tiers for each building
+      this.milestoneTiers = {
+        cursor: [1, 10, 25, 50, 100, 200],
+        baker: [1, 10, 25, 50, 100],
+        farm: [1, 5, 15, 35, 50],
+        mine: [1, 3, 10, 15, 20],
+        factory: [1, 5, 15, 25, 40],
+        logisticCenter: [1, 3, 10, 15, 25],
+        powerPlant: [1, 3, 8, 15, 25],
+        nature: [1, 3, 8, 15, 20],
+        neuralNetworkBakery: [1, 3, 8, 12, 18],
+        portal: [1, 3, 6, 10, 15],
+        capitalCrest: [1, 3, 5, 8, 12],
+      };
 
-        farmStarter: {
-          id: "farmStarter",
-          title: "Farm Starter",
-          description: "Own 2 Farms",
-          target: 2,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "farm",
-          reward: {
-            type: "donuts",
-            amount: 500,
-          },
-        },
-        farmManager: {
-          id: "farmManager",
-          title: "Farm Manager",
-          description: "Own 8 Farms",
-          target: 8,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "farm",
-          reward: {
-            type: "multiplier",
-            amount: 1.5,
-            duration: 35000,
-          },
-        },
+      // Production milestones
+      this.productionMilestones = [
+        500, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000,
+        1000000000000, 1000000000000000,
+      ];
 
-        factoryWorker: {
-          id: "factoryWorker",
-          title: "Factory Worker",
-          description: "Own 1 Factory",
-          target: 1,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "factory",
-          reward: {
-            type: "donuts",
-            amount: 35000,
-          },
-        },
-        factorySupervisor: {
-          id: "factorySupervisor",
-          title: "Factory Supervisor",
-          description: "Own 5 Factories",
-          target: 5,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "factory",
-          reward: {
-            type: "multiplier",
-            amount: 1.3,
-            duration: 25000,
-          },
-        },
+      // Click milestones
+      this.clickMilestones = [
+        50, 500, 2000, 5000, 10000, 25000, 50000, 100000, 1000000,
+      ];
 
-        logisticsIntern: {
-          id: "logisticsIntern",
-          title: "Logistics Intern",
-          description: "Own 1 Logistics Center",
-          target: 1,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "logisticCenter",
-          reward: {
-            type: "donuts",
-            amount: 100000,
-          },
-        },
-        logisticsManager: {
-          id: "logisticsManager",
-          title: "Logistics Manager",
-          description: "Own 3 Logistics Centers",
-          target: 3,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "logisticCenter",
-          reward: {
-            type: "multiplier",
-            amount: 2.5,
-            duration: 60000,
-          },
-        },
+      // Refund rates by tier index
+      this.tierRefundRates = [0.25, 0.22, 0.18, 0.15, 0.12, 0.1];
 
-        mineExplorer: {
-          id: "mineExplorer",
-          title: "Mine Explorer",
-          description: "Own 1 Mine",
-          target: 1,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "mine",
-          reward: {
-            type: "donuts",
-            amount: 1000,
-          },
-        },
-        mineOperator: {
-          id: "mineOperator",
-          title: "Mine Operator",
-          description: "Own 3 Mines",
-          target: 3,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "mine",
-          reward: {
-            type: "multiplier",
-            amount: 1.8,
-            duration: 30000,
-          },
-        },
+      // Initialize milestone quests state
+      this.milestoneQuests = this.initializeMilestoneQuests();
 
-        smallBusiness: {
-          id: "smallBusiness",
-          title: "Small Business",
-          description: "Produce 10,000 donuts",
-          target: 10000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "donuts",
-            amount: 3500,
-          },
+      // Dynamic quest slots
+      this.dynamicSlots = {
+        slot1: {
+          id: "slot1",
+          difficulty: "easy",
+          cooldown: 15 * 60 * 1000, // 15 minutes
+          rewardMinutes: 5,
+          questPool: ["click", "produce", "buyAny"],
+          currentQuest: null,
+          cooldownEnd: null,
         },
-        growingBusiness: {
-          id: "growingBusiness",
-          title: "Growing Business",
-          description: "Produce 100,000 donuts",
-          target: 100000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "multiplier",
-            amount: 2.0,
-            duration: 30000,
-          },
+        slot2: {
+          id: "slot2",
+          difficulty: "medium",
+          cooldown: 30 * 60 * 1000, // 30 minutes
+          rewardMinutes: 15,
+          questPool: ["produce", "buySpecific", "click"],
+          currentQuest: null,
+          cooldownEnd: null,
         },
-        clickEnthusiast: {
-          id: "clickEnthusiast",
-          title: "Click Enthusiast",
-          description: "Click 500 times",
-          target: 500,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "donuts",
-            amount: 10000,
-          },
+        slot3: {
+          id: "slot3",
+          difficulty: "hard",
+          cooldown: 60 * 60 * 1000, // 1 hour
+          rewardMinutes: 45,
+          questPool: ["timedProduce", "buySpecific", "produce"],
+          currentQuest: null,
+          cooldownEnd: null,
         },
-        clickMaster: {
-          id: "clickMaster",
-          title: "Click Master",
-          description: "Click 2,000 times",
-          target: 2000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "multiplier",
-            amount: 2,
-            duration: 60000,
-          },
-        },
-        cursorMaster: {
-          id: "cursorMaster",
-          title: "Cursor Master",
-          description: "Own 50 Cursors",
-          target: 50,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "cursor",
-          reward: {
-            type: "multiplier",
-            amount: 2,
-            duration: 60000,
-          },
-        },
-        cursorLegend: {
-          id: "cursorLegend",
-          title: "Cursor Legend",
-          description: "Own 100 Cursors",
-          target: 100,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "cursor",
-          reward: {
-            type: "donuts",
-            amount: 10000000,
-          },
-        },
-        cursorGod: {
-          id: "cursorGod",
-          title: "Cursor God",
-          description: "Own 200 Cursors",
-          target: 200,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "cursor",
-          reward: {
-            type: "multiplier",
-            amount: 1.5,
-            duration: 120000,
-          },
-        },
-        bakerMaster: {
-          id: "bakerMaster",
-          title: "Baker Master",
-          description: "Own 25 Bakers",
-          target: 25,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "baker",
-          reward: {
-            type: "donuts",
-            amount: 3000,
-          },
-        },
-        bakerLegend: {
-          id: "bakerLegend",
-          title: "Baker Legend",
-          description: "Own 50 Bakers",
-          target: 50,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "baker",
-          reward: {
-            type: "multiplier",
-            amount: 4,
-            duration: 10000,
-          },
-        },
-        bakerGod: {
-          id: "bakerGod",
-          title: "Baker God",
-          description: "Own 100 Bakers",
-          target: 100,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "baker",
-          reward: {
-            type: "donuts",
-            amount: 45000000,
-          },
-        },
-        farmMaster: {
-          id: "farmMaster",
-          title: "Farm Master",
-          description: "Own 20 Farms",
-          target: 20,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "farm",
-          reward: {
-            type: "multiplier",
-            amount: 2.0,
-            duration: 30000,
-          },
-        },
-        farmLegend: {
-          id: "farmLegend",
-          title: "Farm Legend",
-          description: "Own 35 Farms",
-          target: 35,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "farm",
-          reward: {
-            type: "donuts",
-            amount: 50000,
-          },
-        },
-        farmGod: {
-          id: "farmGod",
-          title: "Farm God",
-          description: "Own 50 Farms",
-          target: 50,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "farm",
-          reward: {
-            type: "multiplier",
-            amount: 2,
-            duration: 200000,
-          },
-        },
-        factoryMaster: {
-          id: "factoryMaster",
-          title: "Factory Master",
-          description: "Own 15 Factories",
-          target: 15,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "factory",
-          reward: {
-            type: "donuts",
-            amount: 2500000,
-          },
-        },
-        factoryLegend: {
-          id: "factoryLegend",
-          title: "Factory Legend",
-          description: "Own 25 Factories",
-          target: 25,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "factory",
-          reward: {
-            type: "multiplier",
-            amount: 1.5,
-            duration: 250000,
-          },
-        },
-        factoryGod: {
-          id: "factoryGod",
-          title: "Factory God",
-          description: "Own 40 Factories",
-          target: 40,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "factory",
-          reward: {
-            type: "donuts",
-            amount: 20000000,
-          },
-        },
-        logisticsMaster: {
-          id: "logisticsMaster",
-          title: "Logistics Master",
-          description: "Own 10 Logistics Centers",
-          target: 10,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "logisticCenter",
-          reward: {
-            type: "multiplier",
-            amount: 1.75,
-            duration: 300000,
-          },
-        },
-        logisticsLegend: {
-          id: "logisticsLegend",
-          title: "Logistics Legend",
-          description: "Own 15 Logistics Centers",
-          target: 15,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "logisticCenter",
-          reward: {
-            type: "donuts",
-            amount: 50000000,
-          },
-        },
-        logisticsGod: {
-          id: "logisticsGod",
-          title: "Logistics God",
-          description: "Own 25 Logistics Centers",
-          target: 25,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "logisticCenter",
-          reward: {
-            type: "multiplier",
-            amount: 2.0,
-            duration: 350000,
-          },
-        },
-        mineMaster: {
-          id: "mineMaster",
-          title: "Mine Master",
-          description: "Own 10 Mines",
-          target: 10,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "mine",
-          reward: {
-            type: "donuts",
-            amount: 50000,
-          },
-        },
-        mineLegend: {
-          id: "mineLegend",
-          title: "Mine Legend",
-          description: "Own 15 Mines",
-          target: 15,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "mine",
-          reward: {
-            type: "multiplier",
-            amount: 1.6,
-            duration: 400000,
-          },
-        },
-        mineGod: {
-          id: "mineGod",
-          title: "Mine God",
-          description: "Own 20 Mines",
-          target: 20,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "building",
-          buildingType: "mine",
-          reward: {
-            type: "donuts",
-            amount: 200000,
-          },
-        },
-        donutEntrepreneur: {
-          id: "donutEntrepreneur",
-          title: "Donut Entrepreneur",
-          description: "Produce 1,000,000 donuts",
-          target: 1000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "multiplier",
-            amount: 1.75,
-            duration: 120000,
-          },
-        },
-        donutCorporation: {
-          id: "donutCorporation",
-          title: "Donut Corporation",
-          description: "Produce 10,000,000 donuts",
-          target: 10000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "donuts",
-            amount: 500000,
-          },
-        },
-        donutEmpire: {
-          id: "donutEmpire",
-          title: "Donut Empire",
-          description: "Produce 100,000,000 donuts",
-          target: 100000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "multiplier",
-            amount: 3.0,
-            duration: 60000,
-          },
-        },
-        donutGalaxy: {
-          id: "donutGalaxy",
-          title: "Donut Galaxy",
-          description: "Produce 1,000,000,000 donuts",
-          target: 1000000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "donuts",
-            amount: 100000000,
-          },
-        },
-
-        clickProfessional: {
-          id: "clickProfessional",
-          title: "Click Professional",
-          description: "Click 5,000 times",
-          target: 5000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "multiplier",
-            amount: 3.0,
-            duration: 60000,
-          },
-        },
-        clickExpert: {
-          id: "clickExpert",
-          title: "Click Expert",
-          description: "Click 10,000 times",
-          target: 10000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "donuts",
-            amount: 200000000,
-          },
-        },
-        clickLegend: {
-          id: "clickLegend",
-          title: "Click Legend",
-          description: "Click 25,000 times",
-          target: 25000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "multiplier",
-            amount: 3.0,
-            duration: 60000,
-          },
-        },
-        clickGod: {
-          id: "clickGod",
-          title: "Click God",
-          description: "Click 50,000 times",
-          target: 50000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "donuts",
-            amount: 5000000000,
-          },
-        },
-        smallEmpire: {
-          id: "smallEmpire",
-          title: "Small Empire",
-          description: "Own 10 of each building",
-          target: 10,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "combined",
-          reward: {
-            type: "multiplier",
-            amount: 3.0,
-            duration: 180000,
-          },
-        },
-        mediumEmpire: {
-          id: "mediumEmpire",
-          title: "Medium Empire",
-          description: "Own 25 of each building",
-          target: 25,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "combined",
-          reward: {
-            type: "donuts",
-            amount: 10000000000,
-          },
-        },
-
-        donutUniverse: {
-          id: "donutUniverse",
-          title: "Donut Universe",
-          description: "Produce 1 trillion donuts",
-          target: 1000000000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "multiplier",
-            amount: 50.0,
-            duration: 60000,
-          },
-        },
-        clickingDiety: {
-          id: "clickingDiety",
-          title: "Clicking Deity",
-          description: "Click 1 million times",
-          target: 1000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "donuts",
-            amount: 500000000000,
-          },
-        },
-        legendaryClicker: {
-          id: "legendaryClicker",
-          title: "Legendary Clicker",
-          description: "Click 5 million times",
-          target: 5000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "clicks",
-          reward: {
-            type: "multiplier",
-            amount: 3.0, // Maximum multiplier
-            duration: 300000, // Maximum süre
-          },
-        },
-        legendaryProducer: {
-          id: "legendaryProducer",
-          title: "Legendary Producer",
-          description: "Produce 1 quadrillion donuts",
-          target: 1000000000000000,
-          progress: 0,
-          completed: false,
-          claimed: false,
-          type: "production",
-          reward: {
-            type: "donuts",
-            amount: 100000000000,
-          },
+        slot4: {
+          id: "slot4",
+          difficulty: "special",
+          cooldown: 120 * 60 * 1000, // 2 hours
+          rewardMinutes: 90,
+          questPool: ["multiplier", "buySpecific", "timedProduce"],
+          currentQuest: null,
+          cooldownEnd: null,
         },
       };
+
+      // Multiplier state (queue-based)
+      this.multiplierState = {
+        active: null, // { amount, endTime }
+        queued: null, // { amount, duration }
+      };
+
+      // Multiplier sources (multiplicative)
+      this.multiplierSources = {
+        prestige: 1,
+        questBuff: 1,
+        farmBuff: 1,
+        eventBuff: 1,
+      };
+
+      // CPS history for stabilization (120s rolling)
+      this.cpsHistory = [];
+
+      // Quest tracking (run-based vs lifetime)
+      this.questTracking = {
+        currentRun: {
+          spentAtTier: {}, // { buildingType: { tier: cumulativeSpent } }
+          totalProduced: 0,
+        },
+        lifetime: {
+          totalClicks: 0,
+        },
+      };
+
+      // Legacy quests object for backward compatibility during migration
+      this.quests = {};
       this.isMobile = window.innerWidth <= 768;
       // Quest sistemini başlat
       this.setupQuestSystem();
@@ -2525,10 +1863,12 @@
       // Per second güncelleme
       const currentPerSecond = Math.floor(this.totalPerSecond * 10) / 10;
       const multiplierCount = this.activeMultipliers?.length || 0;
+      const hasQuestMultiplier = this.multiplierState?.active !== null;
 
       if (
         this.lastUpdateValues.totalPerSecond !== currentPerSecond ||
         this.lastUpdateValues.multiplierCount !== multiplierCount ||
+        this.lastUpdateValues.hasQuestMultiplier !== hasQuestMultiplier ||
         isSlowFrame
       ) {
         const formattedPerSecond = this.formatNumber(
@@ -2536,35 +1876,54 @@
           "perSecond",
         );
 
-        if (this.productionMultiplier > 1 && multiplierCount > 0) {
-          // Multiplier aktifken her frame (veya sık) güncelleme gerekebilir (timer için)
+        // Check both legacy activeMultipliers AND new quest multiplier system
+        const hasActiveMultiplier = multiplierCount > 0 || hasQuestMultiplier;
+        const effectiveMultiplier = this.getFinalProductionMultiplier
+          ? this.getFinalProductionMultiplier()
+          : this.productionMultiplier;
+
+        if (effectiveMultiplier > 1 && hasActiveMultiplier) {
+          // Clean up expired legacy multipliers
           this.activeMultipliers = this.activeMultipliers.filter(
             (m) => m.endTime > Date.now(),
           );
 
-          if (this.activeMultipliers.length === 0) {
-            this.productionMultiplier = 1;
-            perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
-            perSecondDisplay.classList.remove("boosted");
-          } else {
-            const nearestEndTime = Math.min(
+          // Determine which multiplier to show (prefer quest multiplier)
+          let displayEndTime, displayAmount, displayDuration;
+
+          if (hasQuestMultiplier && this.multiplierState.active) {
+            displayEndTime = this.multiplierState.active.endTime;
+            displayAmount = this.multiplierState.active.amount;
+            // Calculate duration from start (estimate ~90s max)
+            displayDuration = 90000;
+          } else if (this.activeMultipliers.length > 0) {
+            displayEndTime = Math.min(
               ...this.activeMultipliers.map((m) => m.endTime),
             );
+            displayAmount = this.activeMultipliers[0].amount;
+            displayDuration = this.activeMultipliers[0].duration;
+          }
+
+          if (displayEndTime && displayEndTime > Date.now()) {
             const remainingTime = Math.max(
               0,
-              Math.ceil((nearestEndTime - Date.now()) / 1000),
+              Math.ceil((displayEndTime - Date.now()) / 1000),
             );
-            const currentMultiplier = this.activeMultipliers[0];
-            const progress =
-              (remainingTime / (currentMultiplier.duration / 1000)) * 100;
+            const progress = (remainingTime / (displayDuration / 1000)) * 100;
+
+            // Show queued indicator if there's a queued multiplier
+            const queuedIndicator = this.multiplierState?.queued
+              ? `<span class="boost-queued">+1 queued</span>`
+              : "";
 
             perSecondDisplay.innerHTML = `
             <div class="boosted-per-second">
                 <div class="per-second-text">per second: ${formattedPerSecond}</div>
                 <div class="boost-container">
                     <div class="boost-info">
-                        <span class="boost-multiplier">${this.productionMultiplier.toFixed(2)}x</span>
+                        <span class="boost-multiplier">${effectiveMultiplier.toFixed(2)}x</span>
                         <span class="boost-timer">${remainingTime}s</span>
+                        ${queuedIndicator}
                     </div>
                     <div class="boost-progress-bar">
                         <div class="boost-progress" style="width: ${progress}%"></div>
@@ -2573,6 +1932,10 @@
             </div>
           `;
             perSecondDisplay.classList.add("boosted");
+          } else {
+            // Multiplier expired
+            perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+            perSecondDisplay.classList.remove("boosted");
           }
         } else {
           perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
@@ -2581,6 +1944,7 @@
 
         this.lastUpdateValues.totalPerSecond = currentPerSecond;
         this.lastUpdateValues.multiplierCount = multiplierCount;
+        this.lastUpdateValues.hasQuestMultiplier = hasQuestMultiplier;
       }
 
       // Building güncellemeleri
@@ -5448,19 +4812,11 @@
       this.updateTitleWithDonuts(); // Her tıklamadan sonra başlık güncellenir
     }
 
-    // Yeni metod: Sadece tıklama görevlerini kontrol et
+    // Check click-related quests (optimized for click events)
     checkClickQuests() {
-      Object.values(this.quests)
-        .filter((quest) => quest.type === "clicks" && !quest.completed)
-        .forEach((quest) => {
-          const oldProgress = quest.progress;
-          quest.progress = this.totalClicks;
-
-          if (quest.progress >= quest.target && !quest.completed) {
-            quest.completed = true;
-            this.showNotification(`Quest completed: ${quest.title}!`);
-          }
-        });
+      // Check dynamic quests that are click-based
+      this.checkDynamicQuestProgress();
+      // Click milestones are checked in the main checkMilestoneProgress
     }
     showUpgrades() {
       const upgradeList = document.getElementById("upgrade-list");
@@ -5623,10 +4979,17 @@
         const isFirstBaker = itemKey === "baker" && item.count === 0;
         const isFirstFarm = itemKey === "farm" && item.count === 0;
 
+        // Track spending for quest rewards
+        let currentCost = item.baseCost;
+
         // Tek bir for döngüsü kullan
         for (let i = 0; i < this.purchaseAmount; i++) {
+          // Track this purchase before incrementing count
+          this.trackBuildingPurchase(itemKey, currentCost);
+
           item.count++;
           item.baseCost *= item.costMultiplier;
+          currentCost = item.baseCost;
 
           if (itemKey === "mine") {
             this.addWorker();
@@ -6903,6 +6266,35 @@
         this.totalClicks = 0;
         this.nextPrestigeThreshold *= 2;
 
+        // Reset run-based quest tracking
+        this.questTracking.currentRun = {
+          spentAtTier: {},
+          totalProduced: 0,
+        };
+
+        // Update prestige multiplier source
+        this.multiplierSources.prestige = Math.pow(
+          this.prestigeMultiplier,
+          this.prestigeCount,
+        );
+
+        // Reset multiplier state
+        this.multiplierState = { active: null, queued: null };
+        this.multiplierSources.questBuff = 1;
+        this.activeMultipliers = [];
+
+        // Reset milestone quests (run-based)
+        this.milestoneQuests = this.initializeMilestoneQuests();
+
+        // Clear dynamic quest slots
+        for (const slotId of Object.keys(this.dynamicSlots)) {
+          this.dynamicSlots[slotId].currentQuest = null;
+          this.dynamicSlots[slotId].cooldownEnd = null;
+        }
+
+        // Reset CPS history
+        this.cpsHistory = [];
+
         this.clearUpgradeList();
         this.updatePrestigeBar();
         this.updateDisplay();
@@ -7523,6 +6915,25 @@
         upgradeData[key] = this.upgrades[key].map((u) => u.purchased);
       }
 
+      // New quest system save data
+      const questSystemData = {
+        milestoneQuests: this.milestoneQuests,
+        dynamicSlots: {},
+        multiplierState: this.multiplierState,
+        questTracking: this.questTracking,
+        cpsHistory: this.cpsHistory.slice(-20), // Keep last 20 entries
+      };
+
+      // Save dynamic slots (serialize currentQuest and cooldownEnd)
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const slot = this.dynamicSlots[slotId];
+        questSystemData.dynamicSlots[slotId] = {
+          currentQuest: slot.currentQuest,
+          cooldownEnd: slot.cooldownEnd,
+        };
+      }
+
+      // Legacy quest data for backward compatibility
       const questData = {};
       for (let key in this.quests) {
         questData[key] = {
@@ -7545,6 +6956,7 @@
         items: itemData,
         upgrades: upgradeData,
         quests: questData,
+        questSystem: questSystemData, // New quest system
         recipes: recipeData,
         donutCount: this.donutCount,
         totalDonutsEarned: this.totalDonutsEarned,
@@ -7619,16 +7031,99 @@
           }
         }
 
-        // Quests yükle
-        if (gameState.quests) {
-          for (let key in gameState.quests) {
-            if (this.quests[key]) {
-              this.quests[key].progress = gameState.quests[key].progress || 0;
-              this.quests[key].completed =
-                gameState.quests[key].completed || false;
-              this.quests[key].claimed = gameState.quests[key].claimed || false;
+        // New quest system load
+        if (gameState.questSystem) {
+          const qs = gameState.questSystem;
+
+          // Load milestone quests
+          if (qs.milestoneQuests) {
+            // Building milestones
+            if (qs.milestoneQuests.building) {
+              for (const [buildingType, tiers] of Object.entries(
+                qs.milestoneQuests.building,
+              )) {
+                if (this.milestoneQuests.building[buildingType]) {
+                  for (const [tier, quest] of Object.entries(tiers)) {
+                    if (this.milestoneQuests.building[buildingType][tier]) {
+                      this.milestoneQuests.building[buildingType][
+                        tier
+                      ].progress = quest.progress || 0;
+                      this.milestoneQuests.building[buildingType][
+                        tier
+                      ].completed = quest.completed || false;
+                      this.milestoneQuests.building[buildingType][
+                        tier
+                      ].claimed = quest.claimed || false;
+                    }
+                  }
+                }
+              }
+            }
+            // Production milestones
+            if (qs.milestoneQuests.production) {
+              for (const [target, quest] of Object.entries(
+                qs.milestoneQuests.production,
+              )) {
+                if (this.milestoneQuests.production[target]) {
+                  this.milestoneQuests.production[target].progress =
+                    quest.progress || 0;
+                  this.milestoneQuests.production[target].completed =
+                    quest.completed || false;
+                  this.milestoneQuests.production[target].claimed =
+                    quest.claimed || false;
+                }
+              }
+            }
+            // Click milestones
+            if (qs.milestoneQuests.clicks) {
+              for (const [target, quest] of Object.entries(
+                qs.milestoneQuests.clicks,
+              )) {
+                if (this.milestoneQuests.clicks[target]) {
+                  this.milestoneQuests.clicks[target].progress =
+                    quest.progress || 0;
+                  this.milestoneQuests.clicks[target].completed =
+                    quest.completed || false;
+                  this.milestoneQuests.clicks[target].claimed =
+                    quest.claimed || false;
+                }
+              }
             }
           }
+
+          // Load dynamic slots
+          if (qs.dynamicSlots) {
+            for (const [slotId, slotData] of Object.entries(qs.dynamicSlots)) {
+              if (this.dynamicSlots[slotId]) {
+                this.dynamicSlots[slotId].currentQuest =
+                  slotData.currentQuest || null;
+                this.dynamicSlots[slotId].cooldownEnd =
+                  slotData.cooldownEnd || null;
+              }
+            }
+          }
+
+          // Load multiplier state
+          if (qs.multiplierState) {
+            this.multiplierState = qs.multiplierState;
+            // Update questBuff source from loaded state
+            this.multiplierSources.questBuff =
+              this.multiplierState.active?.amount || 1;
+          }
+
+          // Load quest tracking
+          if (qs.questTracking) {
+            this.questTracking = qs.questTracking;
+          }
+
+          // Load CPS history
+          if (qs.cpsHistory) {
+            this.cpsHistory = qs.cpsHistory;
+          }
+        }
+        // Legacy quest migration (for old saves without questSystem)
+        else if (gameState.quests) {
+          this.migrateOldQuests(gameState.quests);
         }
 
         // Recipes yükle
@@ -8026,6 +7521,708 @@
         location.reload();
       }
     }
+
+    // ========== YENİ QUEST SİSTEMİ METODLARI ==========
+
+    initializeMilestoneQuests() {
+      const quests = {
+        building: {},
+        production: {},
+        clicks: {},
+      };
+
+      // Building milestones
+      for (const [buildingType, tiers] of Object.entries(this.milestoneTiers)) {
+        quests.building[buildingType] = {};
+        tiers.forEach((tier, index) => {
+          const questId = `${buildingType}_${tier}`;
+          quests.building[buildingType][tier] = {
+            id: questId,
+            type: "building",
+            buildingType: buildingType,
+            target: tier,
+            tierIndex: index,
+            progress: 0,
+            completed: false,
+            claimed: false,
+          };
+        });
+      }
+
+      // Production milestones
+      this.productionMilestones.forEach((target, index) => {
+        quests.production[target] = {
+          id: `production_${target}`,
+          type: "production",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      // Click milestones
+      this.clickMilestones.forEach((target, index) => {
+        quests.clicks[target] = {
+          id: `clicks_${target}`,
+          type: "clicks",
+          target: target,
+          tierIndex: index,
+          progress: 0,
+          completed: false,
+          claimed: false,
+        };
+      });
+
+      return quests;
+    }
+
+    // Calculate building quest reward based on tier spending
+    calculateBuildingQuestReward(buildingType, targetTier) {
+      const tracking =
+        this.questTracking.currentRun.spentAtTier[buildingType] || {};
+      const spent =
+        tracking[targetTier] || this.estimateTierCost(buildingType, targetTier);
+
+      // Tier-based refund rate
+      const tierIndex =
+        this.milestoneTiers[buildingType]?.indexOf(targetTier) || 0;
+      const rate = this.tierRefundRates[tierIndex] || 0.1;
+
+      let reward = Math.floor(spent * rate);
+
+      // Cap: 30% of next meaningful building cost
+      const nextCost = this.getNextMeaningfulPurchaseCost();
+      const cap = Math.floor(nextCost * 0.3);
+
+      return Math.min(reward, cap);
+    }
+
+    // Estimate cost to reach tier (fallback when no tracking data)
+    estimateTierCost(buildingType, targetCount) {
+      const item = this.items[buildingType];
+      if (!item) return 0;
+
+      let totalCost = 0;
+      for (let i = 0; i < targetCount; i++) {
+        totalCost += item.originalBaseCost * Math.pow(item.costMultiplier, i);
+      }
+      return totalCost;
+    }
+
+    // Get next meaningful purchase cost for capping
+    getNextMeaningfulPurchaseCost() {
+      const buildingKeys = Object.keys(this.items);
+
+      // Find cheapest building with count < 10
+      for (const key of buildingKeys) {
+        if (this.items[key].count < 10) {
+          return this.items[key].baseCost;
+        }
+      }
+
+      // Fallback: most expensive building's current cost
+      let maxCost = 0;
+      for (const key of buildingKeys) {
+        const cost = this.items[key].baseCost;
+        if (cost > maxCost) maxCost = cost;
+      }
+      return maxCost || 1000; // Minimum fallback
+    }
+
+    // Calculate dynamic quest reward (CPS-based with difficulty scaling)
+    calculateDynamicReward(slot, questType = "produce") {
+      const cps = this.getStableCPS();
+      const minutes = slot.rewardMinutes;
+
+      // Difficulty multipliers for reward scaling
+      const difficultyRewardMultipliers = {
+        easy: 1,
+        medium: 1.8,
+        hard: 3.2,
+        special: 5.5,
+      };
+      const diffMult = difficultyRewardMultipliers[slot.difficulty] || 1;
+
+      // Quest type multipliers (harder quest types give better rewards)
+      const questTypeMultipliers = {
+        click: 0.8, // Easy - just clicking
+        produce: 1.0, // Standard
+        buyAny: 1.2, // Requires resources
+        buySpecific: 1.5, // More restrictive
+        timedProduce: 1.8, // Time pressure
+        multiplier: 0, // Multiplier quests don't give donut rewards
+      };
+      const typeMult = questTypeMultipliers[questType] || 1.0;
+
+      // Base reward from CPS
+      let reward = cps * 60 * minutes * diffMult * typeMult;
+
+      // Minimum floor for early game (scaled by difficulty)
+      const baseMinReward = this.getMinRewardForStage();
+      const minReward = baseMinReward * diffMult * typeMult;
+      reward = Math.max(reward, minReward);
+
+      // Cap system - but don't cap below minReward
+      const nextPurchaseCap =
+        this.getNextMeaningfulPurchaseCost() * 0.25 * diffMult;
+      const timeCap = Math.max(cps * 60 * 120 * diffMult, minReward); // Never cap below minReward
+      const cap = Math.max(Math.min(nextPurchaseCap, timeCap), minReward);
+
+      return Math.floor(Math.min(reward, cap));
+    }
+
+    // Get minimum reward based on game stage
+    getMinRewardForStage() {
+      const totalBuildings = Object.values(this.items).reduce(
+        (sum, item) => sum + item.count,
+        0,
+      );
+      if (totalBuildings < 5) return 50;
+      if (totalBuildings < 20) return 500;
+      if (totalBuildings < 50) return 5000;
+      return 50000;
+    }
+
+    // Stabilized CPS (120s rolling median)
+    getStableCPS() {
+      if (this.cpsHistory.length === 0) return this.calculatePerSecond();
+
+      const sorted = [...this.cpsHistory].sort((a, b) => a.cps - b.cps);
+      const mid = Math.floor(sorted.length / 2);
+
+      return sorted.length % 2 === 0
+        ? (sorted[mid - 1].cps + sorted[mid].cps) / 2
+        : sorted[mid].cps;
+    }
+
+    // Update CPS history (called in game loop)
+    updateCPSHistory() {
+      const currentCPS = this.calculatePerSecond();
+      const now = Date.now();
+
+      this.cpsHistory.push({ cps: currentCPS, time: now });
+
+      // Keep only last 120 seconds
+      const cutoff = now - 120000;
+      this.cpsHistory = this.cpsHistory.filter((h) => h.time > cutoff);
+    }
+
+    // Get final production multiplier (multiplicative)
+    getFinalProductionMultiplier() {
+      return (
+        this.multiplierSources.prestige *
+        this.multiplierSources.questBuff *
+        this.multiplierSources.farmBuff *
+        this.multiplierSources.eventBuff
+      );
+    }
+
+    // Update multipliers (tick-based, no setTimeout)
+    updateQuestMultipliers() {
+      const now = Date.now();
+
+      if (
+        this.multiplierState.active &&
+        now >= this.multiplierState.active.endTime
+      ) {
+        this.multiplierState.active = null;
+
+        // Activate queued multiplier
+        if (this.multiplierState.queued) {
+          const queued = this.multiplierState.queued;
+          this.multiplierState.queued = null;
+          this.startQuestMultiplier(queued.amount, queued.duration);
+          this.showNotification(
+            `Queued ${queued.amount.toFixed(2)}x multiplier activated!`,
+          );
+        }
+      }
+
+      // Update questBuff source
+      this.multiplierSources.questBuff =
+        this.multiplierState.active?.amount || 1;
+    }
+
+    // Start a quest multiplier
+    startQuestMultiplier(amount, duration) {
+      this.multiplierState.active = {
+        amount: amount,
+        endTime: Date.now() + duration,
+      };
+      this.multiplierSources.questBuff = amount;
+    }
+
+    // Apply multiplier reward with queue system
+    applyMultiplierReward(amount, duration) {
+      if (!this.multiplierState.active) {
+        this.startQuestMultiplier(amount, duration);
+        this.showNotification(
+          `${amount.toFixed(2)}x multiplier active for ${duration / 1000}s!`,
+        );
+        return true;
+      } else if (!this.multiplierState.queued) {
+        this.multiplierState.queued = { amount, duration };
+        this.showNotification(`${amount.toFixed(2)}x multiplier queued!`);
+        return true;
+      } else {
+        this.showNotification("Multiplier queue full!");
+        return false;
+      }
+    }
+
+    // Generate dynamic quest for a slot
+    generateQuestForSlot(slotId) {
+      const slot = this.dynamicSlots[slotId];
+      if (!slot) return;
+
+      // Filter pool if queue is full (no multiplier quests)
+      let pool = [...slot.questPool];
+      if (this.multiplierState.queued !== null) {
+        pool = pool.filter((t) => t !== "multiplier");
+      }
+      if (pool.length === 0) pool = ["produce"]; // Fallback
+
+      const questType = pool[Math.floor(Math.random() * pool.length)];
+      const quest = this.createDynamicQuest(questType, slot);
+
+      slot.currentQuest = quest;
+      slot.cooldownEnd = null;
+    }
+
+    // Create a dynamic quest based on type
+    createDynamicQuest(type, slot) {
+      const cps = this.getStableCPS();
+      const difficulty = slot.difficulty;
+      const baseId = `dynamic_${slot.id}_${Date.now()}`;
+
+      const difficultyMultipliers = {
+        easy: 1,
+        medium: 2,
+        hard: 4,
+        special: 6,
+      };
+      const mult = difficultyMultipliers[difficulty] || 1;
+
+      let quest = {
+        id: baseId,
+        slotId: slot.id,
+        type: type,
+        progress: 0,
+        completed: false,
+        claimed: false,
+        startTime: Date.now(),
+      };
+
+      switch (type) {
+        case "click":
+          const clickTarget = Math.ceil((50 + cps * 0.1) * mult);
+          quest.target = Math.max(10, clickTarget);
+          quest.title = `Click ${this.formatNumber(quest.target)} times`;
+          quest.description = `Click the donut ${this.formatNumber(quest.target)} times`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "click"),
+          };
+          quest.startClicks = this.totalClicks;
+          break;
+
+        case "produce":
+          const produceTarget = Math.ceil(cps * 60 * mult * 2);
+          quest.target = Math.max(100, produceTarget);
+          quest.title = `Produce ${this.formatNumber(quest.target)} donuts`;
+          quest.description = `Produce ${this.formatNumber(quest.target)} donuts`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "produce"),
+          };
+          quest.startProduction = this.totalDonutsEarned;
+          break;
+
+        case "buyAny":
+          const buyTarget = Math.ceil(3 * mult);
+          quest.target = Math.max(1, buyTarget);
+          quest.title = `Buy ${quest.target} buildings`;
+          quest.description = `Purchase any ${quest.target} buildings`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "buyAny"),
+          };
+          quest.startBuildings = Object.values(this.items).reduce(
+            (s, i) => s + i.count,
+            0,
+          );
+          break;
+
+        case "buySpecific":
+          const buildingKeys = Object.keys(this.items).filter(
+            (k) =>
+              this.items[k].count > 0 ||
+              this.donutCount >= this.items[k].baseCost * 0.5,
+          );
+          const targetBuilding =
+            buildingKeys[Math.floor(Math.random() * buildingKeys.length)] ||
+            "cursor";
+          const buySpecificTarget = Math.ceil(2 * mult);
+          quest.target = Math.max(1, buySpecificTarget);
+          quest.buildingType = targetBuilding;
+          quest.title = `Buy ${quest.target} ${this.items[targetBuilding].name}(s)`;
+          quest.description = `Purchase ${quest.target} ${this.items[targetBuilding].name}(s)`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "buySpecific"),
+          };
+          quest.startCount = this.items[targetBuilding].count;
+          break;
+
+        case "timedProduce":
+          const timedTarget = Math.ceil(cps * 50);
+          quest.target = Math.max(100, timedTarget);
+          quest.timeLimit = 60000; // 60 seconds
+          quest.title = `Quick production challenge`;
+          quest.description = `Produce ${this.formatNumber(quest.target)} donuts in 60 seconds`;
+          quest.reward = {
+            type: "donuts",
+            amount: this.calculateDynamicReward(slot, "timedProduce"),
+          };
+          quest.startProduction = this.totalDonutsEarned;
+          quest.timedStartTime = Date.now();
+          break;
+
+        case "multiplier":
+          const multiplierAmounts = {
+            easy: 1.25,
+            medium: 1.5,
+            hard: 2.0,
+            special: 3.0,
+          };
+          const multiplierDurations = {
+            easy: 30000,
+            medium: 45000,
+            hard: 60000,
+            special: 90000,
+          };
+          quest.target = Math.ceil(cps * 60 * mult * 3);
+          quest.title = `Multiplier Challenge`;
+          quest.description = `Produce ${this.formatNumber(quest.target)} donuts for a ${multiplierAmounts[difficulty]}x boost`;
+          quest.reward = {
+            type: "multiplier",
+            amount: multiplierAmounts[difficulty],
+            duration: multiplierDurations[difficulty],
+          };
+          quest.startProduction = this.totalDonutsEarned;
+          break;
+      }
+
+      return quest;
+    }
+
+    // Update dynamic slots (called in game loop)
+    updateDynamicSlots() {
+      const now = Date.now();
+
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const slot = this.dynamicSlots[slotId];
+
+        // If no quest and cooldown ended, generate new quest
+        if (
+          !slot.currentQuest &&
+          (!slot.cooldownEnd || now >= slot.cooldownEnd)
+        ) {
+          this.generateQuestForSlot(slotId);
+        }
+
+        // Check timed quest expiry
+        if (slot.currentQuest && slot.currentQuest.type === "timedProduce") {
+          const quest = slot.currentQuest;
+          if (
+            now > quest.timedStartTime + quest.timeLimit &&
+            !quest.completed
+          ) {
+            // Time expired, fail the quest
+            slot.currentQuest = null;
+            slot.cooldownEnd = now + slot.cooldown;
+            this.showNotification("Timed quest expired!");
+          }
+        }
+      }
+    }
+
+    // Check dynamic quest progress
+    checkDynamicQuestProgress() {
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const slot = this.dynamicSlots[slotId];
+        const quest = slot.currentQuest;
+        if (!quest || quest.completed) continue;
+
+        let newProgress = 0;
+
+        switch (quest.type) {
+          case "click":
+            newProgress = this.totalClicks - (quest.startClicks || 0);
+            break;
+          case "produce":
+          case "timedProduce":
+          case "multiplier":
+            newProgress = this.totalDonutsEarned - (quest.startProduction || 0);
+            break;
+          case "buyAny":
+            const currentTotal = Object.values(this.items).reduce(
+              (s, i) => s + i.count,
+              0,
+            );
+            newProgress = currentTotal - (quest.startBuildings || 0);
+            break;
+          case "buySpecific":
+            newProgress =
+              this.items[quest.buildingType].count - (quest.startCount || 0);
+            break;
+        }
+
+        quest.progress = Math.max(0, newProgress);
+
+        if (quest.progress >= quest.target && !quest.completed) {
+          quest.completed = true;
+          this.showNotification(`Quest completed: ${quest.title}!`);
+        }
+      }
+    }
+
+    // Check milestone quest progress
+    checkMilestoneProgress() {
+      // Building milestones
+      for (const [buildingType, tiers] of Object.entries(
+        this.milestoneQuests.building,
+      )) {
+        for (const [tier, quest] of Object.entries(tiers)) {
+          if (quest.claimed) continue;
+          quest.progress = this.items[buildingType]?.count || 0;
+          if (quest.progress >= quest.target && !quest.completed) {
+            quest.completed = true;
+            this.showNotification(
+              `Milestone: Own ${tier} ${this.items[buildingType]?.name || buildingType}(s)!`,
+            );
+          }
+        }
+      }
+
+      // Production milestones
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.production,
+      )) {
+        if (quest.claimed) continue;
+        quest.progress = this.totalDonutsEarned;
+        if (quest.progress >= quest.target && !quest.completed) {
+          quest.completed = true;
+          this.showNotification(
+            `Milestone: Produced ${this.formatNumber(quest.target)} donuts!`,
+          );
+        }
+      }
+
+      // Click milestones
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.clicks,
+      )) {
+        if (quest.claimed) continue;
+        quest.progress = this.totalClicks;
+        if (quest.progress >= quest.target && !quest.completed) {
+          quest.completed = true;
+          this.showNotification(
+            `Milestone: ${this.formatNumber(quest.target)} clicks!`,
+          );
+        }
+      }
+    }
+
+    // Claim milestone quest reward
+    claimMilestoneReward(questType, questKey, tierKey) {
+      let quest;
+      if (questType === "building") {
+        quest = this.milestoneQuests.building[questKey]?.[tierKey];
+      } else if (questType === "production") {
+        quest = this.milestoneQuests.production[questKey];
+      } else if (questType === "clicks") {
+        quest = this.milestoneQuests.clicks[questKey];
+      }
+
+      if (!quest || !quest.completed || quest.claimed) return;
+
+      // Calculate reward
+      let reward;
+      if (questType === "building") {
+        reward = this.calculateBuildingQuestReward(questKey, parseInt(tierKey));
+      } else {
+        // Production/clicks: CPS-based reward
+        const tierIndex = quest.tierIndex || 0;
+        const minutes = 5 + tierIndex * 10; // 5, 15, 25, 35...
+        reward = this.getStableCPS() * 60 * minutes;
+        reward = Math.max(reward, this.getMinRewardForStage());
+        const cap = this.getNextMeaningfulPurchaseCost() * 0.25;
+        reward = Math.min(reward, cap);
+      }
+
+      this.donutCount += reward;
+      quest.claimed = true;
+      this.showNotification(`+${this.formatNumber(reward)} donuts earned!`);
+      this.updateQuestDisplay();
+    }
+
+    // Claim dynamic quest reward
+    claimDynamicReward(slotId) {
+      const slot = this.dynamicSlots[slotId];
+      const quest = slot.currentQuest;
+
+      if (!quest || !quest.completed || quest.claimed) return;
+
+      if (quest.reward.type === "donuts") {
+        this.donutCount += quest.reward.amount;
+        this.showNotification(
+          `+${this.formatNumber(quest.reward.amount)} donuts earned!`,
+        );
+      } else if (quest.reward.type === "multiplier") {
+        if (
+          !this.applyMultiplierReward(
+            quest.reward.amount,
+            quest.reward.duration,
+          )
+        ) {
+          return; // Queue full, can't claim
+        }
+      }
+
+      quest.claimed = true;
+
+      // Start cooldown
+      slot.currentQuest = null;
+      slot.cooldownEnd = Date.now() + slot.cooldown;
+
+      this.updateQuestDisplay();
+    }
+
+    // Track spending at tier (called when buying)
+    trackBuildingPurchase(buildingType, cost) {
+      if (!this.questTracking.currentRun.spentAtTier[buildingType]) {
+        this.questTracking.currentRun.spentAtTier[buildingType] = {
+          cumulative: 0,
+        };
+      }
+
+      const tracking = this.questTracking.currentRun.spentAtTier[buildingType];
+      tracking.cumulative = (tracking.cumulative || 0) + cost;
+
+      // Snapshot at tier
+      const newCount = this.items[buildingType].count + 1;
+      const tiers = this.milestoneTiers[buildingType] || [];
+      if (tiers.includes(newCount)) {
+        tracking[newCount] = tracking.cumulative;
+      }
+    }
+
+    // Migrate old quests to new system
+    migrateOldQuests(oldQuests) {
+      // Map old quest IDs to new milestone structure
+      const buildingMap = {
+        cursorNovice: { type: "cursor", tier: 5 },
+        cursorAdept: { type: "cursor", tier: 25 },
+        cursorMaster: { type: "cursor", tier: 50 },
+        cursorLegend: { type: "cursor", tier: 100 },
+        cursorGod: { type: "cursor", tier: 200 },
+        bakerApprentice: { type: "baker", tier: 3 },
+        bakerJourneyman: { type: "baker", tier: 10 },
+        bakerMaster: { type: "baker", tier: 25 },
+        bakerLegend: { type: "baker", tier: 50 },
+        bakerGod: { type: "baker", tier: 100 },
+        farmStarter: { type: "farm", tier: 2 },
+        farmManager: { type: "farm", tier: 8 },
+        farmMaster: { type: "farm", tier: 20 },
+        farmLegend: { type: "farm", tier: 35 },
+        farmGod: { type: "farm", tier: 50 },
+        mineExplorer: { type: "mine", tier: 1 },
+        mineOperator: { type: "mine", tier: 3 },
+        mineMaster: { type: "mine", tier: 10 },
+        mineLegend: { type: "mine", tier: 15 },
+        mineGod: { type: "mine", tier: 20 },
+        factoryWorker: { type: "factory", tier: 1 },
+        factorySupervisor: { type: "factory", tier: 5 },
+        factoryMaster: { type: "factory", tier: 15 },
+        factoryLegend: { type: "factory", tier: 25 },
+        factoryGod: { type: "factory", tier: 40 },
+        logisticsIntern: { type: "logisticCenter", tier: 1 },
+        logisticsManager: { type: "logisticCenter", tier: 3 },
+        logisticsMaster: { type: "logisticCenter", tier: 10 },
+        logisticsLegend: { type: "logisticCenter", tier: 15 },
+        logisticsGod: { type: "logisticCenter", tier: 25 },
+      };
+
+      const productionMap = {
+        firstProduction: 500,
+        smallBusiness: 10000,
+        growingBusiness: 100000,
+        donutEntrepreneur: 1000000,
+        donutCorporation: 10000000,
+        donutEmpire: 100000000,
+        donutGalaxy: 1000000000,
+        donutUniverse: 1000000000000,
+        legendaryProducer: 1000000000000000,
+      };
+
+      const clickMap = {
+        beginnerClicker: 50,
+        clickEnthusiast: 500,
+        clickMaster: 2000,
+        clickProfessional: 5000,
+        clickExpert: 10000,
+        clickLegend: 25000,
+        clickGod: 50000,
+        clickingDiety: 1000000,
+      };
+
+      // Migrate claimed status
+      for (const [questId, quest] of Object.entries(oldQuests)) {
+        if (!quest.claimed) continue;
+
+        // Building quests
+        if (buildingMap[questId]) {
+          const { type, tier } = buildingMap[questId];
+          // Find closest matching tier in new system
+          const tiers = this.milestoneTiers[type] || [];
+          const closestTier =
+            tiers.find((t) => t >= tier) || tiers[tiers.length - 1];
+          if (this.milestoneQuests.building[type]?.[closestTier]) {
+            this.milestoneQuests.building[type][closestTier].claimed = true;
+            this.milestoneQuests.building[type][closestTier].completed = true;
+          }
+        }
+
+        // Production quests
+        if (productionMap[questId]) {
+          const target = productionMap[questId];
+          // Find closest matching target in new system
+          const closestTarget =
+            this.productionMilestones.find((t) => t >= target) ||
+            this.productionMilestones[this.productionMilestones.length - 1];
+          if (this.milestoneQuests.production[closestTarget]) {
+            this.milestoneQuests.production[closestTarget].claimed = true;
+            this.milestoneQuests.production[closestTarget].completed = true;
+          }
+        }
+
+        // Click quests
+        if (clickMap[questId]) {
+          const target = clickMap[questId];
+          const closestTarget =
+            this.clickMilestones.find((t) => t >= target) ||
+            this.clickMilestones[this.clickMilestones.length - 1];
+          if (this.milestoneQuests.clicks[closestTarget]) {
+            this.milestoneQuests.clicks[closestTarget].claimed = true;
+            this.milestoneQuests.clicks[closestTarget].completed = true;
+          }
+        }
+      }
+    }
+
     setupQuestSystem() {
       // Quest menüsü elementlerini seç
       this.questsMenu = document.getElementById("quests-menu");
@@ -8038,8 +8235,8 @@
         this.closeQuestMenu(),
       );
 
-      // Tab sistemi
-      document.querySelectorAll(".tab-button").forEach((button) => {
+      // Tab sistemi (yeni class: .quest-tab)
+      document.querySelectorAll(".quest-tab").forEach((button) => {
         button.addEventListener("click", () =>
           this.switchQuestTab(button.dataset.tab),
         );
@@ -8054,6 +8251,45 @@
           this.closeQuestMenu();
         }
       });
+
+      // Update KPI counts
+      this.updateQuestKPIs();
+    }
+
+    updateQuestKPIs() {
+      const activeCount = document.getElementById("quest-active-count");
+      const completedCount = document.getElementById("quest-completed-count");
+
+      if (!activeCount || !completedCount) return;
+
+      // Count active dynamic quests
+      let active = 0;
+      let readyToClaim = 0;
+
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const quest = this.dynamicSlots[slotId].currentQuest;
+        if (quest && !quest.claimed) {
+          active++;
+          if (quest.completed) readyToClaim++;
+        }
+      }
+
+      // Count unclaimed milestones
+      let milestoneReady = 0;
+      for (const tiers of Object.values(this.milestoneQuests.building)) {
+        for (const quest of Object.values(tiers)) {
+          if (quest.completed && !quest.claimed) milestoneReady++;
+        }
+      }
+      for (const quest of Object.values(this.milestoneQuests.production)) {
+        if (quest.completed && !quest.claimed) milestoneReady++;
+      }
+      for (const quest of Object.values(this.milestoneQuests.clicks)) {
+        if (quest.completed && !quest.claimed) milestoneReady++;
+      }
+
+      activeCount.textContent = `${active} Active`;
+      completedCount.textContent = `${readyToClaim + milestoneReady} Ready`;
     }
 
     toggleQuestMenu() {
@@ -8081,33 +8317,272 @@
         ".quests-container.completed",
       );
 
-      if (activeContainer) this.renderQuests(activeContainer, false);
-      if (completedContainer) this.renderQuests(completedContainer, true);
+      if (activeContainer) this.renderActiveQuests(activeContainer);
+      if (completedContainer) this.renderCompletedQuests(completedContainer);
+
+      // Update KPI badges
+      this.updateQuestKPIs();
     }
 
-    renderQuests(container, showCompleted) {
+    renderActiveQuests(container) {
       container.innerHTML = "";
       const fragment = document.createDocumentFragment();
 
-      const quests = Object.values(this.quests)
-        .filter((quest) => (showCompleted ? quest.claimed : !quest.claimed))
-        .sort((a, b) => {
-          // Tamamlanmış görevleri üste al
-          if (a.completed && !b.completed) return -1;
-          if (!a.completed && b.completed) return 1;
-          return 0;
-        });
+      // Dynamic Slots Section
+      const dynamicSection = document.createElement("div");
+      dynamicSection.className = "quest-section dynamic-quests";
+      dynamicSection.innerHTML = "<h3>Active Quests</h3>";
 
-      quests.forEach((quest) => {
-        const questElement = this.createQuestElement(quest);
-        if (questElement) fragment.appendChild(questElement);
-      });
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const slot = this.dynamicSlots[slotId];
+        const slotElement = this.renderDynamicSlot(slot);
+        dynamicSection.appendChild(slotElement);
+      }
+      fragment.appendChild(dynamicSection);
+
+      // Milestones Section
+      const milestoneSection = document.createElement("div");
+      milestoneSection.className = "quest-section milestone-quests";
+      milestoneSection.innerHTML = "<h3>Milestones</h3>";
+
+      // Building milestones (unclaimed, showing next tier per building)
+      for (const [buildingType, tiers] of Object.entries(
+        this.milestoneQuests.building,
+      )) {
+        for (const [tier, quest] of Object.entries(tiers)) {
+          if (quest.claimed) continue;
+          const element = this.createMilestoneElement(
+            quest,
+            "building",
+            buildingType,
+            tier,
+          );
+          milestoneSection.appendChild(element);
+          break; // Only show next unclaimed tier per building
+        }
+      }
+
+      // Production milestones (next unclaimed)
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.production,
+      )) {
+        if (quest.claimed) continue;
+        const element = this.createMilestoneElement(
+          quest,
+          "production",
+          target,
+        );
+        milestoneSection.appendChild(element);
+        break;
+      }
+
+      // Click milestones (next unclaimed)
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.clicks,
+      )) {
+        if (quest.claimed) continue;
+        const element = this.createMilestoneElement(quest, "clicks", target);
+        milestoneSection.appendChild(element);
+        break;
+      }
+
+      fragment.appendChild(milestoneSection);
+      container.appendChild(fragment);
+    }
+
+    renderCompletedQuests(container) {
+      container.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+
+      // Claimed milestones
+      const claimedQuests = [];
+
+      for (const [buildingType, tiers] of Object.entries(
+        this.milestoneQuests.building,
+      )) {
+        for (const [tier, quest] of Object.entries(tiers)) {
+          if (quest.claimed) {
+            claimedQuests.push({
+              ...quest,
+              category: "building",
+              buildingType,
+              tier,
+            });
+          }
+        }
+      }
+
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.production,
+      )) {
+        if (quest.claimed) {
+          claimedQuests.push({ ...quest, category: "production", target });
+        }
+      }
+
+      for (const [target, quest] of Object.entries(
+        this.milestoneQuests.clicks,
+      )) {
+        if (quest.claimed) {
+          claimedQuests.push({ ...quest, category: "clicks", target });
+        }
+      }
+
+      if (claimedQuests.length === 0) {
+        const emptyMsg = document.createElement("p");
+        emptyMsg.textContent = "No completed quests yet.";
+        emptyMsg.className = "empty-message";
+        fragment.appendChild(emptyMsg);
+      } else {
+        claimedQuests.forEach((quest) => {
+          const element = document.createElement("div");
+          element.className = "quest-item completed";
+          element.innerHTML = `
+            <div class="quest-info">
+              <h4>${this.getMilestoneTitle(quest)}</h4>
+              <p class="reward-text">Completed!</p>
+            </div>
+          `;
+          fragment.appendChild(element);
+        });
+      }
 
       container.appendChild(fragment);
     }
 
+    renderDynamicSlot(slot) {
+      const slotDiv = document.createElement("div");
+      slotDiv.className = `quest-slot ${slot.difficulty}`;
+      slotDiv.setAttribute("data-slot-id", slot.id);
+
+      const quest = slot.currentQuest;
+      const now = Date.now();
+
+      if (quest) {
+        const progress = Math.min((quest.progress / quest.target) * 100, 100);
+        const rewardText =
+          quest.reward.type === "donuts"
+            ? `${this.formatNumber(quest.reward.amount)} donut`
+            : `${quest.reward.amount.toFixed(2)}x multiplier (${quest.reward.duration / 1000}s)`;
+
+        let timeInfo = "";
+        if (quest.type === "timedProduce" && quest.timedStartTime) {
+          const remaining = Math.max(
+            0,
+            (quest.timedStartTime + quest.timeLimit - now) / 1000,
+          );
+          timeInfo = `<span class="time-remaining">${Math.ceil(remaining)}s left</span>`;
+        }
+
+        slotDiv.innerHTML = `
+          <div class="slot-header ${slot.difficulty}">${slot.difficulty.toUpperCase()}</div>
+          <div class="quest-info">
+            <h4>${quest.title}</h4>
+            <p>${quest.description}</p>
+            ${timeInfo}
+            <div class="quest-progress">
+              <div class="progress-bar" style="width: ${progress}%"></div>
+              <span class="progress-text">${this.formatNumber(quest.progress)}/${this.formatNumber(quest.target)}</span>
+            </div>
+            <p class="reward-text">Reward: ${rewardText}</p>
+          </div>
+          <button class="claim-reward" ${quest.completed && !quest.claimed ? "" : "disabled"}>
+            ${quest.claimed ? "Completed" : quest.completed ? "Claim Reward" : "In Progress"}
+          </button>
+        `;
+
+        const claimButton = slotDiv.querySelector(".claim-reward");
+        claimButton.addEventListener("click", () => {
+          if (quest.completed && !quest.claimed) {
+            this.claimDynamicReward(slot.id);
+          }
+        });
+      } else if (slot.cooldownEnd && slot.cooldownEnd > now) {
+        const remaining = Math.ceil((slot.cooldownEnd - now) / 1000);
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        slotDiv.innerHTML = `
+          <div class="slot-header ${slot.difficulty}">${slot.difficulty.toUpperCase()}</div>
+          <div class="cooldown-info">
+            <span class="cooldown-timer">${minutes}:${seconds.toString().padStart(2, "0")}</span>
+            <p>New quest in...</p>
+          </div>
+        `;
+      } else {
+        slotDiv.innerHTML = `
+          <div class="slot-header ${slot.difficulty}">${slot.difficulty.toUpperCase()}</div>
+          <div class="loading-info">
+            <p>Generating quest...</p>
+          </div>
+        `;
+      }
+
+      return slotDiv;
+    }
+
+    createMilestoneElement(quest, category, key, tierKey = null) {
+      const questDiv = document.createElement("div");
+      questDiv.className = "quest-item milestone";
+
+      const progress = Math.min((quest.progress / quest.target) * 100, 100);
+      const title = this.getMilestoneTitle({
+        ...quest,
+        category,
+        buildingType: key,
+        target: key,
+        tier: tierKey,
+      });
+
+      let rewardText;
+      if (category === "building") {
+        const reward = this.calculateBuildingQuestReward(
+          key,
+          parseInt(tierKey),
+        );
+        rewardText = `~${this.formatNumber(reward)} donuts`;
+      } else {
+        rewardText = "CPS-based reward";
+      }
+
+      questDiv.innerHTML = `
+        <div class="quest-info">
+          <h4>${title}</h4>
+          <div class="quest-progress">
+            <div class="progress-bar" style="width: ${progress}%"></div>
+            <span class="progress-text">${this.formatNumber(quest.progress)}/${this.formatNumber(quest.target)}</span>
+          </div>
+          <p class="reward-text">Reward: ${rewardText}</p>
+        </div>
+        <button class="claim-reward" ${quest.completed && !quest.claimed ? "" : "disabled"}>
+          ${quest.claimed ? "Completed" : quest.completed ? "Claim Reward" : "In Progress"}
+        </button>
+      `;
+
+      const claimButton = questDiv.querySelector(".claim-reward");
+      claimButton.addEventListener("click", () => {
+        if (quest.completed && !quest.claimed) {
+          this.claimMilestoneReward(category, key, tierKey);
+        }
+      });
+
+      return questDiv;
+    }
+
+    getMilestoneTitle(quest) {
+      if (quest.category === "building") {
+        const buildingName =
+          this.items[quest.buildingType]?.name || quest.buildingType;
+        return `Own ${quest.tier || quest.target} ${buildingName}(s)`;
+      } else if (quest.category === "production") {
+        return `Produce ${this.formatNumber(quest.target)} donuts`;
+      } else if (quest.category === "clicks") {
+        return `Click ${this.formatNumber(quest.target)} times`;
+      }
+      return "Unknown Quest";
+    }
+
     switchQuestTab(tabName) {
-      document.querySelectorAll(".tab-button").forEach((button) => {
+      document.querySelectorAll(".quest-tab").forEach((button) => {
         button.classList.toggle("active", button.dataset.tab === tabName);
       });
 
@@ -8170,12 +8645,12 @@
     claimQuestReward(quest) {
       if (!quest.completed || quest.claimed) return;
 
-      // Multiplier reward kontrolü
+      // Multiplier reward - use new queue system
       if (quest.reward.type === "multiplier") {
-        // Aktif multiplier var mı kontrol et
-        if (this.activeMultipliers.length > 0) {
+        // Check if queue is full
+        if (this.multiplierState.active && this.multiplierState.queued) {
           this.showNotification(
-            "You cannot claim a multiplier reward while another one is active!",
+            "Multiplier queue is full! Wait for current multiplier to end.",
           );
           return;
         }
@@ -8188,12 +8663,7 @@
           `+${this.formatNumber(quest.reward.amount)} donuts earned!`,
         );
       } else if (quest.reward.type === "multiplier") {
-        this.activateMultiplier(quest.reward.amount, quest.reward.duration);
-        this.showNotification(
-          `${quest.reward.amount.toFixed(2)}x production multiplier active for ${
-            quest.reward.duration / 1000
-          } seconds!`,
-        );
+        this.applyMultiplierReward(quest.reward.amount, quest.reward.duration);
       }
 
       quest.claimed = true;
@@ -8240,8 +8710,12 @@
       return timerDiv;
     }
 
-    // activateMultiplier metodunu güncelleyelim
+    // activateMultiplier - routes to new queue-based system
     activateMultiplier(amount, duration) {
+      // Use the new queue-based multiplier system
+      this.applyMultiplierReward(amount, duration);
+
+      // Also maintain legacy activeMultipliers for backward compatibility
       const multiplier = {
         id: Date.now(),
         amount: amount,
@@ -8254,25 +8728,7 @@
       );
       this.activeMultipliers.push(multiplier);
 
-      // Her item'in production değerini güncelle
-      for (let key in this.items) {
-        this.items[key].production =
-          this.items[key].originalProduction * this.productionMultiplier;
-      }
-
       this.updateProductionMultiplier();
-
-      setTimeout(() => {
-        this.activeMultipliers = this.activeMultipliers.filter(
-          (m) => m.id !== multiplier.id,
-        );
-        // Multiplier bitince production değerlerini sıfırla
-        for (let key in this.items) {
-          this.items[key].production = this.items[key].originalProduction;
-        }
-        this.updateProductionMultiplier();
-        this.updateDisplay();
-      }, duration);
     }
 
     // Timer container oluşturma metodu
@@ -8284,12 +8740,15 @@
       return container;
     }
     updateProductionMultiplier() {
-      this.productionMultiplier = 1;
-
-      // Aktif multiplier'ları uygula
+      // Base multiplier from legacy activeMultipliers
+      let legacyMultiplier = 1;
       this.activeMultipliers.forEach((multiplier) => {
-        this.productionMultiplier *= multiplier.amount;
+        legacyMultiplier *= multiplier.amount;
       });
+
+      // Combine with new multiplier sources
+      this.productionMultiplier =
+        legacyMultiplier * this.getFinalProductionMultiplier();
 
       // Üretimi güncelle
       this.updateTotalPerSecond();
@@ -8303,84 +8762,25 @@
       }
       this._lastQuestCheck = now;
 
-      let hasNewCompletedQuest = false;
+      // Update CPS history
+      this.updateCPSHistory();
 
-      // Tamamlanmamış görevleri filtrele ve sadece onları kontrol et
-      Object.values(this.quests)
-        .filter((quest) => !quest.completed && !quest.claimed)
-        .forEach((quest) => {
-          const oldProgress = quest.progress;
-          let newProgress;
+      // Update quest multipliers (tick-based)
+      this.updateQuestMultipliers();
 
-          // Switch case yerine lookup table kullan
-          const progressCalculators = {
-            production: () => Math.floor(this.totalDonutsEarned),
-            building: () => this.items[quest.buildingType].count,
-            clicks: () => this.totalClicks,
-            combined: () =>
-              Math.min(...Object.values(this.items).map((item) => item.count)),
-          };
+      // Update dynamic slots (generate new quests if needed)
+      this.updateDynamicSlots();
 
-          newProgress = progressCalculators[quest.type]?.() ?? oldProgress;
+      // Check dynamic quest progress
+      this.checkDynamicQuestProgress();
 
-          // Progress değişmişse güncelle
-          if (newProgress !== oldProgress) {
-            quest.progress = newProgress;
+      // Check milestone progress
+      this.checkMilestoneProgress();
 
-            // Quest tamamlandıysa
-            if (!quest.completed && quest.progress >= quest.target) {
-              quest.completed = true;
-              hasNewCompletedQuest = true;
-
-              // Bildirim göster
-              requestAnimationFrame(() => {
-                this.showNotification(`Quest completed: ${quest.title}!`);
-                // Quests div'ini ve img container'ını seç
-                const questsDiv = document.querySelector(".page-item#quests");
-                const questsImgContainer = questsDiv.querySelector(".page-img");
-
-                // Eğer zaten bir completed etiketi yoksa ekle
-                const existingLabel = questsImgContainer.querySelector(
-                  ".completed-feature-label",
-                );
-                if (!existingLabel) {
-                  // Completed etiketi oluştur
-                  const completedLabel = document.createElement("div");
-                  completedLabel.className = "completed-feature-label";
-                  completedLabel.textContent = "Completed!";
-                  questsImgContainer.appendChild(completedLabel);
-
-                  // Quests div'ine tıklandığında etiketi kaldır
-                  const removeCompletedLabel = (e) => {
-                    // Eğer tıklanan element questsDiv ise
-                    if (e.currentTarget === questsDiv) {
-                      // Etiketi kaldır
-                      const label = questsImgContainer.querySelector(
-                        ".completed-feature-label",
-                      );
-                      if (label) {
-                        label.remove();
-                      }
-                      // Event listener'ı kaldır
-                      questsDiv.removeEventListener(
-                        "click",
-                        removeCompletedLabel,
-                      );
-                    }
-                  };
-
-                  // Click event listener'ı ekle
-                  questsDiv.addEventListener("click", removeCompletedLabel);
-                }
-              });
-            }
-
-            // Quest menüsü açıksa güncelle
-            if (!this.questsMenu.classList.contains("hidden")) {
-              this.updateQuestDisplay();
-            }
-          }
-        });
+      // Quest menüsü açıksa güncelle
+      if (this.questsMenu && !this.questsMenu.classList.contains("hidden")) {
+        this.updateQuestDisplay();
+      }
     }
 
     setupMobileMenus() {

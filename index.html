@@ -102,7 +102,7 @@
       rel="stylesheet"
     />
     <title>Play Donut Clicker – The Best Idle Clicker Game</title>
-    <link rel="stylesheet" href="styles.css?v=1.5.0" />
+    <link rel="stylesheet" href="styles.css?v=1.5.1" />
     <link rel="stylesheet" href="store-visibility.css?v=1.4.4" />
     <link rel="icon" href="img/donutPixelArt.webp" type="image/webp" />
     <link rel="preload" as="image" href="img/donutNew.webp" />
@@ -1242,15 +1242,32 @@
       </div>
     </div>
     <div id="quests-menu" class="hidden">
-      <div class="menu-content">
-        <span id="close-quests-menu" class="close-btn">&times;</span>
-        <h2>Quests</h2>
-        <div class="quest-tabs">
-          <button class="tab-button active" data-tab="active">Active</button>
-          <button class="tab-button" data-tab="completed">Completed</button>
+      <div class="quest-panel">
+        <!-- Top Bar -->
+        <div class="quest-topbar">
+          <div class="quest-header-icon-fallback">📜</div>
+          <div class="quest-header-info">
+            <span class="quest-section-title">Quests</span>
+            <span class="quest-subtitle">Complete tasks for rewards</span>
+          </div>
+          <div class="quest-kpi-bar">
+            <span class="quest-kpi" id="quest-active-count">0 Active</span>
+            <span class="quest-kpi" id="quest-completed-count">0 Done</span>
+          </div>
+          <span id="close-quests-menu" class="quest-close-btn">&times;</span>
         </div>
-        <div class="quests-container active"></div>
-        <div class="quests-container completed hidden"></div>
+
+        <!-- Tabs -->
+        <div class="quest-tabs">
+          <button class="quest-tab active" data-tab="active">Active</button>
+          <button class="quest-tab" data-tab="completed">Completed</button>
+        </div>
+
+        <!-- Content -->
+        <div class="quest-content">
+          <div class="quests-container active"></div>
+          <div class="quests-container completed hidden"></div>
+        </div>
       </div>
     </div>
     <!-- Prestige modal -->
@@ -1354,6 +1371,6 @@
       </div>
     </div>
 
-    <script defer src="script.js?v=1.5.0"></script>
+    <script defer src="script.js?v=1.5.1"></script>
   </body>
 </html>
