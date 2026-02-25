@@ -1394,8 +1394,9 @@
         5, 10, 25, 50, 100, 200, 500, 1000,
       ];
 
-      // Refund rates by tier index (extended for more tiers)
-      this.tierRefundRates = [0.25, 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08, 0.06];
+      // Building milestone bonus rates by tier index.
+      // These apply to INCREMENTAL spending between milestone tiers.
+      this.tierRefundRates = [0.08, 0.075, 0.07, 0.065, 0.06, 0.055, 0.05, 0.045, 0.04, 0.035, 0.03];
 
       // Initialize milestone quests state
       this.milestoneQuests = this.initializeMilestoneQuests();
@@ -1478,6 +1479,9 @@
           totalClicks: 0,
         },
       };
+      this.questUIRefreshInterval = 1000;
+      this._lastQuestUIRefresh = 0;
+      this.isHoveringQuestMenu = false;
 
       // Legacy quests object for backward compatibility during migration
       this.quests = {};
@@ -1739,6 +1743,7 @@
       this.setupInfoMenu();
       this.setupStatsMenu();
       this.setupSettingsMenu();
+      this.setupGuidesMenu();
       this.setupFeedbackPopup();
 
       this.setupAutoBuyer();
@@ -6807,7 +6812,12 @@
     closeAllMenus(except = null) {
       // Sadece masaüstü menüleri için
       if (!this.isMobile) {
-        const menus = ["stats-menu", "information-menu", "settings-menu"];
+        const menus = [
+          "stats-menu",
+          "information-menu",
+          "settings-menu",
+          "guides-menu",
+        ];
         menus.forEach((menu) => {
           if (menu !== except) {
             document.getElementById(menu).classList.add("hidden");
@@ -6898,6 +6908,42 @@
           this.saveGame();
           if (!this.isMobile) {
             settingsMenu.classList.add("hidden");
+          }
+        });
+      }
+    }
+
+    setupGuidesMenu() {
+      const guidesButton = document.getElementById("guides-button");
+      const guidesMenu = document.getElementById("guides-menu");
+
+      if (!this.isMobile && guidesButton && guidesMenu) {
+        guidesButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (!guidesMenu.classList.contains("hidden")) {
+            guidesMenu.classList.add("hidden");
+          } else {
+            this.closeAllMenus("guides-menu");
+            guidesMenu.classList.remove("hidden");
+          }
+        });
+
+        guidesMenu.addEventListener("click", (event) => {
+          event.stopPropagation();
+        });
+
+        document.addEventListener("click", (event) => {
+          if (
+            !event.target.closest("#guides-button") &&
+            !event.target.closest("#guides-menu")
+          ) {
+            guidesMenu.classList.add("hidden");
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            guidesMenu.classList.add("hidden");
           }
         });
       }
@@ -7727,25 +7773,57 @@
       return quests;
     }
 
-    // Calculate building quest reward based on tier spending
+    // Get incremental spend between the current building tier and previous tier
+    getBuildingTierSpendDelta(buildingType, targetTier) {
+      const tiers = this.milestoneTiers[buildingType] || [];
+      const tracking = this.questTracking.currentRun.spentAtTier[buildingType] || {};
+      const targetIndex = tiers.indexOf(targetTier);
+
+      const targetCumulative =
+        tracking[targetTier] ?? this.estimateTierCost(buildingType, targetTier);
+
+      if (targetIndex <= 0) {
+        return Math.max(0, targetCumulative);
+      }
+
+      const prevTier = tiers[targetIndex - 1];
+      const prevCumulative =
+        tracking[prevTier] ?? this.estimateTierCost(buildingType, prevTier);
+
+      return Math.max(0, targetCumulative - prevCumulative);
+    }
+
+    // Building-tier cap tied to the same building's next purchase cost
+    getBuildingTierCap(buildingType, tierIndex = 0) {
+      const building = this.items[buildingType];
+      const nextBuildingCost =
+        building?.baseCost || this.getNextMeaningfulPurchaseCost();
+      const capFactor = Math.min(0.75, 0.45 + tierIndex * 0.03);
+
+      return Math.max(this.getMinRewardForStage(), nextBuildingCost * capFactor);
+    }
+
+    // Building milestone reward based on incremental tier effort
+    calculateBuildingMilestoneReward(buildingType, targetTier, tierIndex = null) {
+      const tiers = this.milestoneTiers[buildingType] || [];
+      const resolvedTierIndex =
+        tierIndex !== null && tierIndex !== undefined
+          ? tierIndex
+          : Math.max(0, tiers.indexOf(targetTier));
+      const spentDelta = this.getBuildingTierSpendDelta(buildingType, targetTier);
+      const fallbackRate = this.tierRefundRates[this.tierRefundRates.length - 1] || 0.03;
+      const rate = this.tierRefundRates[resolvedTierIndex] || fallbackRate;
+
+      let reward = spentDelta * rate;
+      const cap = this.getBuildingTierCap(buildingType, resolvedTierIndex);
+      reward = Math.min(reward, cap);
+
+      return Math.max(Math.floor(reward), this.getMinRewardForStage());
+    }
+
+    // Backward-compatible alias
     calculateBuildingQuestReward(buildingType, targetTier) {
-      const tracking =
-        this.questTracking.currentRun.spentAtTier[buildingType] || {};
-      const spent =
-        tracking[targetTier] || this.estimateTierCost(buildingType, targetTier);
-
-      // Tier-based refund rate
-      const tierIndex =
-        this.milestoneTiers[buildingType]?.indexOf(targetTier) || 0;
-      const rate = this.tierRefundRates[tierIndex] || 0.1;
-
-      let reward = Math.floor(spent * rate);
-
-      // Cap: 30% of next meaningful building cost
-      const nextCost = this.getNextMeaningfulPurchaseCost();
-      const cap = Math.floor(nextCost * 0.3);
-
-      return Math.min(reward, cap);
+      return this.calculateBuildingMilestoneReward(buildingType, targetTier);
     }
 
     // Estimate cost to reach tier (fallback when no tracking data)
@@ -7760,28 +7838,37 @@
       return totalCost;
     }
 
-    // Get next meaningful purchase cost for capping
+    // Get stage-aware purchase benchmark cost for capping
     getNextMeaningfulPurchaseCost() {
-      const buildingKeys = Object.keys(this.items);
+      const entries = Object.entries(this.items);
+      if (entries.length === 0) return 1000;
 
-      // Find cheapest building with count < 10
-      for (const key of buildingKeys) {
-        if (this.items[key].count < 10) {
-          return this.items[key].baseCost;
-        }
-      }
+      const relevant = entries.filter(
+        ([, item]) => item.count > 0 || this.donutCount >= item.baseCost * 0.2,
+      );
+      const pool = relevant.length > 0 ? relevant : entries;
+      const sortedCosts = pool.map(([, item]) => item.baseCost).sort((a, b) => a - b);
 
-      // Fallback: most expensive building's current cost
-      let maxCost = 0;
-      for (const key of buildingKeys) {
-        const cost = this.items[key].baseCost;
-        if (cost > maxCost) maxCost = cost;
-      }
-      return maxCost || 1000; // Minimum fallback
+      const stage = this.getGameStage();
+      const stagePosition = (stage - 1) / 7;
+      const stageIndex = Math.max(
+        0,
+        Math.min(
+          sortedCosts.length - 1,
+          Math.floor(stagePosition * (sortedCosts.length - 1)),
+        ),
+      );
+      const stageCost = sortedCosts[stageIndex];
+
+      const nextProgressionCost =
+        sortedCosts.find((cost) => cost > this.donutCount) ||
+        sortedCosts[sortedCosts.length - 1];
+
+      return Math.max(stageCost, nextProgressionCost * 0.4);
     }
 
     // ============================================================
-    // QUEST REWARD SYSTEM v3.0 - PERFECT EFFORT-BASED ECONOMICS
+    // QUEST REWARD SYSTEM v3.2 - EFFORT-COHERENT ECONOMICS
     // ============================================================
     //
     // CORE PHILOSOPHY:
@@ -7796,6 +7883,7 @@
     // REWARD PRINCIPLE:
     // Reward = (Effort Value) × (Small Bonus Rate)
     // Where bonus rate is 5-15% depending on difficulty
+    // and all caps/minimums use the same stabilized CPS reference
     //
     // ============================================================
 
@@ -7841,7 +7929,7 @@
           // Buying = you SPENT donuts, you have buildings
           // Reward = tiny cashback (not refund!)
           const count = questData?.target || 1;
-          const estCost = this.estimateBuyQuestCost(count, questType);
+          const estCost = this.estimateBuyQuestCost(count, questType, questData);
           // Cashback = 3-8% of spending
           reward = estCost * bonusRate * 0.5;
           break;
@@ -7888,7 +7976,7 @@
       }
 
       // Apply stage-appropriate minimum (prevents 0 rewards, stays tiny)
-      const minReward = this.getStageMinimum(stage);
+      const minReward = this.getDynamicRewardMinimum(stage, difficulty);
       reward = Math.max(reward, minReward);
 
       // Apply economic cap (NEVER break progression)
@@ -7901,7 +7989,7 @@
     // Get current game stage for scaling
     getGameStage() {
       const buildings = Object.values(this.items).reduce((s, i) => s + i.count, 0);
-      const cps = this.calculatePerSecond();
+      const cps = this.getStableCPS();
 
       if (buildings < 3 || cps < 0.5) return 1;
       if (buildings < 8 || cps < 3) return 2;
@@ -7920,10 +8008,22 @@
       return mins[stage] || 1;
     }
 
+    // Difficulty-aware floor so early-game difficulties don't collapse into identical rewards
+    getDynamicRewardMinimum(stage, difficulty) {
+      const baseMin = this.getStageMinimum(stage);
+      const diffFloor = {
+        easy: 1,
+        medium: 2,
+        hard: 3,
+        special: 5,
+      };
+      return baseMin * (diffFloor[difficulty] || 1);
+    }
+
     // Economic cap - prevents breaking game progression
     // Cap = X% of next building cost OR Y seconds of CPS, whichever is SMALLER
     getEconomicCap(stage, difficulty) {
-      const cps = this.calculatePerSecond();
+      const cps = this.getStableCPS();
       const nextBuilding = this.getNextMeaningfulPurchaseCost();
 
       // Cap as percentage of next building
@@ -7948,30 +8048,51 @@
       // Use SMALLER cap (conservative approach)
       const cap = Math.min(buildingCap, cpsCap);
 
-      // Never below stage minimum
-      return Math.max(cap, this.getStageMinimum(stage));
+      // Never below stage+difficulty minimum
+      return Math.max(cap, this.getDynamicRewardMinimum(stage, difficulty));
     }
 
     // Click value (base 1 + tiny CPS bonus)
     getClickValue() {
-      return 1 + (this.calculatePerSecond() * 0.005);
+      return 1 + (this.getStableCPS() * 0.005);
     }
 
     // Estimate buy quest cost
-    estimateBuyQuestCost(count, questType) {
+    estimateBuyQuestCost(count, questType, questData = null) {
       if (questType === "buySpecific") {
+        const targetBuilding = questData?.buildingType;
+        if (targetBuilding && this.items[targetBuilding]) {
+          return this.estimateBuildingPurchaseCost(targetBuilding, count);
+        }
         const cheapest = this.getCheapestBuilding();
-        return cheapest.baseCost * count;
+        return this.estimateBuildingPurchaseCost(cheapest.key || "cursor", count);
       }
       return this.getAverageBuildingCost() * count;
     }
 
+    // Estimate the real cumulative cost for buying N copies of a building
+    estimateBuildingPurchaseCost(buildingType, count) {
+      const item = this.items[buildingType];
+      if (!item || count <= 0) return 0;
+
+      let total = 0;
+      let nextCost = item.baseCost;
+      for (let i = 0; i < count; i++) {
+        total += nextCost;
+        nextCost *= item.costMultiplier;
+      }
+      return total;
+    }
+
     // Get cheapest building
     getCheapestBuilding() {
-      const buildings = Object.values(this.items);
-      const affordable = buildings.filter(b => this.donutCount >= b.baseCost * 0.2);
-      if (affordable.length === 0) return this.items.cursor;
-      return affordable.reduce((min, b) => b.baseCost < min.baseCost ? b : min);
+      const buildingEntries = Object.entries(this.items);
+      const affordable = buildingEntries.filter(([, b]) => this.donutCount >= b.baseCost * 0.2);
+      if (affordable.length === 0) return { ...this.items.cursor, key: "cursor" };
+      const [key, building] = affordable.reduce((minEntry, currentEntry) =>
+        currentEntry[1].baseCost < minEntry[1].baseCost ? currentEntry : minEntry,
+      );
+      return { ...building, key };
     }
 
     // Average building cost
@@ -7992,6 +8113,85 @@
       return sorted.length % 2 === 0
         ? (sorted[mid - 1].cps + sorted[mid].cps) / 2
         : sorted[mid].cps;
+    }
+
+    // Get minimum reward based on game stage
+    getMinRewardForStage() {
+      return this.getStageMinimum(this.getGameStage());
+    }
+
+    // Type-specific rate for non-building milestones
+    getMilestoneBonusRate(questType) {
+      const rates = {
+        production: 0.10,
+        clicks: 0.10,
+        cps: 0.12,
+        totalBuildings: 0.11,
+        upgrades: 0.14,
+        questsCompleted: 0.16,
+      };
+      return rates[questType] || 0.10;
+    }
+
+    // Conservative cap for milestone rewards
+    getMilestoneEconomicCap(questType, tierIndex = 0) {
+      const stableCPS = this.getStableCPS();
+      const nextBuilding = this.getNextMeaningfulPurchaseCost();
+      const growthFactor = Math.min(1.8, 1 + tierIndex * 0.03);
+
+      const buildingPercent = {
+        building: 0.30,
+        production: 0.10,
+        clicks: 0.10,
+        cps: 0.14,
+        totalBuildings: 0.16,
+        upgrades: 0.20,
+        questsCompleted: 0.24,
+      };
+
+      const cpsSeconds = {
+        building: 120,
+        production: 45,
+        clicks: 45,
+        cps: 60,
+        totalBuildings: 75,
+        upgrades: 90,
+        questsCompleted: 120,
+      };
+
+      const basePercent = buildingPercent[questType] || 0.10;
+      const baseSeconds = cpsSeconds[questType] || 45;
+
+      const buildingCap = nextBuilding * basePercent * growthFactor;
+      const cpsCap = stableCPS * baseSeconds * growthFactor;
+
+      return Math.max(this.getMinRewardForStage(), Math.min(buildingCap, cpsCap));
+    }
+
+    calculateNonBuildingMilestoneReward(questType, tierIndex = 0, targetValue = 0) {
+      const stableCPS = this.getStableCPS();
+      const bonusRate = this.getMilestoneBonusRate(questType);
+      const minutesByType = {
+        production: 3 + tierIndex * 2,
+        clicks: 3 + tierIndex * 2,
+        cps: 3 + tierIndex * 3,
+        totalBuildings: 4 + tierIndex * 3,
+        upgrades: 5 + tierIndex * 4,
+        questsCompleted: 6 + tierIndex * 5,
+      };
+
+      const minutes = minutesByType[questType] || (3 + tierIndex * 2);
+      let reward = stableCPS * 60 * minutes * bonusRate;
+
+      // CPS milestones should still reflect the achieved target modestly.
+      if (questType === "cps" && targetValue > 0) {
+        reward = Math.max(reward, targetValue * 8 * bonusRate);
+      }
+
+      const cap = this.getMilestoneEconomicCap(questType, tierIndex);
+      reward = Math.min(reward, cap);
+
+      return Math.max(Math.floor(reward), this.getMinRewardForStage());
     }
 
     // Update CPS history (called in game loop)
@@ -8097,8 +8297,8 @@
       const difficultyMultipliers = {
         easy: 1,
         medium: 2,
-        hard: 4,
-        special: 6,
+        hard: 3,
+        special: 5,
       };
       const mult = difficultyMultipliers[difficulty] || 1;
 
@@ -8168,7 +8368,10 @@
           quest.description = `Purchase ${quest.target} ${this.items[targetBuilding].name}${quest.target > 1 ? 's' : ''}`;
           quest.reward = {
             type: "donuts",
-            amount: this.calculateDynamicReward(slot, "buySpecific", { target: quest.target }),
+            amount: this.calculateDynamicReward(slot, "buySpecific", {
+              target: quest.target,
+              buildingType: targetBuilding,
+            }),
           };
           quest.startCount = this.items[targetBuilding].count;
           break;
@@ -8520,6 +8723,25 @@
       return total;
     }
 
+    // Unified reward calculator for milestone claim + UI preview
+    calculateMilestoneRewardByType(questType, quest, questKey, tierKey = null) {
+      const tierIndex = quest?.tierIndex || 0;
+      if (questType === "building") {
+        const targetTier = Number(tierKey);
+        return this.calculateBuildingMilestoneReward(
+          questKey,
+          targetTier,
+          tierIndex,
+        );
+      }
+
+      return this.calculateNonBuildingMilestoneReward(
+        questType,
+        tierIndex,
+        quest?.target || 0,
+      );
+    }
+
     // Claim milestone quest reward
     claimMilestoneReward(questType, questKey, tierKey) {
       let quest;
@@ -8541,45 +8763,12 @@
 
       if (!quest || !quest.completed || quest.claimed) return;
 
-      // Calculate reward based on milestone type
-      let reward;
-      const tierIndex = quest.tierIndex || 0;
-
-      if (questType === "building") {
-        reward = this.calculateBuildingQuestReward(questKey, parseInt(tierKey));
-      } else if (questType === "cps") {
-        // CPS milestones: reward scales with the CPS target achieved
-        const minutes = 3 + tierIndex * 5; // 3, 8, 13, 18...
-        reward = quest.target * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.5));
-      } else if (questType === "totalBuildings") {
-        // Total buildings: reward based on total building count
-        const minutes = 5 + tierIndex * 8;
-        reward = this.getStableCPS() * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.3));
-      } else if (questType === "upgrades") {
-        // Upgrades: generous rewards to encourage upgrade purchases
-        const minutes = 10 + tierIndex * 15;
-        reward = this.getStableCPS() * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage() * (2 + tierIndex));
-      } else if (questType === "questsCompleted") {
-        // Meta-milestones: big rewards for quest hunters
-        const minutes = 15 + tierIndex * 20;
-        reward = this.getStableCPS() * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage() * (3 + tierIndex * 2));
-      } else {
-        // Production/clicks: CPS-based reward
-        const minutes = 5 + tierIndex * 8;
-        reward = this.getStableCPS() * 60 * minutes;
-        reward = Math.max(reward, this.getMinRewardForStage() * (1 + tierIndex * 0.2));
-      }
-
-      // Apply cap to prevent runaway rewards
-      const cap = this.getNextMeaningfulPurchaseCost() * (0.25 + tierIndex * 0.05);
-      reward = Math.min(Math.floor(reward), cap);
-
-      // Ensure minimum reward
-      reward = Math.max(reward, this.getMinRewardForStage());
+      const reward = this.calculateMilestoneRewardByType(
+        questType,
+        quest,
+        questKey,
+        tierKey,
+      );
 
       this.donutCount += reward;
       quest.claimed = true;
@@ -8751,6 +8940,16 @@
       this.questsButton = document.getElementById("quests");
       this.closeQuestsButton = document.getElementById("close-quests-menu");
 
+      // While user is interacting with quest menu, avoid frequent full rerenders.
+      this.questsMenu.addEventListener("mouseenter", () => {
+        this.isHoveringQuestMenu = true;
+      });
+      this.questsMenu.addEventListener("mouseleave", () => {
+        this.isHoveringQuestMenu = false;
+        this._lastQuestUIRefresh = Date.now();
+        this.updateQuestDisplay();
+      });
+
       // Event listener'ları ekle
       this.questsButton.addEventListener("click", () => this.toggleQuestMenu());
       this.closeQuestsButton.addEventListener("click", () =>
@@ -8845,6 +9044,7 @@
 
     openQuestMenu() {
       this.questsMenu.classList.remove("hidden");
+      this._lastQuestUIRefresh = Date.now();
       this.updateQuestDisplay();
     }
 
@@ -8860,8 +9060,15 @@
         ".quests-container.completed",
       );
 
-      if (activeContainer) this.renderActiveQuests(activeContainer);
-      if (completedContainer) this.renderCompletedQuests(completedContainer);
+      if (activeContainer && !activeContainer.classList.contains("hidden")) {
+        this.renderActiveQuests(activeContainer);
+      }
+      if (
+        completedContainer &&
+        !completedContainer.classList.contains("hidden")
+      ) {
+        this.renderCompletedQuests(completedContainer);
+      }
 
       // Update KPI badges
       this.updateQuestKPIs();
@@ -9152,16 +9359,13 @@
         tier: tierKey,
       });
 
-      let rewardText;
-      if (category === "building") {
-        const reward = this.calculateBuildingQuestReward(
-          key,
-          parseInt(tierKey),
-        );
-        rewardText = `~${this.formatNumber(reward)} donuts`;
-      } else {
-        rewardText = "CPS-based reward";
-      }
+      const reward = this.calculateMilestoneRewardByType(
+        category,
+        quest,
+        key,
+        tierKey,
+      );
+      const rewardText = `~${this.formatNumber(reward)} donuts`;
 
       questDiv.innerHTML = `
         <div class="quest-info">
@@ -9219,6 +9423,9 @@
           !container.classList.contains(tabName),
         );
       });
+
+      this._lastQuestUIRefresh = Date.now();
+      this.updateQuestDisplay();
     }
 
     // createQuestElement metodunu güncelle
@@ -9404,9 +9611,13 @@
       // Check milestone progress
       this.checkMilestoneProgress();
 
-      // Quest menüsü açıksa güncelle
+      // Quest menu UI refresh: throttled and paused while hovering to prevent flicker.
       if (this.questsMenu && !this.questsMenu.classList.contains("hidden")) {
-        this.updateQuestDisplay();
+        const canRefresh = !this.isHoveringQuestMenu;
+        if (canRefresh && now - (this._lastQuestUIRefresh || 0) >= this.questUIRefreshInterval) {
+          this._lastQuestUIRefresh = now;
+          this.updateQuestDisplay();
+        }
       }
     }
 
@@ -9622,39 +9833,7 @@
     initializeComboSystem() {
       const combosElement = document.getElementById("combos");
       if (combosElement) {
-        // Özel class ismiyle yeni etiket oluştur
-        const newLabel = document.createElement("div");
-        newLabel.className = "combo-feature-label";
-        newLabel.textContent = "Try new feature!";
-
-        // Label'ı doğrudan combos elementinin üzerine yerleştir
-        newLabel.style.cssText = `
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff6b6b;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            z-index: 1000;
-            animation: bounce 1s infinite;
-        `;
-
-        combosElement.style.position = "relative";
-        combosElement.appendChild(newLabel);
-
-        // Combo elementine pulse efekti ekle
-        combosElement.classList.add("pulse-effect", "new-feature");
-
         combosElement.addEventListener("click", () => {
-          // Tıklandığında efektleri kaldır
-          combosElement.classList.remove("pulse-effect", "new-feature");
-          const label = combosElement.querySelector(".combo-feature-label");
-          if (label) label.remove();
-
           this.toggleComboMode();
         });
       }
@@ -9967,9 +10146,11 @@
     game.init(); // Game sınıfındaki init fonksiyonunu çağırarak oyunu başlat
     const resetButton = document.getElementById("reset-button");
 
-    resetButton.addEventListener("click", () => {
-      game.resetGame();
-    });
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        game.resetGame();
+      });
+    }
   });
 
   document.querySelectorAll(".mobile-menu-btn").forEach((btn) => {

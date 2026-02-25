@@ -1,8 +1,8 @@
-# Quest System v3.0 - Perfect Effort-Based Economics
+# Quest System v3.2 - Effort-Coherent Rewards
 
-**Date:** 2026-02-24
-**Status:** Implemented
-**Version:** 3.0 (Final)
+**Date:** 2026-02-25
+**Status:** Implemented (Retuned)
+**Version:** 3.2
 
 ---
 
@@ -11,6 +11,16 @@
 **Quests are BONUSES, not primary income.**
 
 When you click 10 times, you earn 10 donuts. The quest reward is a small thank-you bonus on top of that - not a replacement for your earnings.
+
+### v3.2 Tuning Focus
+
+- Solved low-value late-game milestone issue (example: Capital Crest reward showing tiny values)
+- Building milestones now use **incremental tier effort** (delta spend), not full cumulative replay
+- Building milestone cap now uses the **same building's next cost**, not the cheapest low-tier building
+- Milestone reward preview and claim now use the **exact same function**
+- Stage-aware purchase benchmark introduced to reduce irrelevant low caps
+- Dynamic quest minimum now includes **difficulty floor** to prevent early easy/medium/hard reward collapse
+- Quest menu refresh is now **throttled and hover-safe** to prevent visible flicker/jitter
 
 ---
 
@@ -99,10 +109,13 @@ reward = CPS × timeSpent × bonusRate;
 ### Buy Quests
 
 ```javascript
+// buyAny
 estimatedCost = count × avgBuildingCost;
 reward = estimatedCost × bonusRate × 0.5;  // 50% penalty
 
-// Buy 1 building (15 cost) = 15 × 0.05 × 0.5 = 0.375 → 1 donut
+// buySpecific (v3.1)
+estimatedCost = sum(next N costs of selected building);
+reward = estimatedCost × bonusRate × 0.5;
 ```
 
 ### Timed Quests
@@ -137,6 +150,17 @@ cap = MIN(buildingCap, cpsCap); // Use the SMALLER one
 | Medium     | 4%         | 30 sec      |
 | Hard       | 6%         | 60 sec      |
 | Special    | 10%        | 90 sec      |
+
+### Dynamic Difficulty Floors (v3.2)
+
+Used as minimum reward multiplier on top of stage minimum:
+
+| Difficulty | Floor Multiplier |
+| ---------- | ---------------- |
+| Easy       | 1x               |
+| Medium     | 2x               |
+| Hard       | 3x               |
+| Special    | 5x               |
 
 ### Example
 
@@ -199,25 +223,40 @@ Minimum rewards are INTENTIONALLY tiny - they just prevent 0.
 
 ## Milestone Rewards
 
-Milestone quests use the same economic principles:
+Milestone quests now use the same bonus-and-cap philosophy as dynamic quests:
 
 ### Building Milestones
 
 ```javascript
-// Reward = percentage of cumulative spending at that tier
-spent = trackingData.spentAtTier[tier];
-reward = spent × tierRefundRate;
+// v3.2: reward uses incremental effort between tiers
+deltaSpent = cumulativeAtCurrentTier - cumulativeAtPreviousTier;
+reward = deltaSpent × tierBonusRate;
+cap = nextCostOfSameBuilding × tierCapFactor;
+reward = clamp(reward, stageMinimum, cap);
 
-tierRefundRates = [0.25, 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08, 0.06]
+tierBonusRates = [0.08, 0.075, 0.07, 0.065, 0.06, 0.055, 0.05, 0.045, 0.04, 0.035, 0.03]
 ```
 
 ### Other Milestones
 
 ```javascript
-// CPS-based with time multiplier
-minutes = 3 + (tierIndex × 2);  // 3, 5, 7, 9, 11...
-reward = CPS × 60 × minutes × 0.1;  // 10% of time value
+// Non-building milestones (v3.1)
+minutes = typeBasedMinutes(tierIndex);          // conservative growth
+reward = stableCPS × 60 × minutes × bonusRate; // 10-16% by category
+cap = min(buildingCap, cpsCap);                 // dual conservative cap
+reward = clamp(reward, stageMinimum, cap);
 ```
+
+### Bonus Rate by Milestone Category (v3.1)
+
+| Category        | Bonus Rate |
+| --------------- | ---------- |
+| Production      | 10%        |
+| Clicks          | 10%        |
+| CPS             | 12%        |
+| Total Buildings | 11%        |
+| Upgrades        | 14%        |
+| Quest Completed | 16%        |
 
 ---
 
@@ -226,8 +265,10 @@ reward = CPS × 60 × minutes × 0.1;  // 10% of time value
 1. **Tiny Bonus Rates**: 5-15% means exploits have minimal impact
 2. **Two-Cap System**: Building AND CPS caps prevent runaway rewards
 3. **Conservative Cap Selection**: Always use the SMALLER cap
-4. **120-Second Median CPS**: Prevents spike exploitation
-5. **Stage-Based Minimums**: Can't farm stage 1 quests in late game
+4. **120-Second Median CPS Everywhere**: Stage, cap, and click-value all use stabilized CPS
+5. **Stage-Based Minimums**: Single source of truth for minimum rewards
+6. **Stage-Aware Purchase Benchmark**: Caps no longer collapse to trivial low-tier costs
+7. **Preview = Claim Formula**: UI reward estimate matches actual claim value
 
 ---
 
@@ -277,6 +318,51 @@ reward = CPS × 60 × minutes × 0.1;  // 10% of time value
 
 ---
 
+## 10-Minute Playtest Checklist (v3.2)
+
+Run this protocol in a fresh save and log rewards for each completed quest.
+
+### Minute 0-3: Early Game Sanity
+
+1. Buy `5 Cursor + 1 Baker`
+2. Complete one `click`, one `produce`, and one `buyAny` dynamic quest
+3. Claim first `Cursor` and `Baker` building milestones
+
+Pass criteria:
+- Early dynamic rewards stay small (usually `1-10`)
+- No reward should exceed ~`25%` of cheapest next purchase
+- Building milestone rewards should feel non-trivial (not flat `1` unless truly tiny effort)
+
+### Minute 3-7: Mid Game Consistency
+
+1. Reach roughly `50+ buildings` and `100+ CPS`
+2. Complete one quest from each difficulty (`easy`, `medium`, `hard`)
+3. Claim one non-building milestone (`production` or `clicks`)
+
+Pass criteria:
+- Hard rewards should be noticeably above easy (`~1.5x+` in similar effort windows)
+- Reward spikes should not instantly buy multiple progression tiers
+- Non-building milestone rewards should be clearly visible and claim-worthy
+
+### Minute 7-10: Late-Scale Relevance
+
+1. Load late save or fast-forward to include high-tier buildings
+2. Trigger at least one high-tier building milestone (example: `Capital Crest` tier)
+3. Complete one `spending` or `buySpecific` dynamic quest
+
+Pass criteria:
+- High-tier building milestones are not tiny/noise rewards
+- Reward text preview and claim value match
+- Reward remains bonus-like (roughly single-digit % of immediate progression spend)
+
+### Hard Fail Signals
+
+- Completing a very expensive milestone but seeing near-zero reward (ex: single digits)
+- Reward preview and claimed value differ
+- Any repeatable loop where quest reward becomes primary income over normal production
+
+---
+
 ## Milestone Categories
 
 ### Building Milestones (11 buildings × 5-11 tiers each)
@@ -297,13 +383,12 @@ reward = CPS × 60 × minutes × 0.1;  // 10% of time value
 
 ## Summary
 
-| Aspect             | v2.0          | v3.0                      |
-| ------------------ | ------------- | ------------------------- |
-| 10 clicks (early)  | ~3 donuts     | **1 donut**               |
-| 50 produce (early) | ~7 donuts     | **1 donut**               |
-| Bonus philosophy   | 15-40% return | **5-15% bonus**           |
-| Cap system         | Single cap    | **Dual conservative cap** |
-| Min rewards        | 3-100         | **1-50 (stage-based)**    |
-| Primary principle  | Effort return | **Bonus on earnings**     |
+| Aspect                         | v3.1                                           | v3.2                                                         |
+| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------------ |
+| Building milestone effort base | Cumulative tier spend                          | **Incremental tier delta spend**                             |
+| Building milestone cap anchor  | Global next meaningful purchase cost           | **Same building next cost**                                  |
+| Late-game expensive tiers      | Could display tiny reward in edge cases        | **Scaled to tier effort and building relevance**             |
+| Milestone reward display       | Building estimated, others generic text        | **All milestones show numeric estimate from claim formula**  |
+| Progression cap benchmark      | Could over-focus cheapest low tier             | **Stage-aware benchmark, less irrelevant low capping**       |
 
-**The quest system is now economically sound - rewarding but not game-breaking.**
+**v3.2 aims for one principle: reward should feel proportional to the exact effort just completed.**

@@ -285,7 +285,7 @@ body {
   margin-right: 30px;
   gap: 10px;
   right: 0;
-  z-index: 10; /* Tıklanabilir olması için en üste taşıdık */
+  z-index: 220; /* Yan panellerin üstünde, menülerin altında */
 }
 .header-left {
   position: absolute;
@@ -295,7 +295,7 @@ body {
   margin-left: 30px;
   gap: 10px;
   left: 0;
-  z-index: 10; /* Tıklanabilir olması için en üste taşıdık */
+  z-index: 2600; /* Guides menüsünün her zaman üstte kalması için */
 }
 .header-title {
   flex: 2; /* Başlık daha geniş bir alan kaplayacak */
@@ -318,6 +318,58 @@ body {
 .header-left button:hover,
 .header-right button:hover {
   background-color: #562e1c;
+}
+
+.guides-dropdown {
+  position: relative;
+  z-index: 2610;
+}
+
+#guides-button {
+  min-width: 96px;
+}
+
+#guides-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 176px;
+  padding: 8px;
+  background: rgba(44, 24, 16, 0.96);
+  border: 1px solid rgba(255, 234, 182, 0.25);
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  z-index: 2400;
+}
+
+#guides-menu.hidden {
+  display: none;
+}
+
+#guides-menu a {
+  display: block;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffeab6;
+  background: rgba(255, 234, 182, 0.06);
+  border: 1px solid rgba(255, 234, 182, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+#guides-menu a:hover {
+  color: #fccb72;
+  border-color: rgba(252, 203, 114, 0.42);
+  background: rgba(255, 234, 182, 0.1);
 }
 
 .header-left {
@@ -1511,6 +1563,37 @@ button {
   gap: 8px; /* Buton ile metin arasında boşluk */
 }
 
+.settings-reset-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#settings-menu #reset-button {
+  background-color: #4a1f1f;
+  color: #ff9a9a;
+  border: 1px solid #a74848;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+  cursor: pointer;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#settings-menu #reset-button:hover {
+  background-color: #5b2323;
+  transform: scale(1.02);
+}
+
+#settings-menu #reset-button:active {
+  background-color: #3a1717;
+  transform: scale(0.98);
+}
+
 .save-text {
   color: #b8860b; /* Altın rengi */
   font-size: 14px;
@@ -1535,6 +1618,45 @@ button {
 .about-text {
   font-weight: 200;
   font-size: 12px;
+}
+
+.info-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.info-action-link {
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.info-action-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.info-action-reddit {
+  background: #ff4500;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(255, 69, 0, 0.28);
+}
+
+.info-action-support {
+  background: linear-gradient(45deg, #fccb72, #ffb347);
+  color: #2c1810;
+  box-shadow: 0 5px 12px rgba(252, 203, 114, 0.28);
 }
 
 /* Styling for the update sections */
@@ -4439,91 +4561,6 @@ h3::after {
   color: #c62828;
   text-shadow: 0 0 5px rgba(198, 40, 40, 0.3);
 }
-#reset-button {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  padding: 5px 10px;
-  background-color: #ff4d4d;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  z-index: 1000;
-  transition: background-color 0.3s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-#reset-button:hover {
-  background-color: #ff1a1a;
-  transform: scale(1.05);
-}
-#buy-me-a-donut {
-  position: fixed;
-  bottom: 20px;
-  left: calc(
-    20px + 120px
-  ); /* Reset butonunun genişliğine bağlı olarak ayarlayın */
-  padding: 5px 10px;
-  background: linear-gradient(
-    45deg,
-    #fccb72,
-    #ffb347
-  ); /* Aynı arka plan rengi */
-  color: black;
-  font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  z-index: 1000;
-  transition: background-color 0.3s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  text-decoration: none; /* Altı çizgiyi kaldırır */
-  display: inline-block; /* Buton görünümünü korur */
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(252, 203, 114, 0.4);
-  transition: all 0.3s ease;
-}
-/* Hover efekti */
-#buy-me-a-donut:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(252, 203, 114, 0.6);
-}
-
-#reddit-button {
-  position: fixed;
-  bottom: 60px; /* buy-me-a-donut'un üstünde olması için */
-  left: calc(20px + 0px);
-  padding: 5px 10px;
-  background: #ff4500; /* Reddit'in karakteristik turuncu rengi */
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  z-index: 1000;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-#reddit-button img {
-  width: 16px;
-  height: 16px;
-  filter: brightness(0) invert(1); /* SVG'yi beyaza çevirir */
-}
-
-#reddit-button:hover {
-  transform: translateY(-2px);
-  background: #ff5414;
-  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
-}
 /* Üretim bilgi paneli için genel stil */
 .ore-generation-info,
 .ingredient-generation-info {
@@ -4592,31 +4629,6 @@ h3::after {
 #mine-timer.almost-ready,
 #baker-timer.almost-ready {
   animation: countdown-pulse 1s infinite;
-}
-/* Parıltı efekti için ek animasyon */
-#buy-me-a-donut::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transform: rotate(45deg);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  0% {
-    transform: translateX(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) rotate(45deg);
-  }
 }
 #game-saved {
   position: fixed;
@@ -6611,39 +6623,6 @@ input:checked + .slider:before {
     padding: 8px;
     transition: all 0.3s ease;
     z-index: 1000; /* Butonun her zaman üstte olmasını sağlıyoruz */
-  }
-  #reset-button {
-    position: fixed;
-    bottom: 100px;
-    left: 25px;
-    padding: 5px 10px;
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    z-index: 1;
-    transition: background-color 0.3s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  #buy-me-a-donut {
-    position: fixed;
-    bottom: 150px;
-    left: 25px;
-    padding: 5px 10px;
-    background-color: #fccb72; /* Aynı arka plan rengi */
-    color: black;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 12px;
-    z-index: 1000;
-    transition: background-color 0.3s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-decoration: none; /* Altı çizgiyi kaldırır */
-    display: inline-block; /* Buton görünümünü korur */
   }
   .close-menu-btn:hover {
     color: #fff;

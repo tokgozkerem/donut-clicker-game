@@ -203,6 +203,14 @@
         <div class="header-content">
           <div class="header-left">
             <button id="info-button">Info</button>
+            <div class="guides-dropdown">
+              <button id="guides-button">Guides</button>
+              <nav id="guides-menu" class="hidden" aria-label="Guides menu">
+                <a href="/idle-clicker-games.html">Idle Guide</a>
+                <a href="/incremental-games.html">Incremental Guide</a>
+                <a href="/clicker-games.html">Clicker Guide</a>
+              </nav>
+            </div>
           </div>
 
           <h1 class="logo-wrapper">
@@ -227,6 +235,10 @@
           <div class="save-container">
             <button id="save-button">Save</button>
             <span class="save-text">Save Manually</span>
+          </div>
+          <div class="settings-reset-container">
+            <button id="reset-button" type="button">Reset Game</button>
+            <span class="save-text">Hard reset progress</span>
           </div>
           <div class="settings-section auto-buyer-section">
             <h3>Auto-Buyer</h3>
@@ -310,6 +322,20 @@
               reach out at <b>ktz@donutclicker.net</b>. We'd love to hear from
               you!
             </p>
+            <div class="info-links">
+              <a
+                href="https://www.reddit.com/r/donutClicker/"
+                target="_blank"
+                class="info-action-link info-action-reddit"
+                >Join r/donutClicker</a
+              >
+              <a
+                href="https://buymeacoffee.com/donutclickernet"
+                target="_blank"
+                class="info-action-link info-action-support"
+                >Buy me a donut</a
+              >
+            </div>
           </section>
 
           <!-- Updates Section -->
@@ -1314,7 +1340,6 @@
     </div>
     <div id="game-saved">Game Saved!</div>
 
-    <button id="reset-button">Reset</button>
     <div class="mobile-menu">
       <a href="#" class="mobile-menu-btn active">
         <i class="fas fa-tasks"></i>
@@ -1345,20 +1370,6 @@
       </a>
     </div>
     <!-- hidden sınıfını kaldır -->
-
-    <a
-      href="https://buymeacoffee.com/donutclickernet"
-      id="buy-me-a-donut"
-      target="_blank"
-      >🍩 Buy me a donut!</a
-    >
-    <a
-      href="https://www.reddit.com/r/donutClicker/"
-      id="reddit-button"
-      target="_blank"
-    >
-      <img src="img/reddit.svg" alt="Reddit" /> Join r/donutClicker
-    </a>
 
     <!-- Feedback Pop-up -->
     <div id="feedback-popup" class="hidden">
