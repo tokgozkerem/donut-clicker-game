@@ -21,6 +21,7 @@ When you click 10 times, you earn 10 donuts. The quest reward is a small thank-y
 - Stage-aware purchase benchmark introduced to reduce irrelevant low caps
 - Dynamic quest minimum now includes **difficulty floor** to prevent early easy/medium/hard reward collapse
 - Quest menu refresh is now **throttled and hover-safe** to prevent visible flicker/jitter
+- Active quest countdown/progress now uses **in-place live updates** for smoother visual flow
 
 ---
 

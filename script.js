@@ -1481,6 +1481,8 @@
       };
       this.questUIRefreshInterval = 1000;
       this._lastQuestUIRefresh = 0;
+      this.questUILiveUpdateInterval = 200;
+      this._lastQuestUILiveUpdate = 0;
       this.isHoveringQuestMenu = false;
 
       // Legacy quests object for backward compatibility during migration
@@ -8946,7 +8948,9 @@
       });
       this.questsMenu.addEventListener("mouseleave", () => {
         this.isHoveringQuestMenu = false;
-        this._lastQuestUIRefresh = Date.now();
+        const now = Date.now();
+        this._lastQuestUIRefresh = now;
+        this._lastQuestUILiveUpdate = now;
         this.updateQuestDisplay();
       });
 
@@ -9044,7 +9048,9 @@
 
     openQuestMenu() {
       this.questsMenu.classList.remove("hidden");
-      this._lastQuestUIRefresh = Date.now();
+      const now = Date.now();
+      this._lastQuestUIRefresh = now;
+      this._lastQuestUILiveUpdate = now;
       this.updateQuestDisplay();
     }
 
@@ -9346,6 +9352,88 @@
       return slotDiv;
     }
 
+    // Lightweight in-place quest slot updates to keep timers smooth without full rerender flicker
+    updateQuestLiveElements(now = Date.now()) {
+      if (!this.questsMenu || this.questsMenu.classList.contains("hidden")) {
+        return;
+      }
+
+      let kpiNeedsRefresh = false;
+
+      for (const slotId of Object.keys(this.dynamicSlots)) {
+        const slot = this.dynamicSlots[slotId];
+        let slotElement = this.questsMenu.querySelector(
+          `.quest-slot[data-slot-id="${slotId}"]`,
+        );
+        if (!slotElement) continue;
+
+        const quest = slot.currentQuest;
+        const inCooldown = !quest && slot.cooldownEnd && slot.cooldownEnd > now;
+
+        const hasQuestInfo = Boolean(slotElement.querySelector(".quest-info"));
+        const hasCooldownInfo = Boolean(slotElement.querySelector(".cooldown-info"));
+        const hasLoadingInfo = Boolean(slotElement.querySelector(".loading-info"));
+
+        const structureMismatch =
+          (quest && !hasQuestInfo) ||
+          (inCooldown && !hasCooldownInfo) ||
+          (!quest && !inCooldown && !hasLoadingInfo);
+
+        // Re-render only when structure changes (quest->cooldown->loading), not every tick.
+        if (structureMismatch) {
+          const replacement = this.renderDynamicSlot(slot);
+          slotElement.replaceWith(replacement);
+          slotElement = replacement;
+          kpiNeedsRefresh = true;
+        }
+
+        if (quest) {
+          const progress =
+            quest.target > 0
+              ? Math.min((quest.progress / quest.target) * 100, 100)
+              : 0;
+          const progressBar = slotElement.querySelector(".progress-bar");
+          const progressText = slotElement.querySelector(".progress-text");
+          if (progressBar) progressBar.style.width = `${progress}%`;
+          if (progressText) {
+            progressText.textContent = `${this.formatNumber(quest.progress)}/${this.formatNumber(quest.target)}`;
+          }
+
+          const claimButton = slotElement.querySelector(".claim-reward");
+          if (claimButton) {
+            const enabled = quest.completed && !quest.claimed;
+            claimButton.disabled = !enabled;
+            claimButton.textContent = quest.claimed
+              ? "Completed"
+              : quest.completed
+                ? "Claim Reward"
+                : "In Progress";
+          }
+
+          if (quest.type === "timedProduce" && quest.timedStartTime) {
+            const remaining = Math.max(
+              0,
+              Math.ceil((quest.timedStartTime + quest.timeLimit - now) / 1000),
+            );
+            const timeLabel = slotElement.querySelector(".time-remaining");
+            if (timeLabel) timeLabel.textContent = `${remaining}s left`;
+          }
+        } else if (inCooldown) {
+          const remaining = Math.ceil((slot.cooldownEnd - now) / 1000);
+          const minutes = Math.floor(remaining / 60);
+          const seconds = remaining % 60;
+          const timer = slotElement.querySelector(".cooldown-timer");
+          if (timer) {
+            timer.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+          }
+        }
+      }
+
+      if (kpiNeedsRefresh) {
+        this.updateQuestKPIs();
+      }
+    }
+
     createMilestoneElement(quest, category, key, tierKey = null) {
       const questDiv = document.createElement("div");
       questDiv.className = "quest-item milestone";
@@ -9613,6 +9701,14 @@
 
       // Quest menu UI refresh: throttled and paused while hovering to prevent flicker.
       if (this.questsMenu && !this.questsMenu.classList.contains("hidden")) {
+        if (
+          now - (this._lastQuestUILiveUpdate || 0) >=
+          this.questUILiveUpdateInterval
+        ) {
+          this._lastQuestUILiveUpdate = now;
+          this.updateQuestLiveElements(now);
+        }
+
         const canRefresh = !this.isHoveringQuestMenu;
         if (canRefresh && now - (this._lastQuestUIRefresh || 0) >= this.questUIRefreshInterval) {
           this._lastQuestUIRefresh = now;
