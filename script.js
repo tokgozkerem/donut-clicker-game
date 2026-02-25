@@ -1734,12 +1734,46 @@
           this.openChangeNameModal.bind(this),
         );
       }
-      document
-        .getElementById("confirmButton")
-        .addEventListener("click", this.changeBakeryName.bind(this));
-      document
-        .getElementById("cancelButton")
-        .addEventListener("click", this.closeChangeNameModal.bind(this));
+      const confirmButton = document.getElementById("confirmButton");
+      const cancelButton = document.getElementById("cancelButton");
+      const closeChangeNameButton = document.getElementById("changeNameClose");
+      const changeNameModal = document.getElementById("changeNameModal");
+      const newBakeryNameInput = document.getElementById("newBakeryName");
+
+      if (confirmButton) {
+        confirmButton.addEventListener("click", this.changeBakeryName.bind(this));
+      }
+      if (cancelButton) {
+        cancelButton.addEventListener(
+          "click",
+          this.closeChangeNameModal.bind(this),
+        );
+      }
+      if (closeChangeNameButton) {
+        closeChangeNameButton.addEventListener(
+          "click",
+          this.closeChangeNameModal.bind(this),
+        );
+      }
+      if (changeNameModal) {
+        changeNameModal.addEventListener("click", (event) => {
+          if (event.target === changeNameModal) {
+            this.closeChangeNameModal();
+          }
+        });
+      }
+      if (newBakeryNameInput) {
+        newBakeryNameInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            this.changeBakeryName();
+          }
+          if (event.key === "Escape") {
+            event.preventDefault();
+            this.closeChangeNameModal();
+          }
+        });
+      }
 
       // Other setups
       this.setupInfoMenu();
@@ -6976,20 +7010,44 @@
 
     openChangeNameModal() {
       const modal = document.getElementById("changeNameModal");
-      modal.style.display = "block";
+      const nameInput = document.getElementById("newBakeryName");
+      if (!modal) return;
+
+      modal.style.display = "flex";
+
+      if (nameInput) {
+        const currentName = (this.currentBakeryName || "")
+          .replace(/(?:'s|s')?\s*bakery$/i, "")
+          .trim();
+        nameInput.value = currentName;
+        requestAnimationFrame(() => {
+          nameInput.focus();
+          nameInput.select();
+        });
+      }
     }
     closeChangeNameModal() {
       const modal = document.getElementById("changeNameModal");
+      if (!modal) return;
       modal.style.display = "none";
     }
     changeBakeryName() {
-      const newBakeryName = document
-        .getElementById("newBakeryName")
-        .value.trim();
-      if (newBakeryName) {
-        this.currentBakeryName = newBakeryName + "'s Bakery";
-        document.getElementById("bakery-name").textContent =
-          this.currentBakeryName;
+      const nameInput = document.getElementById("newBakeryName");
+      if (!nameInput) return;
+
+      const rawName = nameInput.value.trim();
+      if (rawName) {
+        const compactName = rawName.replace(/\s+/g, " ");
+        const normalizedName = compactName
+          .replace(/(?:'s|s')?\s*bakery$/i, "")
+          .trim();
+        const finalBaseName = normalizedName || compactName;
+
+        this.currentBakeryName = `${finalBaseName}'s Bakery`;
+        const bakeryNameElement = document.getElementById("bakery-name");
+        if (bakeryNameElement) {
+          bakeryNameElement.textContent = this.currentBakeryName;
+        }
 
         // Kullanıcı isim değiştirdiğinde yeni ismi kaydet
         localStorage.setItem("bakeryName", this.currentBakeryName);
@@ -7652,15 +7710,66 @@
       gameState.gameVersion = this.currentVersion;
       localStorage.setItem("gameState", JSON.stringify(gameState));
     }
-    resetGame() {
-      const confirmation = confirm(
-        "Are you sure you want to reset the game? All your progress will be deleted.",
-      );
-      if (confirmation) {
-        localStorage.removeItem("gameState");
-        localStorage.removeItem("bakeryName");
-        location.reload();
+    showResetConfirmModal() {
+      const modal = document.getElementById("reset-confirm-modal");
+      const confirmBtn = document.getElementById("reset-confirm-yes");
+      const cancelBtn = document.getElementById("reset-confirm-cancel");
+      const closeBtn = document.getElementById("reset-confirm-close");
+
+      if (!modal || !confirmBtn || !cancelBtn || !closeBtn) {
+        return Promise.resolve(
+          confirm(
+            "Are you sure you want to reset the game? All your progress will be deleted.",
+          ),
+        );
       }
+
+      return new Promise((resolve) => {
+        const cleanup = () => {
+          modal.classList.remove("open");
+          document.removeEventListener("keydown", onKeyDown);
+          modal.removeEventListener("click", onBackdropClick);
+          confirmBtn.removeEventListener("click", onConfirm);
+          cancelBtn.removeEventListener("click", onCancel);
+          closeBtn.removeEventListener("click", onCancel);
+        };
+
+        const onConfirm = (event) => {
+          event.preventDefault();
+          cleanup();
+          resolve(true);
+        };
+
+        const onCancel = (event) => {
+          if (event) event.preventDefault();
+          cleanup();
+          resolve(false);
+        };
+
+        const onBackdropClick = (event) => {
+          if (event.target === modal) onCancel(event);
+        };
+
+        const onKeyDown = (event) => {
+          if (event.key === "Escape") onCancel(event);
+        };
+
+        confirmBtn.addEventListener("click", onConfirm);
+        cancelBtn.addEventListener("click", onCancel);
+        closeBtn.addEventListener("click", onCancel);
+        modal.addEventListener("click", onBackdropClick);
+        document.addEventListener("keydown", onKeyDown);
+        modal.classList.add("open");
+      });
+    }
+
+    async resetGame() {
+      const confirmation = await this.showResetConfirmModal();
+      if (!confirmation) return;
+
+      localStorage.removeItem("gameState");
+      localStorage.removeItem("bakeryName");
+      location.reload();
     }
 
     // ========== YENİ QUEST SİSTEMİ METODLARI ==========

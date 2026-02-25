@@ -990,18 +990,46 @@
           <img src="img/donut5.webp" alt="Donut" id="donut" />
         </div>
       </div>
-      <div id="changeNameModal" class="modal">
-        <div class="modal-content">
-          <p>How would you like to change the name of your bakery?</p>
+      <div
+        id="changeNameModal"
+        class="modal bakery-name-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="change-name-title"
+      >
+        <div class="modal-content bakery-name-modal-card">
+          <button
+            id="changeNameClose"
+            class="bakery-name-modal-close"
+            aria-label="Close rename modal"
+          >
+            &times;
+          </button>
+          <div class="bakery-name-modal-icon">🍩</div>
+          <h2 id="change-name-title">Rename Your Bakery</h2>
+          <p class="bakery-name-modal-copy">
+            Choose a short name and make your bakery memorable.
+          </p>
+          <label class="bakery-name-modal-label" for="newBakeryName">
+            Bakery name
+          </label>
           <input
             type="text"
             id="newBakeryName"
             placeholder="Enter new name..."
             autocomplete="off"
+            maxlength="26"
           />
-          <div class="modal-buttons">
-            <button id="confirmButton">Confirm</button>
-            <button id="cancelButton" class="cancel">Cancel</button>
+          <p class="bakery-name-modal-note">
+            It will appear as "Name's Bakery".
+          </p>
+          <div class="modal-buttons bakery-name-modal-actions">
+            <button id="confirmButton" class="bakery-name-confirm">
+              Save Name
+            </button>
+            <button id="cancelButton" class="cancel bakery-name-cancel">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -1322,6 +1350,41 @@
         </p>
         <button id="prestigeYes">Yes</button>
         <button id="prestigeNo">No</button>
+      </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div
+      id="reset-confirm-modal"
+      class="reset-confirm-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-confirm-title"
+    >
+      <div class="reset-confirm-card">
+        <button
+          id="reset-confirm-close"
+          class="reset-confirm-close"
+          aria-label="Close reset dialog"
+        >
+          &times;
+        </button>
+        <div class="reset-confirm-icon">⚠</div>
+        <h2 id="reset-confirm-title">Reset Game?</h2>
+        <p class="reset-confirm-text">
+          Are you sure you want to reset the game?
+        </p>
+        <p class="reset-confirm-warning">
+          All your progress will be permanently deleted.
+        </p>
+        <div class="reset-confirm-actions">
+          <button id="reset-confirm-cancel" class="reset-confirm-cancel">
+            Cancel
+          </button>
+          <button id="reset-confirm-yes" class="reset-confirm-yes">
+            Yes, Reset
+          </button>
+        </div>
       </div>
     </div>
 
