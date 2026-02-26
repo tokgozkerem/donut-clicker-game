@@ -659,6 +659,9 @@ body {
 /* Store CSS */
 .store {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
   padding-top: 0px;
   padding-bottom: 10px;
@@ -666,9 +669,9 @@ body {
 
 .store-top-ad {
   width: 100%;
-  min-height: 125px;
+  min-height: 250px;
   text-align: center;
-  margin-bottom: 0px;
+  margin-bottom: 4px;
   overflow: hidden;
   display: flex;
   justify-content: center;
