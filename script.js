@@ -1,7 +1,7 @@
 (function () {
   class Game {
     constructor() {
-      this.currentVersion = "1.5.1";
+      this.currentVersion = "1.5.2";
       this.bakeryNames = [
         "Snowfall Crust",
         "Frosted Pines",
@@ -101,7 +101,7 @@
             img: "cursorUpgrade-5.webp",
             specialEffect: "dynamicBoost",
             description:
-              "Your cursor gains +1 production and click power for each non-cursor building owned.",
+              "Your non-cursor buildings now boost both cursor output and click power.",
           },
           {
             name: "Ruby Cursor",
@@ -767,6 +767,9 @@
           totalProduced: 0,
         },
       };
+      this.baseItemProductions = Object.fromEntries(
+        Object.entries(this.items).map(([key, item]) => [key, item.originalProduction]),
+      );
       this.donutCount = 0;
       this.hasDonutClicked = false;
       this.accumulator = 0;
@@ -1260,6 +1263,7 @@
         },
       };
       this.selectedRecipe = null;
+      this.selectedRecipeName = null;
       this.ores = {
         Copper: { count: 0 },
         Iron: { count: 0 },
@@ -1316,7 +1320,6 @@
       this.counter = document.getElementById("donut-count");
       this.perSecondDisplay = document.getElementById("per-second");
       this.setupModal();
-      this.setupStoreHover();
       this.totalPerSecond = 0;
       this.updateTotalPerSecond(); // Başlangıçta hesapla
       this.currentBakeryName = "";
@@ -1327,8 +1330,6 @@
       this.nextPrestigeThreshold = 300000000;
       this.prestigeMultiplier = 2;
       this.setupPrestigeModal();
-
-      setInterval(() => this.updatePrestigeBar(), this.updateInterval);
 
       this.updateDisplay();
       this.clickSounds.forEach((sound) => {
@@ -1515,8 +1516,20 @@
       }
 
       this.lastFrameTime = 0;
-      this.frameThrottle = 1000 / 60; // 60 FPS hedefi
+      this.frameThrottle = this.isMobile ? 1000 / 45 : 1000 / 60;
       this.accumulatedTime = 0;
+      this.heavyUpdateInterval = this.isMobile ? 180 : 120;
+      this.slowUiUpdateInterval = this.isMobile ? 220 : 150;
+      this.farmUiUpdateInterval = this.isMobile ? 350 : 250;
+      this.activeFarmUiUpdateInterval = this.isMobile ? 180 : 120;
+      this.timerUiUpdateInterval = 100;
+      this.lastHeavyUpdateTime = 0;
+      this.lastSlowUiUpdateTime = 0;
+      this.lastFarmUiUpdateTime = 0;
+      this.lastTimerUiUpdateTime = 0;
+      this.lastCounterUiUpdateTime = 0;
+      this.preciseCounterUpdateInterval = this.isMobile ? 180 : 120;
+      this.gameLoopHandle = null;
 
       // Quest menüsü için cache
       this._questCache = {
@@ -1685,7 +1698,7 @@
         this._throttle(() => this.updateStatsDisplay(), 1000),
         5000,
       );
-      setInterval(this._throttle(this.updateProduction.bind(this), 100), 225);
+      this.startGameLoop();
 
       // Event listener'ları optimize et
       this.handleDonutClickBound = this._throttle(
@@ -1786,6 +1799,29 @@
 
       // Store görünürlüğünü hemen ayarla (RAF beklemeden)
       this.updateStoreVisibility();
+    }
+
+    startGameLoop() {
+      if (this.gameLoopHandle) return;
+
+      const loop = (timestamp) => {
+        if (!this.lastFrameTime) {
+          this.lastFrameTime = timestamp;
+        }
+
+        const frameDelta = timestamp - this.lastFrameTime;
+        this.lastFrameTime = timestamp;
+        this.accumulatedTime += frameDelta;
+
+        if (this.accumulatedTime >= this.frameThrottle) {
+          this.accumulatedTime %= this.frameThrottle;
+          this.updateProduction(Date.now());
+        }
+
+        this.gameLoopHandle = requestAnimationFrame(loop);
+      };
+
+      this.gameLoopHandle = requestAnimationFrame(loop);
     }
 
     cacheElements() {
@@ -1920,7 +1956,13 @@
     }
     _actualUpdateDisplay() {
       this.renderFrameCount++;
-      const isSlowFrame = this.renderFrameCount % 10 === 0;
+      const now = performance.now();
+      const isSlowFrame =
+        now - this.lastSlowUiUpdateTime >= this.slowUiUpdateInterval;
+
+      if (isSlowFrame) {
+        this.lastSlowUiUpdateTime = now;
+      }
 
       if (isSlowFrame) {
         this.updateStoreVisibility();
@@ -1931,11 +1973,30 @@
       if (!counter || !perSecondDisplay) return;
 
       // Donut sayısı güncelleme (sadece değiştiyse)
-      const currentDonutCount = Math.floor(this.donutCount);
-      if (this.lastUpdateValues.donutCount !== currentDonutCount) {
-        const formattedDonuts = this.formatNumber(this.donutCount, "count");
+      const usePreciseDonutDisplay =
+        this.donutCount < 1000 && this.totalPerSecond < 10;
+      const currentDonutCount = usePreciseDonutDisplay
+        ? Math.floor(this.donutCount * 10) / 10
+        : Math.floor(this.donutCount);
+      let shouldUpdateCounter =
+        this.lastUpdateValues.donutCount !== currentDonutCount;
+
+      if (
+        shouldUpdateCounter &&
+        usePreciseDonutDisplay &&
+        now - this.lastCounterUiUpdateTime < this.preciseCounterUpdateInterval
+      ) {
+        shouldUpdateCounter = false;
+      }
+
+      if (shouldUpdateCounter) {
+        const formattedDonuts = this.formatNumber(
+          this.donutCount,
+          usePreciseDonutDisplay ? "perSecond" : "count",
+        );
         counter.textContent = `${formattedDonuts} donuts`;
         this.lastUpdateValues.donutCount = currentDonutCount;
+        this.lastCounterUiUpdateTime = now;
       }
 
       // Per second güncelleme
@@ -2103,7 +2164,6 @@
 
         if (key === "cursor") {
           // Cursor için özel hesaplama
-          let cursorProduction = this.items.cursor.originalProduction;
           let normalMultiplier = 1;
           let x10Multiplier = 1;
 
@@ -2123,7 +2183,13 @@
             }
           });
 
-          // Önce dinamik boost'u ekle (base production'a)
+          let cursorProduction =
+            this.items.cursor.originalProduction *
+            normalMultiplier *
+            x10Multiplier;
+
+          // Donut Cursor bonusu early/mid cursor güçlerini alır, ancak
+          // geç oyun x10 zincirinden en fazla tek bir 10x alır.
           const dynamicBoostUpgrade = this.upgrades.cursor[4];
           if (dynamicBoostUpgrade.purchased) {
             let buildingBoost = 0;
@@ -2132,14 +2198,10 @@
                 buildingBoost += this.items[buildingKey].count;
               }
             }
-            cursorProduction += buildingBoost; // Base production'a ekle
+            const lateGameBoostMultiplier = Math.min(x10Multiplier, 10);
+            cursorProduction +=
+              buildingBoost * normalMultiplier * lateGameBoostMultiplier;
           }
-
-          // Sonra normal multiplier'ları uygula
-          cursorProduction *= normalMultiplier;
-
-          // En son x10 multiplier'ları uygula
-          cursorProduction *= x10Multiplier;
 
           // Multiplier etkisini ekle
           if (this.activeMultipliers && this.activeMultipliers.length > 0) {
@@ -2151,24 +2213,9 @@
         } else {
           // Diğer binalar için hesaplama
           let baseProduction = this.items[key].originalProduction;
-
-          // Farm ve Mine için bonus hesaplamaları
-          if (key === "farm") {
-            const classicDonut = this.recipes["Classic Donut"];
-            if (classicDonut?.craftCount > 0) {
-              const farmBonus =
-                classicDonut.effects.farm.productionBonus *
-                classicDonut.craftCount;
-              baseProduction = baseProduction * (1 + farmBonus);
-            }
-          } else if (key === "mine") {
-            const whiteMagicDonut = this.recipes["White Magic Donut"];
-            if (whiteMagicDonut?.craftCount > 0) {
-              const mineBonus =
-                whiteMagicDonut.effects.mine.productionBonus *
-                whiteMagicDonut.craftCount;
-              baseProduction = baseProduction * (1 + mineBonus);
-            }
+          const recipeBonus = this.getRecipeProductionBonusForBuilding(key);
+          if (recipeBonus > 0) {
+            baseProduction = baseProduction * (1 + recipeBonus);
           }
 
           // Aktif multiplier varsa uygula
@@ -2210,9 +2257,9 @@
       this.totalPerSecond = basePerSecond;
       return itemProductions;
     }
-    updateProduction() {
-      const currentTime = Date.now();
-      const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
+    updateProduction(currentTime = Date.now(), forcedDeltaTime = null) {
+      const deltaTime =
+        forcedDeltaTime ?? (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
       this.lastUpdateTime = currentTime;
 
       // Depolanmış totalPerSecond kullanarak hesaplama
@@ -2228,25 +2275,29 @@
         }
       }
 
-      // Pahalı hesaplamaları throttle et
-      if (this.renderFrameCount % 5 === 0) {
+      // Pahalı hesaplamaları zaman tabanlı throttle et
+      if (
+        currentTime - this.lastHeavyUpdateTime >= this.heavyUpdateInterval
+      ) {
         this.updateTotalPerSecond();
         this.checkQuestProgress();
         this.checkAutoBuyer();
         this.updatePrestigeBar();
+        this.lastHeavyUpdateTime = currentTime;
       }
 
       this.updateDisplay();
 
       // Farm production tick
       this.tickFarm(deltaTime);
-      // Farm display update (throttled — faster for contracts tab)
+      // Farm display update (time-based — faster for contracts/breeding)
       const farmUpdateInterval =
         this.farmActiveTab === "contracts" || this.farmActiveTab === "breeding"
-          ? 4
-          : 15;
-      if (this.renderFrameCount % farmUpdateInterval === 0) {
+          ? this.activeFarmUiUpdateInterval
+          : this.farmUiUpdateInterval;
+      if (currentTime - this.lastFarmUiUpdateTime >= farmUpdateInterval) {
         this.updateFarmDisplay();
+        this.lastFarmUiUpdateTime = currentTime;
       }
 
       // Mine ve Baker üretimi zamanlayıcıları
@@ -2266,27 +2317,38 @@
         this.lastBakerProduction = currentTime;
       }
 
-      // Timer DOM güncellemeleri
-      const mineTimer = this.domCache.get("mineTimer");
-      if (mineTimer) {
-        const mineRemainingTime = Math.ceil((60000 - mineElapsedTime) / 1000);
-        if (mineTimer.textContent !== String(Math.max(0, mineRemainingTime))) {
-          mineTimer.textContent = Math.max(0, mineRemainingTime);
-          mineTimer.classList.toggle("almost-ready", mineRemainingTime <= 10);
+      // Timer DOM güncellemeleri: saniye hissini koruyup gereksiz DOM yazımını azalt
+      if (
+        currentTime - this.lastTimerUiUpdateTime >= this.timerUiUpdateInterval
+      ) {
+        const mineTimer = this.domCache.get("mineTimer");
+        if (mineTimer) {
+          const mineRemainingTime = Math.ceil((60000 - mineElapsedTime) / 1000);
+          if (
+            mineTimer.textContent !== String(Math.max(0, mineRemainingTime))
+          ) {
+            mineTimer.textContent = Math.max(0, mineRemainingTime);
+            mineTimer.classList.toggle("almost-ready", mineRemainingTime <= 10);
+          }
         }
-      }
 
-      const bakerTimer = this.domCache.get("bakerTimer");
-      if (bakerTimer) {
-        const bakerRemainingTime = Math.ceil(
-          (180000 - bakerElapsedTime) / 1000,
-        );
-        if (
-          bakerTimer.textContent !== String(Math.max(0, bakerRemainingTime))
-        ) {
-          bakerTimer.textContent = Math.max(0, bakerRemainingTime);
-          bakerTimer.classList.toggle("almost-ready", bakerRemainingTime <= 10);
+        const bakerTimer = this.domCache.get("bakerTimer");
+        if (bakerTimer) {
+          const bakerRemainingTime = Math.ceil(
+            (180000 - bakerElapsedTime) / 1000,
+          );
+          if (
+            bakerTimer.textContent !== String(Math.max(0, bakerRemainingTime))
+          ) {
+            bakerTimer.textContent = Math.max(0, bakerRemainingTime);
+            bakerTimer.classList.toggle(
+              "almost-ready",
+              bakerRemainingTime <= 10,
+            );
+          }
         }
+
+        this.lastTimerUiUpdateTime = currentTime;
       }
     }
 
@@ -4776,7 +4838,6 @@
     }
 
     calculateClickValue() {
-      let clickValue = 1; // Base click value
       let normalMultiplier = 1;
       let x10Multiplier = 1;
 
@@ -4795,22 +4856,22 @@
         }
       });
 
-      // Dynamic boost upgrade'ini kontrol et
+      let clickValue = 1 * normalMultiplier * x10Multiplier;
+
+      // Donut Cursor bonusu early/mid cursor güçlerini alır, ancak
+      // geç oyun x10 zincirinden en fazla tek bir 10x alır.
       const dynamicBoostUpgrade = this.upgrades.cursor[4];
       if (dynamicBoostUpgrade.purchased) {
+        let buildingBoost = 0;
         // Tüm binaların toplamını hesapla (cursor hariç)
         for (let key in this.items) {
           if (key !== "cursor") {
-            clickValue += this.items[key].count;
+            buildingBoost += this.items[key].count;
           }
         }
+        const lateGameBoostMultiplier = Math.min(x10Multiplier, 10);
+        clickValue += buildingBoost * normalMultiplier * lateGameBoostMultiplier;
       }
-
-      // Normal multiplier'ları uygula
-      clickValue *= normalMultiplier;
-
-      // x10 multiplier'ları uygula
-      clickValue *= x10Multiplier;
 
       // Donut Upgrades'lerin etkisini ekle
       if (this.upgrades.donutUpgrades) {
@@ -5251,6 +5312,57 @@
       });
     }
 
+    getRecipeTargetBuildingKey(recipeName) {
+      const recipe = this.recipes[recipeName];
+      if (!recipe?.effects) return null;
+
+      const effectKeys = Object.keys(recipe.effects);
+      return effectKeys.length > 0 ? effectKeys[0] : null;
+    }
+
+    isRecipeUnlocked(recipeName) {
+      const targetBuildingKey = this.getRecipeTargetBuildingKey(recipeName);
+      if (!targetBuildingKey) return true;
+
+      return (this.items[targetBuildingKey]?.count || 0) > 0;
+    }
+
+    getRecipeLockReason(recipeName) {
+      if (this.isRecipeUnlocked(recipeName)) return "";
+
+      const targetBuildingKey = this.getRecipeTargetBuildingKey(recipeName);
+      const targetBuildingName =
+        this.items[targetBuildingKey]?.name || "the required building";
+      return `Requires at least 1 ${targetBuildingName}.`;
+    }
+
+    getRecipeProductionBonusForBuilding(buildingKey) {
+      let totalBonus = 0;
+
+      Object.values(this.recipes).forEach((recipe) => {
+        const effect = recipe.effects?.[buildingKey];
+        if (!effect || !recipe.craftCount) return;
+
+        totalBonus += effect.productionBonus * recipe.craftCount;
+      });
+
+      return totalBonus;
+    }
+
+    getRecipeBonusDetailsForBuilding(buildingKey) {
+      const bonuses = [];
+
+      Object.entries(this.recipes).forEach(([recipeName, recipe]) => {
+        const effect = recipe.effects?.[buildingKey];
+        if (!effect || !recipe.craftCount) return;
+
+        const totalBonusPercent = effect.productionBonus * recipe.craftCount * 100;
+        bonuses.push({ recipeName, totalBonusPercent });
+      });
+
+      return bonuses;
+    }
+
     updateRecipeBook() {
       const recipesList = document.querySelector(".recipes-list");
       recipesList.innerHTML = "";
@@ -5258,6 +5370,8 @@
       Object.entries(this.recipes).forEach(([recipeName, recipe]) => {
         const recipeItem = document.createElement("div");
         recipeItem.className = "recipe-item";
+        const canCraftRecipe = this.canMakeRecipe(recipeName);
+        const recipeLockReason = this.getRecipeLockReason(recipeName);
 
         const scaleCurrent = recipe.scaling?.ingredients?.current || 1;
         const ingredientsHTML = Object.entries(recipe.ingredients)
@@ -5279,8 +5393,8 @@
           ${ingredientsHTML}
         </div>
         <button class="make-btn" data-recipe="${recipeName}" ${
-          this.canMakeRecipe(recipeName) ? "" : "disabled"
-        }>Make!</button>
+          canCraftRecipe ? "" : "disabled"
+        } title="${canCraftRecipe ? "Make!" : recipeLockReason || "Not enough ingredients"}">Make!</button>
       `;
 
         recipesList.appendChild(recipeItem);
@@ -5350,6 +5464,7 @@
     }
 
     selectRecipe(recipeName) {
+      this.selectedRecipeName = recipeName;
       this.selectedRecipe = this.recipes[recipeName];
       const selectedRecipeElem = document.getElementById(
         "selected-recipe-name",
@@ -5369,21 +5484,16 @@
         return;
       }
 
-      let canCraft = true;
-      for (const [ingredient, amount] of Object.entries(
-        this.selectedRecipe.ingredients,
-      )) {
-        if (
-          !this.ingredients[ingredient] ||
-          this.ingredients[ingredient].count < amount
-        ) {
-          canCraft = false;
-          break;
-        }
-      }
+      const canCraft = this.selectedRecipeName
+        ? this.canMakeRecipe(this.selectedRecipeName)
+        : false;
 
       craftBtn.disabled = !canCraft;
-      craftBtn.title = canCraft ? "Craft Donut" : "Not enough ingredients";
+      craftBtn.title = canCraft
+        ? "Craft Donut"
+        : this.selectedRecipeName
+          ? this.getRecipeLockReason(this.selectedRecipeName) || "Not enough ingredients"
+          : "Not enough ingredients";
     }
 
     craftDonut(recipeName) {
@@ -5414,16 +5524,7 @@
           const building = this.items[buildingKey];
           if (building) {
             const totalBonus = recipe.craftCount * effect.productionBonus;
-            building.production =
-              building.originalProduction * (1 + totalBonus);
-
-            if (this.upgrades[buildingKey]) {
-              this.upgrades[buildingKey].forEach((upgrade) => {
-                if (upgrade.purchased && !upgrade.specialEffect) {
-                  building.production *= upgrade.multiplier;
-                }
-              });
-            }
+            building.production = building.originalProduction * (1 + totalBonus);
           }
         });
       }
@@ -5448,7 +5549,7 @@
 
     canMakeRecipe(recipeName) {
       const recipe = this.recipes[recipeName];
-      if (!recipe) return false;
+      if (!recipe || !this.isRecipeUnlocked(recipeName)) return false;
 
       return Object.entries(recipe.ingredients).every(
         ([ingredient, amount]) => {
@@ -6074,13 +6175,8 @@
           efficiencyText = "Clicking gains +1% of your DpS";
         }
       } else if (upgrade.specialEffect === "dynamicBoost") {
-        let totalBuildings = 0;
-        for (let key in this.items) {
-          if (key !== "cursor") {
-            totalBuildings += this.items[key].count;
-          }
-        }
-        efficiencyText = `Click and and cursor gain +1 donuts for each building owned (non-cursor)`;
+        efficiencyText =
+          "Your non-cursor buildings boost both cursor output and click power.";
       } else {
         const multiplierText = getEfficiencyText(upgrade.multiplier);
         efficiencyText = `<strong>${formattedItemName}</strong> production ${multiplierText}!`;
@@ -6125,46 +6221,78 @@
         feature: document.getElementById("item-info-feature"),
       };
 
-      const updateItemInfo = () => {
-        let currentProduction = item.production;
-        let featureHTML = "";
+      const imagePath = `${itemKey}.webp`;
+      if (!this.imageCache.has(imagePath)) {
+        const img = new Image();
+        img.src = `img/${imagePath}`;
+        this.imageCache.set(imagePath, img);
+      }
 
-        if (itemKey === "cursor") {
-          const dynamicBoostUpgrade = this.upgrades.cursor[4];
-          if (dynamicBoostUpgrade.purchased) {
-            let buildingCount = 0;
-            for (let key in this.items) {
-              if (key !== "cursor") {
-                buildingCount += this.items[key].count;
-              }
-            }
-            currentProduction += buildingCount;
-          }
-        }
-
-        // Resmi önbellekten al veya yükle
-        const imagePath = `${itemKey}.webp`;
-        if (!this.imageCache.has(imagePath)) {
-          const img = new Image();
-          img.src = `img/${imagePath}`;
-          this.imageCache.set(imagePath, img);
-        }
-        elements.image.src = this.imageCache.get(imagePath).src;
-
-        // Diğer bilgileri güncelle
-        elements.name.innerHTML = `<strong>${item.name}</strong>`;
-        elements.owned.textContent = `Owned: ${item.count}`;
-
-        const costColor = this.donutCount >= item.baseCost ? "#6f6" : "red";
-        elements.cost.innerHTML = `
-        <img src="img/donutMoney.webp" alt="donut icon" class="icon" />
-        <span style="color: ${costColor};">${this.formatNumber(
-          item.baseCost,
-          "cost",
-        )}</span>
+      elements.image.src = this.imageCache.get(imagePath).src;
+      elements.name.innerHTML = `<strong>${item.name}</strong>`;
+      elements.feature.innerHTML = `
+        <div class="item-info-line" data-role="per-unit"></div>
+        <div class="item-info-line" data-role="total-output"></div>
+        <div class="item-info-line" data-role="total-produced"></div>
+        <div class="item-info-line" data-role="contribution" style="color: #FFD700;"></div>
+        <div class="item-info-line" data-role="upgrades"></div>
+        <div class="item-info-line" data-role="bonus"></div>
       `;
 
+      const featureNodes = {
+        perUnit: elements.feature.querySelector('[data-role="per-unit"]'),
+        totalOutput: elements.feature.querySelector('[data-role="total-output"]'),
+        totalProduced: elements.feature.querySelector(
+          '[data-role="total-produced"]',
+        ),
+        contribution: elements.feature.querySelector('[data-role="contribution"]'),
+        upgrades: elements.feature.querySelector('[data-role="upgrades"]'),
+        bonus: elements.feature.querySelector('[data-role="bonus"]'),
+      };
+      const featureCache = {
+        cost: "",
+        costColor: "",
+        owned: "",
+        perUnit: "",
+        totalOutput: "",
+        totalProduced: "",
+        contribution: "",
+        upgrades: "",
+        bonus: "",
+      };
+
+      const updateItemInfo = () => {
+        let currentProduction = item.production;
+
+        const ownedText = `Owned: ${item.count}`;
+        if (featureCache.owned !== ownedText) {
+          elements.owned.textContent = ownedText;
+          featureCache.owned = ownedText;
+        }
+
+        const costColor = this.donutCount >= item.baseCost ? "#6f6" : "red";
+        const formattedCost = this.formatNumber(item.baseCost, "cost");
+        if (
+          featureCache.cost !== formattedCost ||
+          featureCache.costColor !== costColor
+        ) {
+          elements.cost.innerHTML = `
+        <img src="img/donutMoney.webp" alt="donut icon" class="icon" />
+        <span style="color: ${costColor};">${formattedCost}</span>
+      `;
+          featureCache.cost = formattedCost;
+          featureCache.costColor = costColor;
+        }
+
         const itemProduction = item.count * currentProduction;
+        const formattedCurrentProduction = this.formatNumber(
+          currentProduction,
+          "perSecond",
+        );
+        const formattedItemProduction =
+          itemProduction < 1000
+            ? this.formatNumber(itemProduction, "perSecond")
+            : this.formatNumber(itemProduction, "count");
         const totalProduction = this.calculatePerSecond();
 
         // Contributing yüzdesini hesapla
@@ -6173,27 +6301,13 @@
           percentageOfTotal = (itemProduction / totalProduction) * 100;
         }
 
-        featureHTML = `
-        Each <strong>${item.name}</strong> produces <strong>${
-          itemKey === "cursor"
-            ? this.formatNumber(currentProduction, "perSecond")
-            : currentProduction < 1000
-              ? currentProduction.toFixed(1).replace(".", ",")
-              : this.formatNumber(currentProduction, "perSecond")
-        } donuts</strong> per second<br>
-        ${this.formatNumber(item.count, "count")} <strong>${
-          item.name + "(s)"
-        }</strong> producing <strong>${this.formatNumber(
-          itemProduction,
-          "count",
-        )} donuts</strong> per second<br>
-        Total produced: ${this.formatNumber(item.totalProduced, "count")}<br>
-        <span style="color: #FFD700;">Contributing ${percentageOfTotal.toFixed(
-          1,
-        )}% of total production</span>
-      `;
+        const perUnitText = `Each <strong>${item.name}</strong> produces <strong>${formattedCurrentProduction} donuts</strong> per second`;
+        const totalOutputText = `${this.formatNumber(item.count, "count")} <strong>${item.name + "(s)"}</strong> producing <strong>${formattedItemProduction} donuts</strong> per second`;
+        const totalProducedText = `Total produced: ${this.formatNumber(item.totalProduced, "count")}`;
+        const contributionText = `Contributing ${percentageOfTotal.toFixed(1)}% of total production`;
 
         // Upgrade bilgilerini ekle
+        let upgradesMarkup = "";
         if (this.upgrades[itemKey]) {
           const purchasedUpgrades = this.upgrades[itemKey]
             .filter((upgrade) => upgrade.purchased)
@@ -6204,33 +6318,55 @@
             .join("");
 
           if (purchasedUpgrades) {
-            featureHTML += `<br>Purchased upgrades: <div class="upgrades-container">${purchasedUpgrades}</div>`;
+            upgradesMarkup = `Purchased upgrades: <div class="upgrades-container">${purchasedUpgrades}</div>`;
           } else {
-            featureHTML += "<br>No upgrades purchased yet.";
+            upgradesMarkup = "No upgrades purchased yet.";
           }
         }
 
-        // Farm ve Mine için bonus bilgilerini ekle
-        if (itemKey === "farm") {
-          const classicDonut = this.recipes["Classic Donut"];
-          if (classicDonut?.craftCount > 0) {
-            const bonusPercentage = classicDonut.craftCount * 10;
-            featureHTML += `<br><span style="color: #98FB98;">Classic Donut Bonus: +${bonusPercentage}% production</span>`;
-          }
-        } else if (itemKey === "mine") {
-          const whiteMagicDonut = this.recipes["White Magic Donut"];
-          if (whiteMagicDonut?.craftCount > 0) {
-            const bonusPercentage = whiteMagicDonut.craftCount * 10;
-            featureHTML += `<br><span style="color: #98FB98;">White Magic Donut Bonus: +${bonusPercentage}% production</span>`;
-          }
+        // Recipe bonus bilgilerini ekle
+        let bonusMarkup = "";
+        const recipeBonuses = this.getRecipeBonusDetailsForBuilding(itemKey);
+        if (recipeBonuses.length > 0) {
+          bonusMarkup = recipeBonuses
+            .map(({ recipeName, totalBonusPercent }) => {
+              const formattedBonus = Number.isInteger(totalBonusPercent)
+                ? totalBonusPercent.toString()
+                : totalBonusPercent.toFixed(1);
+              return `<span style="color: #98FB98;">${recipeName} Bonus: +${formattedBonus}% production</span>`;
+            })
+            .join("<br>");
         }
 
-        elements.feature.innerHTML = featureHTML;
+        if (featureCache.perUnit !== perUnitText) {
+          featureNodes.perUnit.innerHTML = perUnitText;
+          featureCache.perUnit = perUnitText;
+        }
+        if (featureCache.totalOutput !== totalOutputText) {
+          featureNodes.totalOutput.innerHTML = totalOutputText;
+          featureCache.totalOutput = totalOutputText;
+        }
+        if (featureCache.totalProduced !== totalProducedText) {
+          featureNodes.totalProduced.textContent = totalProducedText;
+          featureCache.totalProduced = totalProducedText;
+        }
+        if (featureCache.contribution !== contributionText) {
+          featureNodes.contribution.textContent = contributionText;
+          featureCache.contribution = contributionText;
+        }
+        if (featureCache.upgrades !== upgradesMarkup) {
+          featureNodes.upgrades.innerHTML = upgradesMarkup;
+          featureCache.upgrades = upgradesMarkup;
+        }
+        if (featureCache.bonus !== bonusMarkup) {
+          featureNodes.bonus.innerHTML = bonusMarkup;
+          featureCache.bonus = bonusMarkup;
+        }
       };
 
       let frameRequest;
       let lastUpdate = 0;
-      const UPDATE_INTERVAL = 1000; // 1 saniyede bir güncelle
+      const UPDATE_INTERVAL = this.isMobile ? 320 : 220;
 
       const tick = (timestamp) => {
         if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
@@ -6273,20 +6409,6 @@
 
       storeItem.addEventListener("mouseleave", hidePanel);
     }
-    setupStoreHover() {
-      for (let key in this.items) {
-        const storeItem = document.querySelector(
-          `.store-item[data-item="${key}"]`,
-        );
-        if (storeItem) {
-          storeItem.addEventListener("mouseenter", () =>
-            this.showItemInfo(key),
-          );
-        } else {
-        }
-      }
-    }
-
     updatePrestigeBar() {
       const prestigeBarFill = document.getElementById("prestigeBarFill");
       const prestigePoints = document.getElementById("prestigePoints");
@@ -6701,12 +6823,26 @@
         clickValue: this.lastClickValue,
         totalClicks: this.totalClicks,
       };
+      const formatTypes = {
+        totalDonuts:
+          this.donutCount < 1000 && this.totalPerSecond < 10
+            ? "perSecond"
+            : "count",
+        donutsProduced: this.totalDonutsEarned < 1000 ? "perSecond" : "count",
+        totalItems: "count",
+        donutsPerSecond: "perSecond",
+        clickValue: "perSecond",
+        totalClicks: "count",
+      };
 
       // RAF kullanarak DOM güncellemelerini yap
       requestAnimationFrame(() => {
         for (const [key, value] of Object.entries(updates)) {
           if (elements[key]) {
-            elements[key].textContent = this.formatNumber(value);
+            elements[key].textContent = this.formatNumber(
+              value,
+              formatTypes[key] || "count",
+            );
           }
         }
       });
@@ -6717,6 +6853,9 @@
       if (!this._notificationQueue) {
         this._notificationQueue = [];
       }
+      if (typeof this._notificationActive !== "boolean") {
+        this._notificationActive = false;
+      }
 
       // Multiplier mesajlarını formatla
       if (message.includes("production multiplier")) {
@@ -6726,23 +6865,30 @@
         });
       }
 
-      // Aktif bildirimi kaldır
-      const oldNotification = document.querySelector(".quest-notification");
-      if (oldNotification) {
-        oldNotification.remove();
-      }
-
-      // Yeni bildirimi oluştur ve kuyruğa ekle
-      const notification = document.createElement("div");
-      notification.className = "quest-notification";
-      notification.innerHTML = `
+      // Animasyon ve kaldırma işlemlerini yönet
+      const showNotification = () => {
+        const notification = document.createElement("div");
+        notification.className = "quest-notification";
+        notification.innerHTML = `
       <div class="notification-content">
         <span>${message}</span>
       </div>
     `;
 
-      // Animasyon ve kaldırma işlemlerini yönet
-      const showNotification = () => {
+        this._notificationActive = true;
+
+        const closeNotification = () => {
+          if (!notification.isConnected && !this._notificationActive) return;
+
+          notification.remove();
+          this._notificationActive = false;
+
+          if (this._notificationQueue.length > 0) {
+            const nextNotification = this._notificationQueue.shift();
+            nextNotification();
+          }
+        };
+
         requestAnimationFrame(() => {
           document.body.appendChild(notification);
           notification.style.opacity = "1";
@@ -6753,22 +6899,18 @@
             notification.style.transform = "translateY(-20px)";
             notification.addEventListener(
               "transitionend",
-              () => {
-                notification.remove();
-                // Kuyrukta bekleyen bir bildirim varsa göster
-                if (this._notificationQueue.length > 0) {
-                  const nextNotification = this._notificationQueue.shift();
-                  nextNotification();
-                }
-              },
+              closeNotification,
               { once: true },
             );
+
+            // transitionend tetiklenmezse kuyruğun kilitlenmesini engelle
+            setTimeout(closeNotification, 400);
           }, duration);
         });
       };
 
       // Eğer aktif bildirim yoksa hemen göster, varsa kuyruğa ekle
-      if (document.querySelector(".quest-notification")) {
+      if (this._notificationActive || document.querySelector(".quest-notification")) {
         this._notificationQueue.push(showNotification);
       } else {
         showNotification();
@@ -7128,7 +7270,6 @@
         workers: this.workers,
         bakers: this.bakers,
         ingredients: this.ingredients,
-        recipes: this.recipes,
         hasDonutClicked: this.hasDonutClicked,
         productionMultiplier: this.productionMultiplier,
         activeMultipliers: this.activeMultipliers,
@@ -7177,8 +7318,12 @@
         if (gameState.upgrades) {
           for (let key in gameState.upgrades) {
             if (this.upgrades[key]) {
-              gameState.upgrades[key].forEach((isPurchased, index) => {
+              gameState.upgrades[key].forEach((savedUpgrade, index) => {
                 if (this.upgrades[key][index]) {
+                  const isPurchased =
+                    typeof savedUpgrade === "boolean"
+                      ? savedUpgrade
+                      : !!savedUpgrade?.purchased;
                   this.upgrades[key][index].purchased = isPurchased;
                 }
               });
@@ -7329,11 +7474,15 @@
         if (gameState.recipes) {
           for (let key in gameState.recipes) {
             if (this.recipes[key]) {
-              this.recipes[key].craftCount =
-                gameState.recipes[key].craftCount || 0;
+              const savedRecipe = gameState.recipes[key];
+              this.recipes[key].craftCount = savedRecipe.craftCount || 0;
               if (this.recipes[key].scaling?.ingredients) {
+                const savedScaling =
+                  typeof savedRecipe.currentScaling === "number"
+                    ? savedRecipe.currentScaling
+                    : savedRecipe.scaling?.ingredients?.current;
                 this.recipes[key].scaling.ingredients.current =
-                  gameState.recipes[key].currentScaling || 1;
+                  typeof savedScaling === "number" ? savedScaling : 1;
               }
             }
           }
@@ -7368,7 +7517,6 @@
         this.workers = gameState.workers || [];
         this.bakers = gameState.bakers || [];
         this.ingredients = gameState.ingredients || {};
-        this.recipes = gameState.recipes || this.recipes;
         this.lastBakerProduction = gameState.lastBakerProduction || Date.now();
         this.lastMineProduction = gameState.lastMineProduction || Date.now();
         this.lastUpdateTime = Date.now(); // Bu satırda kalmalı.
@@ -7424,6 +7572,8 @@
           claimInterval: 24 * 60 * 60 * 1000,
         };
 
+        this.rebuildItemProductionsFromSaveState();
+
         // totalPerSecond'ın doğru hesaplandığından emin ol
         this.updateTotalPerSecond();
 
@@ -7458,6 +7608,29 @@
         } else {
           item.baseCost = item.originalBaseCost;
         }
+      }
+    }
+
+    rebuildItemProductionsFromSaveState() {
+      const prestigeMultiplier = Math.pow(
+        this.prestigeMultiplier,
+        this.prestigeCount || 0,
+      );
+
+      for (const [itemKey, item] of Object.entries(this.items)) {
+        const baseProduction =
+          this.baseItemProductions[itemKey] ?? item.originalProduction;
+        item.originalProduction = baseProduction * prestigeMultiplier;
+
+        if (itemKey !== "cursor" && this.upgrades[itemKey]) {
+          this.upgrades[itemKey].forEach((upgrade) => {
+            if (upgrade.purchased && !upgrade.specialEffect) {
+              item.originalProduction *= upgrade.multiplier;
+            }
+          });
+        }
+
+        item.production = item.originalProduction;
       }
     }
 
