@@ -1629,7 +1629,6 @@
       const imagesToPreload = [
         // Donut görselleri
         "donutNew.webp",
-        "donutSign1.webp",
         "donutPixelArt.webp",
         "donutMoney.webp",
         "donutCoin.webp",
@@ -1679,12 +1678,32 @@
       });
     }
 
+    scheduleDeferredImagePreload() {
+      const queuePreload = () => {
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => this.preloadImages(), {
+            timeout: 2000,
+          });
+          return;
+        }
+
+        setTimeout(() => this.preloadImages(), 1500);
+      };
+
+      if (document.readyState === "complete") {
+        queuePreload();
+        return;
+      }
+
+      window.addEventListener("load", queuePreload, { once: true });
+    }
+
     init() {
       // DOM Elemanlarını önbelleğe al
       this.cacheElements();
 
-      // Önce resimleri yükle
-      this.preloadImages();
+      // Kritik ekran ilk boyansın, toplu görsel preload'u sonra başlat.
+      this.scheduleDeferredImagePreload();
       this.initializeComboSystem();
       this.loadGame();
       this.updateBakeryName();
@@ -10941,8 +10960,13 @@
 
   document.querySelectorAll("img").forEach((img) => {
     if (!img.classList.contains("headerImg") && img.id !== "donut") {
-      img.loading = "lazy";
-      img.decoding = "async";
+      if (!img.hasAttribute("loading")) {
+        img.loading = "lazy";
+      }
+
+      if (!img.hasAttribute("decoding")) {
+        img.decoding = "async";
+      }
 
       if (img.dataset.width && img.dataset.height) {
         img.width = img.dataset.width;

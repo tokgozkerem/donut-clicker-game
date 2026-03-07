@@ -97,8 +97,8 @@
 
     <!-- Icons / Preload -->
     <link rel="icon" href="img/donutPixelArt.webp" type="image/webp" />
-    <link rel="preload" as="image" href="img/donutNew.webp" />
-    <link rel="preload" as="image" href="img/donutSign1.webp" />
+    <link rel="preload" as="image" href="img/donutSign1.webp" type="image/webp" />
+    <link rel="preload" as="image" href="img/donut5.webp" type="image/webp" />
 
     <!-- Google tag -->
     <script
@@ -156,7 +156,13 @@
           <div id="pages">
             <div class="page-item" id="quests">
               <div class="page-img">
-                <img src="img/quests.webp" alt="Quests" />
+                <img
+                  src="img/quests.webp"
+                  alt="Quests"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="page-info">
                 <p class="page-name title">Quests</p>
@@ -168,7 +174,13 @@
 
             <div class="page-item" id="prestige" style="cursor: pointer">
               <div class="page-img">
-                <img src="img/prestige.webp" alt="Prestige" />
+                <img
+                  src="img/prestige.webp"
+                  alt="Prestige"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="page-info">
                 <p class="page-name title">Prestige</p>
@@ -185,7 +197,13 @@
 
             <div class="page-item" id="combos">
               <div class="page-img">
-                <img src="img/combos.webp" alt="Combos" />
+                <img
+                  src="img/combos.webp"
+                  alt="Combos"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="page-info">
                 <p class="page-name title">Combos</p>
@@ -233,6 +251,11 @@
               src="img/donutSign1.webp"
               alt="Donut Clicker - The Best Idle Game"
               class="headerImg"
+              width="661"
+              height="377"
+              loading="eager"
+              decoding="sync"
+              fetchpriority="high"
             />
           </h1>
 
@@ -627,7 +650,13 @@
             <div class="right-section">
               <div class="crafting-container">
                 <button id="recipe-book-btn">
-                  <img src="img/recipe-book.webp" alt="Recipe Book" />
+                  <img
+                    src="img/recipe-book.webp"
+                    alt="Recipe Book"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                  />
                 </button>
               </div>
             </div>
@@ -639,7 +668,14 @@
           <div class="mine-content">
             <div class="left-section">
               <div class="mine-content-header">
-                <img src="img/mine.webp" alt="Mine" class="mine-header-icon" />
+                <img
+                  src="img/mine.webp"
+                  alt="Mine"
+                  class="mine-header-icon"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
                 <span class="mine-section-title">Mine</span>
                 <span class="mine-topbar-timer"
                   ><span id="mine-timer">60</span>s</span
@@ -743,7 +779,14 @@
         <div id="farm-panel" class="footer-panel hidden">
           <span id="close-farm-panel" class="close-btn">&times;</span>
           <div class="farm-topbar">
-            <img src="img/farm.webp" alt="Farm" class="farm-header-icon" />
+            <img
+              src="img/farm.webp"
+              alt="Farm"
+              class="farm-header-icon"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
+            />
             <span class="farm-section-title">Farm</span>
             <div class="farm-kpi-bar">
               <span class="farm-kpi" id="farm-kpi-output">0/min</span>
@@ -1004,7 +1047,13 @@
       <div id="donut-coin" class="donut-coin">
         <div class="coin-image-wrapper">
           <span class="star-left">✦</span>
-          <img src="img/donutCoin.webp" alt="DonutCoin" />
+          <img
+            src="img/donutCoin.webp"
+            alt="DonutCoin"
+            loading="eager"
+            decoding="async"
+            fetchpriority="low"
+          />
           <span class="star-right">✧</span>
         </div>
         <span id="donut-coin-count">0</span>
@@ -1015,7 +1064,16 @@
         <p id="donut-count">0 donuts</p>
         <p id="per-second">per second: 0</p>
         <div class="donut-wrapper">
-          <img src="img/donut5.webp" alt="Donut" id="donut" />
+          <img
+            src="img/donut5.webp"
+            alt="Donut"
+            id="donut"
+            width="500"
+            height="500"
+            loading="eager"
+            decoding="sync"
+            fetchpriority="high"
+          />
         </div>
       </div>
       <div
@@ -1094,7 +1152,13 @@
             <!-- Cursor -->
             <div class="store-item" data-item="cursor">
               <div class="item-img">
-                <img src="img/cursor.webp" alt="Cursor" />
+                <img
+                  src="img/cursor.webp"
+                  alt="Cursor"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Cursor</p>
@@ -1115,7 +1179,13 @@
             <!-- Baker -->
             <div class="store-item is-hidden" data-item="baker">
               <div class="item-img">
-                <img src="img/baker.webp" alt="Baker" />
+                <img
+                  src="img/baker.webp"
+                  alt="Baker"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Baker</p>
@@ -1136,7 +1206,13 @@
             <!-- Farm -->
             <div class="store-item is-hidden" data-item="farm">
               <div class="item-img">
-                <img src="img/farm.webp" alt="Farm" />
+                <img
+                  src="img/farm.webp"
+                  alt="Farm"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Farm</p>
@@ -1157,7 +1233,13 @@
             <!-- Mine -->
             <div class="store-item is-hidden" data-item="mine">
               <div class="item-img">
-                <img src="img/mine.webp" alt="mineDonut" />
+                <img
+                  src="img/mine.webp"
+                  alt="mineDonut"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Mine</p>
@@ -1178,7 +1260,13 @@
             <!-- Factory -->
             <div class="store-item is-hidden" data-item="factory">
               <div class="item-img">
-                <img src="img/factory.webp" alt="Factory" />
+                <img
+                  src="img/factory.webp"
+                  alt="Factory"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Factory</p>
@@ -1198,7 +1286,13 @@
             <!-- Factory -->
             <div class="store-item is-hidden" data-item="logisticCenter">
               <div class="item-img">
-                <img src="img/logisticCenter.webp" alt="Factory" />
+                <img
+                  src="img/logisticCenter.webp"
+                  alt="Factory"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Logistic Center</p>
@@ -1219,7 +1313,13 @@
             <!-- Power Plant -->
             <div class="store-item is-hidden" data-item="powerPlant">
               <div class="item-img">
-                <img src="img/powerPlant.webp" alt="powerPlantDonut" />
+                <img
+                  src="img/powerPlant.webp"
+                  alt="powerPlantDonut"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Power Plant</p>
@@ -1239,7 +1339,13 @@
             <!-- Nature -->
             <div class="store-item is-hidden" data-item="nature">
               <div class="item-img">
-                <img src="img/nature.webp" alt="nature" />
+                <img
+                  src="img/nature.webp"
+                  alt="nature"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Nature</p>
@@ -1283,7 +1389,13 @@
             <!-- Portal -->
             <div class="store-item is-hidden" data-item="portal">
               <div class="item-img">
-                <img src="img/portal.webp" alt="portalDonut" />
+                <img
+                  src="img/portal.webp"
+                  alt="portalDonut"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
               <div class="item-info">
                 <p class="item-name title">Portal</p>
@@ -1303,7 +1415,13 @@
             <!-- Capital Crest -->
             <div class="store-item is-hidden" data-item="capitalCrest">
               <div class="item-img">
-                <img src="img/capitalCrest.webp" alt="capitalCrest" />
+                <img
+                  src="img/capitalCrest.webp"
+                  alt="capitalCrest"
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                />
               </div>
 
               <div class="item-info">
@@ -1482,7 +1600,14 @@
       <div class="feedback-content">
         <span id="close-feedback" class="close-feedback-btn">&times;</span>
         <div class="feedback-body">
-          <img src="img/farmChicken.webp" alt="Chicken" class="feedback-img" />
+          <img
+            src="img/farmChicken.webp"
+            alt="Chicken"
+            class="feedback-img"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+          />
           <div class="feedback-text">
             <h4>New: Farm Panel! 🌾</h4>
             <p>
@@ -1498,6 +1623,6 @@
       </div>
     </div>
 
-    <script defer src="script.js?v=1.5.3"></script>
+    <script defer src="script.js?v=1.5.4"></script>
   </body>
 </html>
