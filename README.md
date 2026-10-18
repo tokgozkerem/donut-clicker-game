@@ -12,7 +12,7 @@
   - **The Mine**: Extract Copper, Iron, Gold, and Diamonds. Trade them in the market or use them for upgrades.
   - **The Baker's Kitchen**: Collect ingredients like Dough, Sugar, and Chocolate to craft special recipes.
   - **Recipe Book**: Master complex recipes that provide unique, permanent bonuses to your production buildings.
-- **Auto-Buyer**: Automate your purchases with a customizable auto-buyer, ensuring your empire grows even while you're away.
+- **Auto-Buyer**: Automate your purchases with a customizable auto-buyer, purchasing buildings while the page is visible. Hidden and closed sessions advance production at 25% for up to 12 continuous hours; the auto-buyer does not simulate purchases while away.
 - **Responsive Design**: Play seamlessly on desktop or mobile with a fully optimized UI.
 
 ## 🚀 Recent Updates (v1.4.4)

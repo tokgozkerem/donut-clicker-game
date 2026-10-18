@@ -1,7 +1,179 @@
 (function () {
+  const donutDebug = (() => {
+    // Console-only development convenience. Discoverable in source; not authentication.
+    let game = null;
+    let panel = null;
+    let clickMultiplier = 1;
+    const multipliers = [1, 10, 100, 1000, 10000];
+    const amounts = [[1000, "+1K"], [1000000, "+1M"], [1000000000, "+1B"], [1000000000000, "+1T"]];
+
+    function manualClickValue(canonical) {
+      const value = canonical * clickMultiplier;
+      if (Number.isFinite(value)) return value;
+      clickMultiplier = 1;
+      return canonical;
+    }
+
+    function close() {
+      if (!panel) return;
+      const dialog = panel;
+      panel = null;
+      dialog.close();
+      dialog.remove();
+    }
+
+    function reset() {
+      clickMultiplier = 1;
+      close();
+    }
+
+    function refresh() {
+      if (!panel) return;
+      const canonical = game.calculateClickValue();
+      const debug = manualClickValue(canonical);
+      const values = {
+        balance: game.donutCount,
+        earned: game.totalDonutsEarned,
+        cps: game.calculatePerSecond(),
+        canonical,
+        multiplier: `×${clickMultiplier}`,
+        debug,
+        prestige: game.prestigeCount,
+        requirement: game.nextPrestigeThreshold,
+        visibility: document.visibilityState,
+      };
+      panel.querySelectorAll("[data-debug-stat]").forEach(node => {
+        const value = values[node.dataset.debugStat];
+        node.textContent = typeof value === "number"
+          ? value.toLocaleString("en-US", { maximumSignificantDigits: 17 }) : value;
+      });
+    }
+
+    function grant(amount, asEarned) {
+      if (!Number.isFinite(amount) || amount <= 0) return false;
+      game.settleBeforeMutation();
+      const balance = game.donutCount + amount;
+      const earned = game.totalDonutsEarned + amount;
+      if (!Number.isFinite(balance) || balance <= game.donutCount ||
+          (asEarned && (!Number.isFinite(earned) || earned <= game.totalDonutsEarned))) return false;
+      if (!game.creditDonuts(amount, asEarned)) return false;
+      if (asEarned) {
+        game.checkDynamicQuestProgress();
+        game.checkMilestoneProgress();
+        game.updateQuestDisplay();
+      }
+      game.updateDisplay(true);
+      game.showUpgrades();
+      game.updatePrestigeBar();
+      game.updateTitleWithDonuts();
+      game.requestSave();
+      return true;
+    }
+
+    function open() {
+      if (panel) { refresh(); return true; }
+      const dialog = document.createElement("dialog");
+      dialog.id = "donut-debug-panel";
+      dialog.setAttribute("aria-labelledby", "donut-debug-heading");
+      Object.assign(dialog.style, {
+        width: "min(90vw, 620px)", maxHeight: "85vh", overflow: "auto",
+        boxSizing: "border-box", padding: "20px", border: "2px solid #b8860b",
+        borderRadius: "12px", background: "#2c2c2c", color: "#fff",
+        font: "14px/1.5 system-ui, sans-serif",
+      });
+      const grants = [
+        ["balance", "Balance Only", "Spendable donuts only. Does not count toward total earned, prestige or production quests."],
+        ["earned", "Add As Earned", "Counts as earned income toward prestige and production progression."],
+      ].map(([mode, label, explanation]) => `
+        <fieldset style="margin:12px 0">
+          <legend>${label}</legend><p>${explanation}</p>
+          ${amounts.map(([amount, text]) => `<button type="button" data-debug-mode="${mode}" data-debug-amount="${amount}">${text}</button>`).join(" ")}
+          <p><label>Custom amount (donuts)
+            <input type="number" min="0" step="any" data-debug-input="${mode}" style="max-width:100%">
+          </label>
+          <button type="button" data-debug-mode="${mode}">${label}</button></p>
+        </fieldset>`).join("");
+      const stats = [
+        ["balance", "Donuts"], ["earned", "Total earned"], ["cps", "Effective CPS"],
+        ["canonical", "Normal click value"], ["multiplier", "Click multiplier"],
+        ["debug", "Debug click value"], ["prestige", "Prestige count"],
+        ["requirement", "Current prestige requirement"], ["visibility", "Visibility state"],
+      ].map(([key, label]) => `<div>${label}: <output data-debug-stat="${key}" style="overflow-wrap:anywhere"></output></div>`).join("");
+      dialog.innerHTML = `
+        <h2 id="donut-debug-heading">Donut Debug</h2>
+        <button type="button" data-debug-action="close">Close</button>
+        <h3>Donuts</h3>${grants}
+        <h3>Click Multiplier</h3>
+        ${multipliers.map(value => `<button type="button" data-debug-multiplier="${value}">×${value}</button>`).join(" ")}
+        <p>Manual clicks only. Closing keeps the multiplier; reset or reload restores ×1.</p>
+        <h3>Current State</h3>${stats}
+        <p><button type="button" data-debug-action="refresh">Refresh</button>
+        <button type="button" data-debug-action="reset">Reset debug</button></p>
+        <p role="status" data-debug-status></p>`;
+      dialog.addEventListener("click", event => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        const status = dialog.querySelector("[data-debug-status]");
+        if (button.dataset.debugAction === "close") { close(); return; }
+        if (button.dataset.debugAction === "reset") { reset(); return; }
+        if (button.dataset.debugMultiplier) {
+          const value = Number(button.dataset.debugMultiplier);
+          if (!multipliers.includes(value)) return;
+          if (!Number.isFinite(game.calculateClickValue() * value)) {
+            status.textContent = "Multiplier exceeds the numeric range.";
+          } else {
+            clickMultiplier = value;
+            status.textContent = "Manual click multiplier updated.";
+          }
+        }
+        const mode = button.dataset.debugMode;
+        if (mode === "balance" || mode === "earned") {
+          const raw = button.dataset.debugAmount ?? dialog.querySelector(`[data-debug-input="${mode}"]`).value;
+          status.textContent = grant(Number(raw), mode === "earned")
+            ? (mode === "earned" ? "Added as earned income." : "Added to balance only.")
+            : "Enter a positive, finite amount that changes the balance without overflow.";
+        }
+        refresh();
+      });
+      dialog.addEventListener("close", () => {
+        dialog.remove();
+        if (panel === dialog) panel = null;
+      });
+      document.body.appendChild(dialog);
+      panel = dialog;
+      dialog.showModal();
+      refresh();
+      return true;
+    }
+
+    function attach(liveGame) {
+      game = liveGame;
+      window.openDonutDebug = open;
+      window.closeDonutDebug = close;
+      window.resetDonutDebug = reset;
+    }
+
+    return { attach, manualClickValue };
+  })();
+
   class Game {
     constructor() {
-      this.currentVersion = "1.5.3";
+      this.currentVersion = "1.5.4";
+      this.saveVersion = 1;
+      this.productionStateVersion = 0;
+      this.productionSnapshotContext = null;
+      this.bulkPriceCache = new Map();
+      this._presentationSuspended = false;
+      this._presentationTimers = null;
+      this._displayUpdateHandle = null;
+      this._notificationFrame = null;
+      this.saveWritesBlocked = false;
+      this._saveReady = false;
+      this._loadedPrimarySave = undefined;
+      this._saveTimer = null;
+      this._saveDeadline = 0;
+      this._lastSaveTime = 0;
+      this._storageWarnings = new Set();
       this.bakeryNames = [
         "Snowfall Crust",
         "Frosted Pines",
@@ -50,723 +222,8 @@
         new Audio("sounds/click3.mp3"),
         new Audio("sounds/click4.mp3"),
       ];
-      this.upgrades = {
-        cursor: [
-          {
-            name: "First Upgrade!",
-            cost: 100,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "cursorUpgrade.webp",
-            description:
-              "A rudimentary extension that powers your donut factory into overdrive.",
-          },
-          {
-            name: "Tidal Surge",
-            cost: 500,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "cursorUpgrade-2.webp",
-            description:
-              "Unleash a wave of efficiency, drowning inefficiency in a sea of productivity.",
-          },
-          {
-            name: "Blazing Touch",
-            cost: 5000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "cursorUpgrade-3.webp",
-            description:
-              "Ignite the donut cosmos with a touch that burns through production limits.",
-          },
-          {
-            name: "Abyssal Grasp",
-            cost: 50000,
-            multiplier: 3,
-            purchased: false,
-            requirement: 30,
-            img: "cursorUpgrade-4.webp",
-            description:
-              "Reach deep into the void, pulling forth untapped donut-making power.",
-          },
-          {
-            name: "Donut Cursor",
-            cost: 500000,
-            multiplier: 1,
-            purchased: false,
-            requirement: 50,
-            img: "cursorUpgrade-5.webp",
-            specialEffect: "dynamicBoost",
-            description:
-              "Your non-cursor buildings now boost both cursor output and click power.",
-          },
-          {
-            name: "Ruby Cursor",
-            cost: 50000000,
-            multiplier: 10,
-            purchased: false,
-            requirement: 100,
-            img: "cursorUpgrade-6.webp",
-            description: "Careful though: you might fall in love…with a cursor",
-          },
-          {
-            name: "Verdant Precision",
-            cost: 500000000,
-            multiplier: 10,
-            purchased: false,
-            requirement: 150,
-            img: "cursorUpgrade-7.webp",
-            description:
-              "Clicks as precise as nature itself. Fresh, green, and absolutely donut-licious!",
-          },
-          {
-            name: "Obsidian Whisper",
-            cost: 50000000000,
-            multiplier: 10,
-            purchased: false,
-            requirement: 200,
-            img: "cursorUpgrade-8.webp",
-            description:
-              "Harness the power of darkness to craft donuts with quiet, shadowy elegance. Shh... the donuts are listening.",
-          },
-        ],
-        baker: [
-          {
-            name: "Crustaire",
-            cost: 1000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "bakerUpgrade-1.webp",
-            description:
-              "A master baker whose mere presence doubles the doughy yield of your donuts.",
-          },
-          {
-            name: "Doughmire",
-            cost: 5250,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "bakerUpgrade-2.webp",
-            description:
-              "Harness the power of ancient dough magic to knead perfection into every donut.",
-          },
-          {
-            name: "Flourist",
-            cost: 52500,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "bakerUpgrade-3.webp",
-            description:
-              "A flour conjurer whose delicate touch transforms ingredients into donut gold.",
-          },
-          {
-            name: "Batteron",
-            cost: 5250000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "bakerUpgrade-4.webp",
-            description:
-              "An elemental baker, crafting cosmic donuts from primordial batter.",
-          },
-          {
-            name: "Crèmeor",
-            cost: 525000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "bakerUpgrade-5.webp",
-            description:
-              "A mythical baker whose crème-filled creations are the stuff of legends.",
-          },
-          {
-            name: "Strawknead",
-            cost: 5250000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 150,
-            img: "bakerUpgrade-6.webp",
-            description:
-              "A master of strawberry-infused dough, bringing a burst of berry sweetness to every donut.",
-          },
-          {
-            name: "Chocobatch",
-            cost: 525000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 200,
-            img: "bakerUpgrade-7.webp",
-            description:
-              "The ultimate chocolatier, infusing your donuts with rich, velvety cocoa magic.",
-          },
-        ],
-        farm: [
-          {
-            name: "Harvest Plains",
-            cost: 10000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "farmUpgrade-1.webp",
-            description:
-              "Lush fields bursting with crops, nurturing the perfect ingredients for your donuts.",
-          },
-          {
-            name: "Golden Acre",
-            cost: 50000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "farmUpgrade-2.webp",
-            description:
-              "A golden field where each stalk of grain yields a bounty of donut flour.",
-          },
-          {
-            name: "Elder Grove",
-            cost: 500000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "farmUpgrade-3.webp",
-            description:
-              "An ancient grove, where the oldest trees bear the finest donut fruits.",
-          },
-          {
-            name: "Ironroot Fields",
-            cost: 50000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "farmUpgrade-4.webp",
-            description:
-              "Fields with roots of iron, pulling forth the strongest crops for donut production.",
-          },
-          {
-            name: "Magicland",
-            cost: 5000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "farmUpgrade-5.webp",
-            description:
-              "A mystical realm where the land itself grows donut-making magic.",
-          },
-        ],
-        mine: [
-          {
-            name: "Ironclad Plains",
-            cost: 160000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "mineUpgrade-1.webp",
-            description:
-              "Sturdy plains rich in minerals, fueling your donut factory with raw power.",
-          },
-          {
-            name: "Golden Veil",
-            cost: 800000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "mineUpgrade-2.webp",
-            description:
-              "A mine where every vein glistens with pure golden resources for your donuts.",
-          },
-          {
-            name: "Diamondspire",
-            cost: 8000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "mineUpgrade-3.webp",
-            description:
-              "Towering spires of diamonds, feeding your production with unrivaled hardness and beauty.",
-          },
-          {
-            name: "Emerald Hollow",
-            cost: 800000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "mineUpgrade-4.webp",
-            description:
-              "A deep cavern of shimmering emeralds, infusing your donuts with rare energy.",
-          },
-          {
-            name: "Ruby Ascendant",
-            cost: 80000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "mineUpgrade-5.webp",
-            description:
-              "A mine that ascends to the heavens, where rubies pulse with the heart of donut production.",
-          },
-        ],
-        factory: [
-          {
-            name: "Ironclad Nexus",
-            cost: 1800000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "factoryUpgrade-1.webp",
-            description:
-              "A mighty nexus of steel and steam, churning out donuts at blinding speeds.",
-          },
-          {
-            name: "Aureum Heart",
-            cost: 9000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "factoryUpgrade-2.webp",
-            description:
-              "At the core of your factory, the golden heart beats with unstoppable donut-making power.",
-          },
-          {
-            name: "Diamondflare Core",
-            cost: 90000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "factoryUpgrade-3.webp",
-            description:
-              "A blazing core of diamond-powered energy, driving your factory to new heights.",
-          },
-          {
-            name: "Emerald Vein",
-            cost: 9000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "factoryUpgrade-4.webp",
-            description:
-              "Hidden deep in your factory lies an emerald vein, enhancing production with every pulse.",
-          },
-          {
-            name: "Rubyflare Engine",
-            cost: 900000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "factoryUpgrade-5.webp",
-            description:
-              "An engine of pure rubyfire, propelling your donut output beyond the stars.",
-          },
-        ],
-        logisticCenter: [
-          {
-            name: "Warehouse Whisperer",
-            cost: 19000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "logisticCenterUpgrade-1.webp",
-            description:
-              "With a subtle glow, this upgrade whispers directions to your donuts, ensuring none get lost on their way out.",
-          },
-          {
-            name: "Goldie Locks",
-            cost: 95000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "logisticCenterUpgrade-2.webp",
-            description:
-              "Now with a golden touch, your logistics flow is so smooth that even the donuts look surprised as they roll out!",
-          },
-          {
-            name: "Diamond Dispatch",
-            cost: 950000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "logisticCenterUpgrade-3.webp",
-            description:
-              "Powered by a sparkly diamond core, this dispatch unit runs so efficiently it thinks it's the CEO of donut deliveries.",
-          },
-          {
-            name: "Emerald Express",
-            cost: 9500000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "logisticCenterUpgrade-4.webp",
-            description:
-              "This upgrade finds shortcuts, backroads, and donut-sized tunnels—who knew green could be so quick?",
-          },
-          {
-            name: "Ruby Roadrunner",
-            cost: 9500000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "logisticCenterUpgrade-5.webp",
-            description:
-              "Fueled by the fastest ruby energy, this upgrade makes your donuts so quick that they deliver themselves.",
-          },
-        ],
-        powerPlant: [
-          {
-            name: "Voltage Amplifier",
-            cost: 210000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "powerPlantUpgrade-1.webp",
-            description:
-              "Boosts the power output of your plant, electrifying donut production to new levels.",
-          },
-          {
-            name: "Fusion Reactor",
-            cost: 1050000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "powerPlantUpgrade-2.webp",
-            description:
-              "A state-of-the-art reactor that harnesses fusion energy to supercharge donut generation.",
-          },
-          {
-            name: "Plasma Conductor",
-            cost: 10500000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "powerPlantUpgrade-3.webp",
-            description:
-              "Plasma energy flows through your plant, exponentially increasing production efficiency.",
-          },
-          {
-            name: "Quantum Dynamo",
-            cost: 105000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "powerPlantUpgrade-4.webp",
-            description:
-              "Taps into quantum fields, unleashing limitless energy for donut crafting.",
-          },
-          {
-            name: "Celestial Reactor",
-            cost: 105000000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "powerPlantUpgrade-5.webp",
-            description:
-              "Fueled by the energy of the stars, this reactor takes your donut empire to galactic proportions.",
-          },
-        ],
-        nature: [
-          {
-            name: "Mighty Oak",
-            cost: 2300000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 1,
-            img: "natureUpgrade-1.webp",
-            description:
-              "This majestic oak tree symbolizes strength and stability, doubling your nature's donut yield.",
-          },
-          {
-            name: "Whispering Pine",
-            cost: 11500000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 15,
-            img: "natureUpgrade-2.webp",
-            description:
-              "The soothing presence of pine trees enhances your production with nature's whisper.",
-          },
-          {
-            name: "Paradise Palm",
-            cost: 115000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 30,
-            img: "natureUpgrade-3.webp",
-            description:
-              "Bring the tropical vibes with a palm tree that boosts your donuts in a breezy way.",
-          },
-          {
-            name: "Evergreen Spruce",
-            cost: 1150000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 50,
-            img: "natureUpgrade-4.webp",
-            description:
-              "A symbol of eternal growth, spruce trees inspire endless donut production.",
-          },
-          {
-            name: "Eternal Eucalyptus",
-            cost: 115000000000000,
-            multiplier: 2,
-            purchased: false,
-            requirement: 100,
-            img: "natureUpgrade-5.webp",
-            description:
-              "Harness the calming power of eucalyptus to take your nature-driven empire to tranquil heights.",
-          },
-        ],
-
-        nonItemUpgrades: [
-          {
-            name: "Chocolate Dream",
-            cost: 5000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 500,
-            img: "clickUpgrade1.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Dough Delight",
-            cost: 500000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 1000,
-            img: "clickUpgrade2.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Rainbow Sprinkle Surprise",
-            cost: 5000000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 2000,
-            img: "clickUpgrade3.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Strawberry Bliss",
-            cost: 50000000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 4000,
-            img: "clickUpgrade4.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Creamy Classic",
-            cost: 50000000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 8000,
-            img: "clickUpgrade5.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Choco-Chip White Magic",
-            cost: 500000000,
-            multiplier: 1.01, // %1 increase in clickValue
-            purchased: false,
-            requirement: 16000,
-            img: "clickUpgrade6.webp",
-            description:
-              "Clicking efficiency increases with each second, gaining 1% of the per-second production.",
-          },
-          {
-            name: "Auto Catcher",
-            cost: 1,
-            multiplier: 0.2, // %20 yakalama şansı
-            purchased: false,
-            requirement: 1,
-            img: "autoCatcher.webp",
-            specialEffect: "automation",
-            description:
-              "Automatically catches falling donuts with 20% chance!",
-          },
-        ],
-        donutUpgrades: [
-          {
-            name: "Sweet Loop",
-            cost: 250000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 2500000,
-            img: "donutUpgrade-6.webp",
-            description: "So sweet it bends time. Maybe.",
-            type: "totalProduced",
-          },
-          {
-            name: "Berry Burst",
-            cost: 250000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 5000,
-            img: "donutUpgrade-5.webp",
-            description: "Explodes in flavor, not in your hand.",
-            type: "perSecond",
-          },
-          {
-            name: "Caramel Crown",
-            cost: 1000000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 25000000,
-            img: "donutUpgrade-4.webp",
-            description: "Wear it like a king. Eat it like a fool.",
-            type: "totalProduced",
-          },
-          {
-            name: "Berry Bliss",
-            cost: 1000000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 25000,
-            img: "donutUpgrade-3.webp",
-            description:
-              "Packed with so much blueberry, it might start singing jazz.",
-            type: "perSecond",
-          },
-          {
-            name: "Matcha Swirl",
-            cost: 5000000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 250000000,
-            img: "donutUpgrade-2.webp",
-            description: "So zen, it might start meditating on its own.",
-            type: "totalProduced",
-          },
-          {
-            name: "Banana Bounce",
-            cost: 5000000,
-            multiplier: 1.03,
-            purchased: false,
-            requirement: 100000,
-            img: "donutUpgrade-1.webp",
-            description: "Bounces back with more potassium.",
-            type: "perSecond",
-          },
-        ],
-      };
-      this.items = {
-        cursor: {
-          name: "Cursor",
-          count: 0,
-          baseCost: 15,
-          originalBaseCost: 15,
-          costMultiplier: 1.15,
-          production: 0.1,
-          originalProduction: 0.1,
-          totalProduced: 0,
-        },
-        baker: {
-          name: "Baker",
-          count: 0,
-          baseCost: 115,
-          originalBaseCost: 115,
-          costMultiplier: 1.155,
-          production: 1,
-          originalProduction: 1,
-          totalProduced: 0,
-        },
-        farm: {
-          name: "Farm",
-          count: 0,
-          baseCost: 1400,
-          originalBaseCost: 1400,
-          costMultiplier: 1.15,
-          production: 7,
-          originalProduction: 7,
-          totalProduced: 0,
-        },
-        mine: {
-          name: "Mine",
-          count: 0,
-          baseCost: 16000,
-          originalBaseCost: 16000,
-          costMultiplier: 1.16,
-          production: 50,
-          originalProduction: 50,
-          totalProduced: 0,
-        },
-        factory: {
-          name: "Factory",
-          count: 0,
-          baseCost: 176000,
-          originalBaseCost: 176000,
-          costMultiplier: 1.16,
-          production: 255,
-          originalProduction: 255,
-          totalProduced: 0,
-        },
-        logisticCenter: {
-          name: "Logistic Center",
-          count: 0,
-          baseCost: 1927200,
-          originalBaseCost: 1927200,
-          costMultiplier: 1.16,
-          production: 1225,
-          originalProduction: 1225,
-          totalProduced: 0,
-        },
-        powerPlant: {
-          name: "Power Plant",
-          count: 0,
-          baseCost: 21090250,
-          originalBaseCost: 21090250,
-          costMultiplier: 1.16,
-          production: 8000,
-          originalProduction: 8000,
-          totalProduced: 0,
-        },
-        nature: {
-          name: "Nature",
-          count: 0,
-          baseCost: 230800850,
-          originalBaseCost: 230800850,
-          costMultiplier: 1.16,
-          production: 46000,
-          originalProduction: 46000,
-          totalProduced: 0,
-        },
-        neuralNetworkBakery: {
-          name: "Neural Network Bakery",
-          count: 0,
-          baseCost: 2525256900,
-          originalBaseCost: 2525256900,
-          costMultiplier: 1.16,
-          production: 270500,
-          originalProduction: 270500,
-          totalProduced: 0,
-        },
-        portal: {
-          name: "Portal",
-          count: 0,
-          baseCost: 27650200500,
-          originalBaseCost: 27650200500,
-          costMultiplier: 1.16,
-          production: 1800000,
-          originalProduction: 1800000,
-          totalProduced: 0,
-        },
-        capitalCrest: {
-          name: "Capital Crest",
-          count: 0,
-          baseCost: 302924200000,
-          originalBaseCost: 302924200000,
-          costMultiplier: 1.16,
-          production: 10980000,
-          originalProduction: 10980000,
-          totalProduced: 0,
-        },
-      };
+      this.upgrades = window.DonutClickerContent.createUpgradeDefinitions();
+      this.items = window.DonutClickerContent.createBuildingDefinitions();
       this.baseItemProductions = Object.fromEntries(
         Object.entries(this.items).map(([key, item]) => [
           key,
@@ -1315,6 +772,7 @@
       this.workerProductionInterval = 60000; // 60 saniyelik genel üretim döngüsü
       this.workerCycleRemainingTime = this.workerProductionInterval; // Döngü süresi takibi için
       this.orePurchaseLimit = 10;
+      this.oreMarket = null; // Frozen reference snapshot; optional in older saves.
       this.workers = []; // İşçi listesi
       this.isBuying = false; // Şu an alım mı yapılıyor
       this.isSelling = false; // Şu an satım mı yapılıyor
@@ -1324,7 +782,6 @@
       this.counter = document.getElementById("donut-count");
       this.perSecondDisplay = document.getElementById("per-second");
       this.setupModal();
-      this.totalPerSecond = 0;
       this.updateTotalPerSecond(); // Başlangıçta hesapla
       this.currentBakeryName = "";
       this.PRESTIGE_BASE_THRESHOLD = 550000000000;
@@ -1390,7 +847,7 @@
       ];
 
       // Upgrade milestones (new!)
-      this.upgradeMilestones = [1, 3, 5, 10, 15, 20, 30, 40, 50, 75, 100];
+      this.upgradeMilestones = [1, 3, 5, 10, 15, 20, 30, 40, 50];
 
       // Quest completion milestones (meta-milestone, new!)
       this.questCompletionMilestones = [5, 10, 25, 50, 100, 200, 500, 1000];
@@ -1453,18 +910,54 @@
         },
       };
 
+      // Recurring quest balance only; seconds describe work, not slot cooldowns.
+      this.dynamicQuestBalance = {
+        easy: {
+          seconds: 60,
+          baseClicks: 80,
+          maxClicks: 120,
+          maxPurchases: 3,
+          bonusRate: 0.1,
+          minCapSeconds: 3,
+          maxCapSeconds: 15,
+          purchaseCap: 0.1,
+        },
+        medium: {
+          seconds: 180,
+          baseClicks: 240,
+          maxClicks: 360,
+          maxPurchases: 5,
+          bonusRate: 0.12,
+          minCapSeconds: 9,
+          maxCapSeconds: 45,
+          purchaseCap: 0.15,
+        },
+        hard: {
+          seconds: 360,
+          baseClicks: 600,
+          maxClicks: 800,
+          maxPurchases: 8,
+          bonusRate: 0.15,
+          minCapSeconds: 18,
+          maxCapSeconds: 90,
+          purchaseCap: 0.2,
+        },
+        special: {
+          seconds: 480,
+          baseClicks: 720,
+          maxClicks: 900,
+          maxPurchases: 10,
+          bonusRate: 0.15,
+          minCapSeconds: 24,
+          maxCapSeconds: 120,
+          purchaseCap: 0.25,
+        },
+      };
+
       // Multiplier state (queue-based)
       this.multiplierState = {
         active: null, // { amount, endTime }
         queued: null, // { amount, duration }
-      };
-
-      // Multiplier sources (multiplicative)
-      this.multiplierSources = {
-        prestige: 1,
-        questBuff: 1,
-        farmBuff: 1,
-        eventBuff: 1,
       };
 
       // CPS history for stabilization (120s rolling)
@@ -1501,8 +994,6 @@
       // Multiplier sistemi için gerekli özellikler
       this.activeMultipliers = []; // Array'i burada tanımla
       this.productionMultiplier = 1;
-      this.cachedBuildingCount = 0;
-      this.lastBuildingUpdate = 0;
 
       this.autoBuyer = {
         enabled: false,
@@ -1521,6 +1012,9 @@
       this.frameThrottle = this.isMobile ? 1000 / 45 : 1000 / 60;
       this.accumulatedTime = 0;
       this.heavyUpdateInterval = this.isMobile ? 180 : 120;
+      this.hudUpdateInterval = this.isMobile ? 250 : 200;
+      this.lastHudUpdateTime = 0;
+      this.lastOrchestrationTime = 0;
       this.slowUiUpdateInterval = this.isMobile ? 220 : 150;
       this.farmUiUpdateInterval = this.isMobile ? 350 : 250;
       this.activeFarmUiUpdateInterval = this.isMobile ? 180 : 120;
@@ -1622,6 +1116,9 @@
       this.renderFrameCount = 0;
       this.activeAnimationElements = 0;
       this.MAX_ANIMATION_ELEMENTS = 40; // Don't allow more than 40 animation nodes at once
+      this.timeState = this.createTimeState(Date.now());
+      this._timeMonotonic = performance.now();
+      this._settlingTime = false;
     }
 
     // Resim önbellekleme sistemi
@@ -1708,17 +1205,11 @@
       this.loadGame();
       this.updateBakeryName();
       this.setupDonutCoin();
+      this.setupSaveLifecycle();
 
       // Zamanlayıcıları optimize et
       setInterval(this._throttle(this.saveGame.bind(this), 60000), 180000);
-      setInterval(
-        this._throttle(this.updateTitleWithDonuts.bind(this), 500),
-        1000,
-      );
-      setInterval(
-        this._throttle(() => this.updateStatsDisplay(), 1000),
-        5000,
-      );
+      this.startPresentationPolling();
       this.startGameLoop();
 
       // Event listener'ları optimize et
@@ -1826,9 +1317,13 @@
     }
 
     startGameLoop() {
-      if (this.gameLoopHandle) return;
+      if (this.gameLoopHandle || !this.canPresent()) return;
 
       const loop = (timestamp) => {
+        if (!this.canPresent()) {
+          this.gameLoopHandle = null;
+          return;
+        }
         if (!this.lastFrameTime) {
           this.lastFrameTime = timestamp;
         }
@@ -1839,7 +1334,21 @@
 
         if (this.accumulatedTime >= this.frameThrottle) {
           this.accumulatedTime %= this.frameThrottle;
-          this.updateProduction(Date.now());
+          const now = Date.now();
+          // Keep the existing heavy-work/auto-buyer opportunities on eligible
+          // frames. Intervening frames do not need an economic settlement.
+          if (
+            now - this.lastHeavyUpdateTime >= this.heavyUpdateInterval ||
+            (now < this.lastHeavyUpdateTime &&
+              timestamp - this.lastOrchestrationTime >=
+                this.heavyUpdateInterval)
+          ) {
+            this.lastOrchestrationTime = timestamp;
+            this.updateProduction(now);
+          } else {
+            this.updateProductionDisplays(now);
+          }
+          this.flushDisplay();
         }
 
         this.gameLoopHandle = requestAnimationFrame(loop);
@@ -1886,6 +1395,7 @@
     }
 
     updateStoreVisibility() {
+      if (!this.canPresent()) return;
       const buildingOrder = [
         "cursor",
         "baker",
@@ -1968,103 +1478,120 @@
       });
     }
 
-    updateDisplay() {
-      // Performans optimizasyonu için RAF kullan
+    updateDisplay(immediate = true) {
+      this._hudDirty = true;
+      if (!this.canPresent() || !immediate) return;
+      this._hudImmediate = true;
+      // Actions retain next-frame feedback, independent of the passive budget.
       if (!this._displayUpdateScheduled) {
         this._displayUpdateScheduled = true;
-        requestAnimationFrame(() => {
-          this._actualUpdateDisplay();
+        this._displayUpdateHandle = requestAnimationFrame(() => {
+          this._displayUpdateHandle = null;
           this._displayUpdateScheduled = false;
+          this.flushDisplay();
         });
       }
     }
-    _actualUpdateDisplay() {
-      this.renderFrameCount++;
+
+    flushDisplay() {
+      if (!this.canPresent() || !this._hudDirty) return;
       const now = performance.now();
-      const isSlowFrame =
-        now - this.lastSlowUiUpdateTime >= this.slowUiUpdateInterval;
-
-      if (isSlowFrame) {
-        this.lastSlowUiUpdateTime = now;
-      }
-
-      if (isSlowFrame) {
-        this.updateStoreVisibility();
-      }
-
-      const counter = this.domCache.get("counter");
-      const perSecondDisplay = this.domCache.get("perSecondDisplay");
-      if (!counter || !perSecondDisplay) return;
-
-      // Donut sayısı güncelleme (sadece değiştiyse)
-      const currentDonutCount = Math.floor(this.donutCount);
-      const shouldUpdateCounter =
-        this.lastUpdateValues.donutCount !== currentDonutCount;
-
-      if (shouldUpdateCounter) {
-        const formattedDonuts = this.formatNumber(currentDonutCount, "count");
-        counter.textContent = `${formattedDonuts} donuts`;
-        this.lastUpdateValues.donutCount = currentDonutCount;
-        this.lastCounterUiUpdateTime = now;
-      }
-
-      // Per second güncelleme
-      const currentPerSecond = Math.floor(this.totalPerSecond * 10) / 10;
-      const multiplierCount = this.activeMultipliers?.length || 0;
-      const hasQuestMultiplier = this.multiplierState?.active !== null;
-
       if (
-        this.lastUpdateValues.totalPerSecond !== currentPerSecond ||
-        this.lastUpdateValues.multiplierCount !== multiplierCount ||
-        this.lastUpdateValues.hasQuestMultiplier !== hasQuestMultiplier ||
-        isSlowFrame
-      ) {
-        const formattedPerSecond = this.formatNumber(
-          this.totalPerSecond,
-          "perSecond",
+        !this._hudImmediate &&
+        now - this.lastHudUpdateTime < this.hudUpdateInterval
+      )
+        return;
+      this._hudDirty = false;
+      this._hudImmediate = false;
+      this.lastHudUpdateTime = now;
+      this._actualUpdateDisplay();
+    }
+    _actualUpdateDisplay() {
+      if (!this.canPresent()) return;
+      return this.withProductionSnapshot(() => {
+        this.renderFrameCount++;
+        const now = performance.now();
+        const isSlowFrame =
+          now - this.lastSlowUiUpdateTime >= this.slowUiUpdateInterval;
+
+        if (isSlowFrame) {
+          this.lastSlowUiUpdateTime = now;
+        }
+
+        if (isSlowFrame) {
+          this.updateStoreVisibility();
+        }
+
+        const counter = this.domCache.get("counter");
+        const perSecondDisplay = this.domCache.get("perSecondDisplay");
+        if (!counter || !perSecondDisplay) return;
+
+        // Donut sayısı güncelleme (sadece değiştiyse)
+        const currentDonutCount = Math.floor(this.donutCount);
+        const shouldUpdateCounter =
+          this.lastUpdateValues.donutCount !== currentDonutCount;
+
+        if (shouldUpdateCounter) {
+          const formattedDonuts = this.formatNumber(currentDonutCount, "count");
+          counter.textContent = `${formattedDonuts} donuts`;
+          this.lastUpdateValues.donutCount = currentDonutCount;
+          this.lastCounterUiUpdateTime = now;
+        }
+
+        // Per second güncelleme
+        const currentPerSecond = Math.floor(this.totalPerSecond * 10) / 10;
+        const economicTime = Date.now();
+        const legacyBuffs = this.activeMultipliers.filter(
+          (m) => m.endTime > economicTime,
         );
+        const multiplierCount = legacyBuffs.length;
+        const hasQuestMultiplier =
+          this.multiplierState?.active?.endTime > economicTime;
 
-        // Check both legacy activeMultipliers AND new quest multiplier system
-        const hasActiveMultiplier = multiplierCount > 0 || hasQuestMultiplier;
-        const effectiveMultiplier = this.getFinalProductionMultiplier
-          ? this.getFinalProductionMultiplier()
-          : this.productionMultiplier;
-
-        if (effectiveMultiplier > 1 && hasActiveMultiplier) {
-          // Clean up expired legacy multipliers
-          this.activeMultipliers = this.activeMultipliers.filter(
-            (m) => m.endTime > Date.now(),
+        if (
+          this.lastUpdateValues.totalPerSecond !== currentPerSecond ||
+          this.lastUpdateValues.multiplierCount !== multiplierCount ||
+          this.lastUpdateValues.hasQuestMultiplier !== hasQuestMultiplier ||
+          isSlowFrame
+        ) {
+          const formattedPerSecond = this.formatNumber(
+            this.totalPerSecond,
+            "perSecond",
           );
 
-          // Determine which multiplier to show (prefer quest multiplier)
-          let displayEndTime, displayAmount, displayDuration;
+          // Check both legacy activeMultipliers AND new quest multiplier system
+          const hasActiveMultiplier = multiplierCount > 0 || hasQuestMultiplier;
+          const effectiveMultiplier =
+            this.getProductionModifiers().temporaryMultiplier;
 
-          if (hasQuestMultiplier && this.multiplierState.active) {
-            displayEndTime = this.multiplierState.active.endTime;
-            displayAmount = this.multiplierState.active.amount;
-            // Calculate duration from start (estimate ~90s max)
-            displayDuration = 90000;
-          } else if (this.activeMultipliers.length > 0) {
-            displayEndTime = Math.min(
-              ...this.activeMultipliers.map((m) => m.endTime),
-            );
-            displayAmount = this.activeMultipliers[0].amount;
-            displayDuration = this.activeMultipliers[0].duration;
-          }
+          if (effectiveMultiplier > 1 && hasActiveMultiplier) {
+            // Determine which multiplier to show (prefer quest multiplier)
+            let displayEndTime, displayAmount, displayDuration;
 
-          if (displayEndTime && displayEndTime > Date.now()) {
-            const remainingTime = Math.max(
-              0,
-              Math.ceil((displayEndTime - Date.now()) / 1000),
-            );
-            const progress = (remainingTime / (displayDuration / 1000)) * 100;
+            if (hasQuestMultiplier && this.multiplierState.active) {
+              displayEndTime = this.multiplierState.active.endTime;
+              displayAmount = this.multiplierState.active.amount;
+              // Calculate duration from start (estimate ~90s max)
+              displayDuration = 90000;
+            } else if (legacyBuffs.length > 0) {
+              displayEndTime = Math.min(...legacyBuffs.map((m) => m.endTime));
+              displayAmount = legacyBuffs[0].amount;
+              displayDuration = legacyBuffs[0].duration;
+            }
 
-            // Show queued indicator if there's a queued multiplier
-            const queuedIndicator = this.multiplierState?.queued
-              ? `<span class="boost-queued">+1 queued</span>`
-              : "";
+            if (displayEndTime && displayEndTime > Date.now()) {
+              const remainingTime = Math.max(
+                0,
+                Math.ceil((displayEndTime - Date.now()) / 1000),
+              );
+              const progress = (remainingTime / (displayDuration / 1000)) * 100;
 
-            perSecondDisplay.innerHTML = `
+              // Show queued indicator if there's a queued multiplier
+              const queuedIndicator = this.multiplierState?.queued
+                ? `<span class="boost-queued">+1 queued</span>`
+                : "";
+
+              perSecondDisplay.innerHTML = `
             <div class="boosted-per-second">
                 <div class="per-second-text">per second: ${formattedPerSecond}</div>
                 <div class="boost-container">
@@ -2079,223 +1606,647 @@
                 </div>
             </div>
           `;
-            perSecondDisplay.classList.add("boosted");
+              perSecondDisplay.classList.add("boosted");
+            } else {
+              // Multiplier expired
+              perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
+              perSecondDisplay.classList.remove("boosted");
+            }
           } else {
-            // Multiplier expired
             perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
             perSecondDisplay.classList.remove("boosted");
           }
-        } else {
-          perSecondDisplay.textContent = `per second: ${formattedPerSecond}`;
-          perSecondDisplay.classList.remove("boosted");
+
+          this.lastUpdateValues.totalPerSecond = currentPerSecond;
+          this.lastUpdateValues.multiplierCount = multiplierCount;
+          this.lastUpdateValues.hasQuestMultiplier = hasQuestMultiplier;
         }
 
-        this.lastUpdateValues.totalPerSecond = currentPerSecond;
-        this.lastUpdateValues.multiplierCount = multiplierCount;
-        this.lastUpdateValues.hasQuestMultiplier = hasQuestMultiplier;
-      }
+        // Building güncellemeleri
+        for (let key in this.items) {
+          const item = this.items[key];
+          const bulkCost = this.getBulkPricePreview(key, this.purchaseAmount);
+          const isAffordable = this.donutCount >= bulkCost;
 
-      // Building güncellemeleri
-      for (let key in this.items) {
-        const item = this.items[key];
-        const bulkCost = this.calculateBulkPrice(item, this.purchaseAmount);
-        const isAffordable = this.donutCount >= bulkCost;
+          // Affordability veya purchase amount değiştiyse güncelle
+          if (
+            this.lastUpdateValues.affordability[key] !== isAffordable ||
+            this.lastUpdateValues.purchaseAmount !== this.purchaseAmount ||
+            isSlowFrame
+          ) {
+            const costElem = this.domCache.get(`${key}Cost`);
+            const storeItem = this.domCache.get(`${key}StoreItem`);
+            const imgContainer = this.domCache.get(`${key}ItemImgContainer`);
 
-        // Affordability veya purchase amount değiştiyse güncelle
-        if (
-          this.lastUpdateValues.affordability[key] !== isAffordable ||
-          this.lastUpdateValues.purchaseAmount !== this.purchaseAmount ||
-          isSlowFrame
-        ) {
-          const costElem = this.domCache.get(`${key}Cost`);
-          const storeItem = this.domCache.get(`${key}StoreItem`);
-          const imgContainer = this.domCache.get(`${key}ItemImgContainer`);
+            if (costElem) {
+              costElem.textContent = this.formatNumber(bulkCost, "cost");
+              costElem.style.color = isAffordable ? "#6f6" : "red";
 
-          if (costElem) {
-            costElem.textContent = this.formatNumber(bulkCost, "cost");
-            costElem.style.color = isAffordable ? "#6f6" : "red";
+              if (storeItem) {
+                storeItem.classList.toggle("insufficient-funds", !isAffordable);
+              }
 
-            if (storeItem) {
-              storeItem.classList.toggle("insufficient-funds", !isAffordable);
-            }
-
-            // Alım miktarı göstergesi
-            if (imgContainer) {
-              let amountDisplay =
-                imgContainer.querySelector(".purchase-amount");
-              if (this.purchaseAmount > 1) {
-                if (!amountDisplay) {
-                  amountDisplay = document.createElement("span");
-                  amountDisplay.className = "purchase-amount";
-                  imgContainer.appendChild(amountDisplay);
+              // Alım miktarı göstergesi
+              if (imgContainer) {
+                let amountDisplay =
+                  imgContainer.querySelector(".purchase-amount");
+                if (this.purchaseAmount > 1) {
+                  if (!amountDisplay) {
+                    amountDisplay = document.createElement("span");
+                    amountDisplay.className = "purchase-amount";
+                    imgContainer.appendChild(amountDisplay);
+                  }
+                  amountDisplay.textContent = `x${this.purchaseAmount}`;
+                } else if (amountDisplay) {
+                  amountDisplay.remove();
                 }
-                amountDisplay.textContent = `x${this.purchaseAmount}`;
-              } else if (amountDisplay) {
-                amountDisplay.remove();
               }
             }
-          }
-          this.lastUpdateValues.affordability[key] = isAffordable;
-        }
-
-        // Bina sayısı güncelleme (sadece değiştiyse)
-        if (this.lastUpdateValues.buildingCounts[key] !== item.count) {
-          const totalElem = this.domCache.get(`${key}Total`);
-          if (totalElem) {
-            totalElem.textContent = this.formatNumber(item.count, "count");
+            this.lastUpdateValues.affordability[key] = isAffordable;
           }
 
-          // Mine/Baker efektleri
-          if (key === "mine" || key === "baker") {
-            const img = this.domCache.get(`${key}Image`);
-            if (img) {
-              img.classList.toggle(`active-${key}-effect`, item.count >= 1);
+          // Bina sayısı güncelleme (sadece değiştiyse)
+          if (this.lastUpdateValues.buildingCounts[key] !== item.count) {
+            const totalElem = this.domCache.get(`${key}Total`);
+            if (totalElem) {
+              totalElem.textContent = this.formatNumber(item.count, "count");
             }
+
+            // Mine/Baker efektleri
+            if (key === "mine" || key === "baker") {
+              const img = this.domCache.get(`${key}Image`);
+              if (img) {
+                img.classList.toggle(`active-${key}-effect`, item.count >= 1);
+              }
+            }
+            this.lastUpdateValues.buildingCounts[key] = item.count;
           }
-          this.lastUpdateValues.buildingCounts[key] = item.count;
         }
-      }
 
-      if (isSlowFrame) {
-        this.showUpgrades();
-        this.updateActiveMultiplierDisplay();
-      }
+        if (isSlowFrame) {
+          this.showUpgrades();
+          this.updateActiveMultiplierDisplay();
+        }
 
-      this.lastUpdateValues.purchaseAmount = this.purchaseAmount;
+        this.lastUpdateValues.purchaseAmount = this.purchaseAmount;
+        this.lastUpdateValues.balance = this.donutCount;
+        this.lastUpdateValues.earned = this.totalDonutsEarned;
+      }, this.getGameTime());
     }
-    updateTotalPerSecond() {
-      let basePerSecond = 0;
-      let itemProductions = {};
-      let flatDynamicCursorContribution = 0;
+    // Derived snapshots, never accumulated multiplications. No DOM or timer mutations.
+    economicNumber(value, fallback = 0) {
+      return typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? value
+        : fallback;
+    }
 
-      // Tüm itemların üretimini hesapla
-      for (let key in this.items) {
-        let itemProduction = 0;
+    economicFactor(value) {
+      const factor = this.economicNumber(value, 1);
+      return factor > 0 ? factor : 1;
+    }
 
-        if (key === "cursor") {
-          // Cursor için özel hesaplama
-          let normalMultiplier = 1;
-          let x10Multiplier = 1;
+    getBuildingUpgradeMultiplier(key) {
+      return (this.upgrades[key] || []).reduce(
+        (factor, upgrade) =>
+          upgrade?.purchased && !upgrade.specialEffect
+            ? factor * this.economicFactor(upgrade.multiplier)
+            : factor,
+        1,
+      );
+    }
 
-          // Normal multiplier'ları hesapla
-          this.upgrades.cursor.forEach((upgrade) => {
-            if (upgrade.purchased && !upgrade.specialEffect) {
-              if (
-                upgrade === this.upgrades.cursor[5] || // Ruby Cursor
-                upgrade === this.upgrades.cursor[6] || // Verdant Precision
-                upgrade === this.upgrades.cursor[7]
-              ) {
-                // Obsidian Whisper
-                x10Multiplier *= 10;
-              } else {
-                normalMultiplier *= upgrade.multiplier;
-              }
-            }
-          });
-
-          let cursorProduction =
-            this.items.cursor.originalProduction *
-            normalMultiplier *
-            x10Multiplier;
-
-          // Multiplier etkisini ekle
-          if (this.activeMultipliers && this.activeMultipliers.length > 0) {
-            cursorProduction *= this.productionMultiplier;
-          }
-
-          // Donut Cursor bonusu: sadece non-cursor bina sayisi * 0.1.
-          // Bu kisim diger boost'lardan etkilenmez.
-          const dynamicBoostUpgrade = this.upgrades.cursor[4];
-          if (dynamicBoostUpgrade.purchased) {
-            let nonCursorBuildingCount = 0;
-            for (let buildingKey in this.items) {
-              if (buildingKey !== "cursor") {
-                nonCursorBuildingCount += this.items[buildingKey].count;
-              }
-            }
-            const dynamicBoostPerCursor = nonCursorBuildingCount * 0.1;
-            cursorProduction += dynamicBoostPerCursor;
-            flatDynamicCursorContribution =
-              this.items.cursor.count * dynamicBoostPerCursor;
-          }
-
-          this.items.cursor.production = cursorProduction;
-          itemProduction = this.items.cursor.count * cursorProduction;
-        } else {
-          // Diğer binalar için hesaplama
-          let baseProduction = this.items[key].originalProduction;
-          const recipeBonus = this.getRecipeProductionBonusForBuilding(key);
-          if (recipeBonus > 0) {
-            baseProduction = baseProduction * (1 + recipeBonus);
-          }
-
-          // Aktif multiplier varsa uygula
-          if (this.activeMultipliers && this.activeMultipliers.length > 0) {
-            baseProduction *= this.productionMultiplier;
-          }
-
-          this.items[key].production = baseProduction;
-          itemProduction = this.items[key].count * baseProduction;
+    getProductionModifiers(now = this.getProductionQueryTime()) {
+      const active = this.multiplierState?.active;
+      const questMultiplier =
+        active && Number.isFinite(active.endTime) && active.endTime > now
+          ? this.economicFactor(active.amount)
+          : 1;
+      let legacyMultiplier = 1;
+      let skippedMirror = false;
+      for (const buff of this.activeMultipliers || []) {
+        if (!buff || !Number.isFinite(buff.endTime) || buff.endTime <= now)
+          continue;
+        // Old activateMultiplier wrote the same reward to both representations.
+        // Its consecutive Date.now() calls could differ slightly. Ignore ONE mirror,
+        // retaining independent legacy buffs (including additional identical ones).
+        const mirror =
+          !skippedMirror &&
+          active &&
+          active.endTime > now &&
+          buff.amount === active.amount &&
+          Math.abs(buff.endTime - active.endTime) <= 100;
+        if (mirror) {
+          skippedMirror = true;
+          continue;
         }
-
-        itemProductions[key] = itemProduction;
-        basePerSecond += itemProduction;
+        legacyMultiplier *= this.economicFactor(buff.amount);
       }
+      const prestigeMultiplier = Math.pow(
+        this.economicFactor(this.prestigeMultiplier),
+        this.economicNumber(this.prestigeCount),
+      );
+      const globalUpgradeMultiplier =
+        this.getDonutUpgradeProductionMultiplier();
+      const masteryMultiplier = this.farmState?.mastery?.level >= 20 ? 1.05 : 1;
+      const temporaryMultiplier = questMultiplier * legacyMultiplier;
+      return {
+        prestigeMultiplier,
+        globalUpgradeMultiplier,
+        masteryMultiplier,
+        questMultiplier,
+        legacyMultiplier,
+        temporaryMultiplier,
+      };
+    }
 
-      // Donut Cursor flat bonusunu global carpandan ayir
-      let boostedPerSecond = basePerSecond - flatDynamicCursorContribution;
-
-      // Donut upgrade'leri global CpS bonusudur; unlock tipi etkiden bagimsizdir.
-      boostedPerSecond *= this.getDonutUpgradeProductionMultiplier();
-
-      // Farm mastery level 20 bonus: +5% CpS
-      if (this.farmState && this.farmState.mastery.level >= 20) {
-        boostedPerSecond *= 1.05;
+    // Scopes are synchronous and disposable; no snapshot survives a pass.
+    withProductionSnapshot(calculate, queryTime = null) {
+      if (this.productionSnapshotContext) return calculate();
+      this.productionSnapshotContext = {
+        queryTime,
+        now: undefined,
+        version: -1,
+        snapshot: null,
+      };
+      try {
+        return calculate();
+      } finally {
+        this.productionSnapshotContext = null;
       }
-      // Farm COST buff: reduce effective cost (reflected as production boost here)
+    }
+
+    invalidateProductionSnapshot() {
+      this.productionStateVersion++;
+      if (this.productionSnapshotContext) {
+        this.productionSnapshotContext.snapshot = null;
+        this.productionSnapshotContext.queryTime = null;
+      }
+    }
+
+    // Also useful for development probes; this never changes gameplay truth.
+    invalidateDerivedCaches() {
+      this.invalidateProductionSnapshot();
+      this.bulkPriceCache.clear();
+    }
+
+    getProductionQueryTime() {
+      // Read-only render passes evaluate at one explicit instant. Mutation guards
+      // release that instant; economic simulation always supplies its own time.
+      return (
+        this._simulationNow ??
+        this.productionSnapshotContext?.queryTime ??
+        this.getGameTime()
+      );
+    }
+
+    getProductionBreakdown(now = this.getProductionQueryTime()) {
+      const context = this.productionSnapshotContext;
       if (
-        this.farmState &&
-        this.farmState.buffs.PROD &&
-        this.farmState.buffs.PROD.remaining > 0
+        context?.snapshot &&
+        context.now === now &&
+        context.version === this.productionStateVersion
       ) {
-        // PROD buff already applied per-animal in farm tick, this is for main game CpS
-        // Only apply if mastery >= certain level to make it meaningful
+        return context.snapshot;
       }
-
-      this.totalPerSecond = boostedPerSecond + flatDynamicCursorContribution;
-      return itemProductions;
+      const snapshot = this.calculateProductionBreakdown(now);
+      if (context) {
+        context.now = now;
+        context.version = this.productionStateVersion;
+        context.snapshot = snapshot;
+      }
+      return snapshot;
     }
-    updateProduction(currentTime = Date.now(), forcedDeltaTime = null) {
-      const deltaTime =
-        forcedDeltaTime ?? (currentTime - this.lastUpdateTime) / 1000; // Saniye olarak geçen süre
-      this.lastUpdateTime = currentTime;
 
-      // Depolanmış totalPerSecond kullanarak hesaplama
-      const donutsProduced = this.totalPerSecond * deltaTime;
-      this.donutCount += donutsProduced;
-      this.totalDonutsEarned += donutsProduced;
+    calculateProductionBreakdown(now = this.getProductionQueryTime()) {
+      const modifiers = this.getProductionModifiers(now);
+      const globalMultiplier =
+        modifiers.globalUpgradeMultiplier * modifiers.masteryMultiplier;
+      const boostedMultiplier =
+        globalMultiplier *
+        modifiers.prestigeMultiplier *
+        modifiers.temporaryMultiplier;
+      const buildings = {};
+      let baseCPS = 0;
+      let localCPS = 0;
+      let boostedCPS = 0;
+      let flatCPS = 0;
+      let nonCursorCount = 0;
+      for (const [key, item] of Object.entries(this.items)) {
+        if (key !== "cursor") nonCursorCount += this.economicNumber(item.count);
+      }
+      const dynamicClickBonus = this.upgrades.cursor.some(
+        (u) => u?.purchased && u.specialEffect === "dynamicBoost",
+      )
+        ? nonCursorCount * 0.1
+        : 0;
+      for (const [key, item] of Object.entries(this.items)) {
+        const count = this.economicNumber(item.count);
+        const baseRate = this.economicNumber(this.baseItemProductions[key]);
+        const upgradeMultiplier = this.getBuildingUpgradeMultiplier(key);
+        // Recipe percentages add locally, then multiply the upgraded building rate.
+        const recipeBonus = this.getRecipeProductionBonusForBuilding(key);
+        const localRate = baseRate * upgradeMultiplier * (1 + recipeBonus);
+        const boostedRate = localRate === 0 ? 0 : localRate * boostedMultiplier;
+        // Donut Cursor's explicit flat exception is never boosted, even by prestige.
+        const flatRate = key === "cursor" ? dynamicClickBonus : 0;
+        const perUnit = boostedRate + flatRate;
+        const effectiveCPS = count === 0 ? 0 : count * perUnit;
+        buildings[key] = {
+          count,
+          baseRate,
+          upgradeMultiplier,
+          recipeBonus,
+          localRate,
+          boostedRate,
+          flatRate,
+          perUnit,
+          effectiveCPS,
+        };
+        baseCPS += count * baseRate;
+        localCPS += count * localRate;
+        boostedCPS += count === 0 ? 0 : count * boostedRate;
+        flatCPS += count * flatRate;
+      }
+      const effectiveCPS = boostedCPS + flatCPS;
+      const valid = Number.isFinite(effectiveCPS) && effectiveCPS >= 0;
+      // No late-game cap. Unrepresentable arithmetic must not poison balances/saves.
+      return {
+        ...modifiers,
+        globalMultiplier,
+        buildings,
+        baseCPS,
+        localCPS,
+        boostedCPS,
+        flatCPS,
+        dynamicClickBonus,
+        valid,
+        effectiveCPS: valid ? effectiveCPS : 0,
+      };
+    }
 
-      // Her item'in toplam üretimini de artır
-      for (let key in this.items) {
-        if (this.items[key].count > 0) {
-          this.items[key].totalProduced +=
-            this.items[key].count * this.items[key].production * deltaTime;
+    get totalPerSecond() {
+      return this.calculatePerSecond();
+    }
+
+    updateTotalPerSecond() {
+      const breakdown = this.getProductionBreakdown();
+      const outputs = {};
+      // Compatibility/display mirrors only; economic calculations never read these.
+      for (const [key, building] of Object.entries(breakdown.buildings)) {
+        this.items[key].originalProduction =
+          building.baseRate *
+          building.upgradeMultiplier *
+          breakdown.prestigeMultiplier;
+        this.items[key].production = building.perUnit;
+        outputs[key] = building.effectiveCPS;
+      }
+      this.productionMultiplier = breakdown.temporaryMultiplier;
+      return outputs;
+    }
+
+    creditDonuts(amount, countsAsEarned = true) {
+      const balance = this.donutCount + amount;
+      const earned = this.totalDonutsEarned + (countsAsEarned ? amount : 0);
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0 ||
+        !Number.isFinite(balance) ||
+        !Number.isFinite(earned)
+      ) {
+        if (!this._numericWarningShown) {
+          this._numericWarningShown = true;
+          this.showNotification(
+            "Income could not be calculated safely. Your existing balance has been kept.",
+          );
         }
+        return false;
       }
+      this.donutCount = balance;
+      this.totalDonutsEarned = earned;
+      return true;
+    }
+    createTimeState(now) {
+      return {
+        settledAt: now,
+        inactive: document.visibilityState === "hidden",
+        inactiveElapsed: 0,
+        mineProgress: 0,
+        bakerProgress: 0,
+        randomState: Math.floor(Math.random() * 0xffffffff) >>> 0 || 1,
+      };
+    }
 
-      // Pahalı hesaplamaları zaman tabanlı throttle et
-      if (currentTime - this.lastHeavyUpdateTime >= this.heavyUpdateInterval) {
-        this.updateTotalPerSecond();
-        this.checkQuestProgress();
-        this.checkAutoBuyer();
-        this.updatePrestigeBar();
-        this.lastHeavyUpdateTime = currentTime;
+    getGameTime() {
+      return (
+        this._simulationNow ??
+        Math.max(Date.now(), this.timeState?.settledAt || 0)
+      );
+    }
+
+    settleBeforeMutation() {
+      if (!this._settlingTime && !this._questStateLoading) this.settleTime();
+      // Old elapsed is settled first. Query guards also invalidate conservatively.
+      this.invalidateProductionSnapshot();
+    }
+
+    timeRandom() {
+      if (!this._settlingTime && this._boardRandomState === undefined)
+        return Math.random();
+      let state = this._boardRandomState ?? this.timeState.randomState;
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      state >>>= 0;
+      if (this._boardRandomState !== undefined) this._boardRandomState = state;
+      else this.timeState.randomState = state;
+      return state / 0x100000000;
+    }
+
+    // The sole elapsed-time owner. Active elapsed uses a monotonic clock;
+    // persisted/inactive elapsed uses a non-regressing wall checkpoint.
+    settleTime(wallNow = Date.now(), forcedSeconds = null) {
+      return this.withProductionSnapshot(() => {
+        if (this._settlingTime || this._questStateLoading || !this.timeState)
+          return 0;
+        const state = this.timeState;
+        const monotonic = performance.now();
+        const activeElapsed = Math.max(0, monotonic - this._timeMonotonic);
+        const wallElapsed = Math.max(0, wallNow - state.settledAt);
+        const elapsed =
+          forcedSeconds !== null
+            ? this.economicNumber(forcedSeconds) * 1000
+            : state.inactive
+              ? wallElapsed
+              : Math.max(activeElapsed, wallElapsed);
+        const activeSpeed =
+          forcedSeconds !== null || elapsed === 0 ? 1 : activeElapsed / elapsed;
+        this._timeMonotonic = monotonic;
+        const start = state.settledAt;
+        const end = start + elapsed;
+        if (!Number.isFinite(end)) return 0;
+        const before = this.donutCount;
+        this._settlingTime = true;
+        try {
+          let cursor = start;
+          this._simulationNow = cursor;
+          this.updateQuestMultipliers(cursor);
+          if (elapsed > 0) this.tickFarm(0, 0, cursor);
+          while (cursor < end) {
+            this._simulationNow = cursor;
+            const eligible = state.inactive
+              ? Math.max(0, this.MAX_OFFLINE_TIME - state.inactiveElapsed)
+              : Infinity;
+            const speed = !state.inactive
+              ? activeSpeed
+              : eligible > 0
+                ? this.OFFLINE_EFFICIENCY
+                : 0;
+            const production = this.getProductionBreakdown(cursor);
+            let next = Math.min(
+              end,
+              eligible > 0 ? cursor + eligible : Infinity,
+            );
+            const boundary = (at) => {
+              if (Number.isFinite(at) && at > cursor) next = Math.min(next, at);
+            };
+            for (const buff of [
+              this.multiplierState.active,
+              ...this.activeMultipliers,
+            ])
+              if (buff) boundary(buff.endTime);
+            for (const buff of Object.values(this.farmState.buffs))
+              if (buff?.remaining > 0) boundary(cursor + buff.remaining * 1000);
+            if (
+              this.getFarmCount() >= 5 &&
+              (speed > 0 ||
+                this.farmState.breeding.slots.some((slot) => slot.active) ||
+                Object.values(this.farmState.buffs).some(
+                  (buff) => buff?.remaining > 0,
+                ))
+            )
+              boundary(this.farmState.contracts.lastRefresh + 600000);
+            if (speed > 0) {
+              boundary(
+                cursor +
+                  (this.workerProductionInterval - state.mineProgress) / speed,
+              );
+              boundary(
+                cursor +
+                  (this.bakerProductionInterval - state.bakerProgress) / speed,
+              );
+              this.addFarmTimeBoundaries(
+                cursor,
+                speed,
+                production.effectiveCPS,
+                boundary,
+              );
+              for (const slot of Object.values(this.dynamicSlots)) {
+                const q = slot.currentQuest;
+                if (!q || q.completed) continue;
+                if (q.type === "timedProduce")
+                  boundary(q.timedStartTime + q.timeLimit);
+                const target = [
+                  "produce",
+                  "timedProduce",
+                  "multiplier",
+                ].includes(q.type)
+                  ? q.target
+                  : q.type === "combo"
+                    ? q.produceTarget
+                    : null;
+                const left =
+                  target === null
+                    ? 0
+                    : target -
+                      Math.max(0, this.totalDonutsEarned - q.startProduction);
+                if (left > 0 && production.effectiveCPS > 0)
+                  boundary(
+                    cursor + (left / (production.effectiveCPS * speed)) * 1000,
+                  );
+              }
+              for (const q of Object.values(this.milestoneQuests.production)) {
+                if (
+                  !q.completed &&
+                  q.target > this.totalDonutsEarned &&
+                  production.effectiveCPS > 0
+                )
+                  boundary(
+                    cursor +
+                      ((q.target - this.totalDonutsEarned) /
+                        (production.effectiveCPS * speed)) *
+                        1000,
+                  );
+              }
+            }
+            for (const slot of this.farmState.breeding.slots)
+              if (slot.active)
+                boundary(
+                  cursor + Math.max(0, slot.duration - slot.progress) * 1000,
+                );
+            const seconds = (next - cursor) / 1000;
+            const economicSeconds = seconds * speed;
+            if (
+              production.valid &&
+              this.creditDonuts(production.effectiveCPS * economicSeconds)
+            ) {
+              for (const [key, building] of Object.entries(
+                production.buildings,
+              )) {
+                const total =
+                  this.economicNumber(this.items[key].totalProduced) +
+                  building.effectiveCPS * economicSeconds;
+                if (Number.isFinite(total))
+                  this.items[key].totalProduced = total;
+              }
+            }
+            this.tickFarm(economicSeconds, seconds, next);
+            state.mineProgress += economicSeconds * 1000;
+            state.bakerProgress += economicSeconds * 1000;
+            this._simulationNow = next;
+            if (state.mineProgress >= this.workerProductionInterval - 0.001) {
+              state.mineProgress = Math.max(
+                0,
+                state.mineProgress - this.workerProductionInterval,
+              );
+              this.produceMineResources(() => this.timeRandom());
+              this.updateMarketPrices(() => this.timeRandom());
+            }
+            if (state.bakerProgress >= this.bakerProductionInterval - 0.001) {
+              state.bakerProgress = Math.max(
+                0,
+                state.bakerProgress - this.bakerProductionInterval,
+              );
+              this.produceBakerResources(() => this.timeRandom());
+            }
+            if (state.inactive)
+              state.inactiveElapsed = Math.min(
+                this.MAX_OFFLINE_TIME,
+                state.inactiveElapsed + next - cursor,
+              );
+            cursor = next;
+            state.settledAt = cursor;
+            // Epoch timestamps have coarser precision than small elapsed deltas.
+            // Pass only that rounding envelope to production-goal comparisons.
+            const productionTolerance =
+              (production.effectiveCPS *
+                speed *
+                Number.EPSILON *
+                Math.max(1, next)) /
+              1000;
+            this.checkDynamicQuestProgress(productionTolerance);
+            this.checkMilestoneProgress(productionTolerance);
+            this.updateQuestMultipliers(cursor);
+          }
+          // Forward clock adjustments do not manufacture active income. Backward
+          // adjustments cannot move this checkpoint back or replay an interval.
+          state.settledAt = Math.max(state.settledAt, wallNow);
+          this.lastUpdateTime = state.settledAt;
+          this.lastActiveTime = state.settledAt;
+          this.lastMineProduction = state.settledAt - state.mineProgress;
+          this.lastBakerProduction = state.settledAt - state.bakerProgress;
+        } finally {
+          this._simulationNow = undefined;
+          this._settlingTime = false;
+        }
+        return this.donutCount - before;
+      });
+    }
+
+    addFarmTimeBoundaries(now, speed, cps, boundary) {
+      if (this.getFarmCount() < 1) return;
+      const fs = this.farmState;
+      let feed = 0;
+      for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
+        const count = fs.animals.filter((a) => a.type === type).length;
+        const stock = fs.storage[def.good],
+          cap = this.getEffectiveStorageCap(def.good);
+        if (!count || stock >= cap) continue;
+        const normalRate =
+          this.getProductionModifier(type, false) / def.prodInterval;
+        const cycles = this.getFarmCareCycles(type);
+        const rate = normalRate * (cycles > 0 ? fs.careBonus.modifier : 1);
+        const threshold =
+          this.getFarmCount() >= 60 && fs.mastery.level >= 13 ? cap * 0.8 : cap;
+        if (rate > 0) {
+          boundary(
+            now +
+              (Math.max(0, threshold - stock) / (count * rate * speed)) * 1000,
+          );
+          if (cycles > 0) boundary(now + (cycles / (rate * speed)) * 1000);
+        }
+        const cost = this.getFeedCostPerSecond(type);
+        if (cost > 0 && this.donutCount <= 1e-9 && feed + cost > cps) {
+          fs.feedPlans[type] = "standard";
+        } else feed += cost;
       }
+      if (feed > cps && this.donutCount > 0)
+        boundary(now + (this.donutCount / ((feed - cps) * speed)) * 1000);
+      const star = this.getActiveFarmTraitEffect("contract_star");
+      const contractSpeed =
+        1 + (fs.mastery.level >= 11 ? 0.05 : 0) + (star?.contractSpeed || 0);
+      for (const contract of fs.contracts.active)
+        boundary(
+          now +
+            (Math.max(0, contract.duration - contract.elapsed) /
+              (contractSpeed * speed)) *
+              1000,
+        );
+    }
 
-      this.updateDisplay();
+    setTimeVisibility(hidden) {
+      this.settleTime();
+      if (hidden === this.timeState.inactive) return;
+      this.timeState.inactive = hidden;
+      this.timeState.inactiveElapsed = 0;
+      this._timeMonotonic = performance.now();
+      this.lastFrameTime = 0;
+      this.accumulatedTime = 0;
+      if (hidden) {
+        this.stopFallingDonuts();
+        this.stopAutoCatcher();
+        clearTimeout(this.comboTimeout);
+        this.lastClickSuccess = false;
+      } else if (this.comboActive) {
+        this.startFallingDonuts();
+        this.startAutoCatcher();
+      }
+    }
 
-      // Farm production tick
-      this.tickFarm(deltaTime);
+    updateProduction(currentTime = Date.now(), forcedDeltaTime = null) {
+      return this.withProductionSnapshot(() => {
+        this.settleTime(currentTime, forcedDeltaTime);
+
+        // Pahalı hesaplamaları zaman tabanlı throttle et
+        if (
+          currentTime - this.lastHeavyUpdateTime >=
+          this.heavyUpdateInterval
+        ) {
+          this.updateTotalPerSecond();
+          if (!this.timeState.inactive) this.checkQuestProgress();
+          if (!this.timeState.inactive) this.checkAutoBuyer();
+          this.updatePrestigeBar();
+          this.lastHeavyUpdateTime = currentTime;
+        }
+
+        // Scalar HUD invalidation is independent of production snapshot reuse.
+        // Active/just-expired boosts also need paced countdown/expiry presentation.
+        if (
+          this.lastUpdateValues.balance !== this.donutCount ||
+          this.lastUpdateValues.earned !== this.totalDonutsEarned ||
+          this.multiplierState.active ||
+          this.activeMultipliers.length ||
+          this.lastUpdateValues.hasQuestMultiplier ||
+          this.lastUpdateValues.multiplierCount
+        ) {
+          this.updateDisplay(false);
+        }
+
+        this.updateProductionDisplays(currentTime);
+      });
+    }
+
+    updateProductionDisplays(currentTime) {
+      if (!this.canPresent()) return;
       // Farm display update (time-based — faster for contracts/breeding)
       const farmUpdateInterval =
         this.farmActiveTab === "contracts" || this.farmActiveTab === "breeding"
@@ -2307,21 +2258,8 @@
       }
 
       // Mine ve Baker üretimi zamanlayıcıları
-      const mineElapsedTime = currentTime - this.lastMineProduction;
-      const bakerElapsedTime = currentTime - this.lastBakerProduction;
-
-      // Mine üretimi kontrolü (60 saniye)
-      if (mineElapsedTime >= 60000) {
-        this.produceMineResources();
-        this.updateMarketPrices();
-        this.lastMineProduction = currentTime;
-      }
-
-      // Baker üretimi kontrolü (5 dakika)
-      if (bakerElapsedTime >= this.bakerProductionInterval) {
-        this.produceBakerResources();
-        this.lastBakerProduction = currentTime;
-      }
+      const mineElapsedTime = this.timeState.mineProgress;
+      const bakerElapsedTime = this.timeState.bakerProgress;
 
       // Timer DOM güncellemeleri: saniye hissini koruyup gereksiz DOM yazımını azalt
       if (
@@ -2360,17 +2298,30 @@
     }
 
     // Üretim metodları
-    produceMineResources() {
+    produceMineResources(random = Math.random) {
       if (this.items.mine.count <= 0) return;
 
+      this.refreshOreMarketReference();
+      this.reconcileMineWorkers();
       const workerCount = this.workers.length;
       const orePerWorker = 5; // Her işçi için 5 ore
+
+      if (workerCount * orePerWorker > 1000) {
+        this.produceLargeResourceBatch(
+          this.oreTypes,
+          this.ores,
+          workerCount * orePerWorker,
+          random,
+        );
+        this.updateOreList();
+        return;
+      }
 
       for (let i = 0; i < workerCount; i++) {
         let remainingOres = orePerWorker;
 
         while (remainingOres > 0) {
-          const randomNum = Math.random();
+          const randomNum = random();
           let cumulativeChance = 0;
 
           for (const ore of this.oreTypes) {
@@ -2388,14 +2339,26 @@
       this.updateOreList();
     }
 
-    produceBakerResources() {
+    produceBakerResources(random = Math.random) {
+      this.reconcileBakerWorkers();
       if (this.items.baker.count <= 0) return;
 
       const bakerCount = this.items.baker.count;
 
+      if (bakerCount * this.bakerIngredientsPerCycle > 1000) {
+        this.produceLargeResourceBatch(
+          this.ingredientTypes,
+          this.ingredients,
+          bakerCount * this.bakerIngredientsPerCycle,
+          random,
+        );
+        this.updateIngredientList();
+        return;
+      }
+
       for (let i = 0; i < bakerCount; i++) {
         for (let j = 0; j < this.bakerIngredientsPerCycle; j++) {
-          const randomNum = Math.random();
+          const randomNum = random();
           let cumulativeChance = 0;
 
           for (const ingredient of this.ingredientTypes) {
@@ -2412,6 +2375,50 @@
       }
 
       this.updateIngredientList();
+    }
+
+    produceLargeResourceBatch(definitions, inventory, count, random) {
+      if (!Number.isSafeInteger(count)) return;
+      // Sequential multinomial sampling: exact binomial inversion for small
+      // tails, normal approximation for large populations. Preserve total units,
+      // normalized weights, means and variance without one draw per worker unit.
+      let remaining = count;
+      let weight = definitions.reduce((sum, entry) => sum + entry.rarity, 0);
+      for (let i = 0; i < definitions.length; i++) {
+        const entry = definitions[i],
+          p = Math.min(1, entry.rarity / weight);
+        let quantity = remaining;
+        if (i < definitions.length - 1 && remaining > 0) {
+          const flipped = p > 0.5,
+            q = flipped ? 1 - p : p;
+          let sample;
+          if (remaining * q < 30) {
+            let probability = Math.pow(1 - q, remaining),
+              cumulative = probability;
+            const draw = random();
+            sample = 0;
+            while (draw > cumulative && sample < remaining) {
+              sample++;
+              probability *=
+                (((remaining - sample + 1) / sample) * q) / (1 - q);
+              cumulative += probability;
+            }
+          } else {
+            const normal =
+              Math.sqrt(-2 * Math.log(Math.max(Number.MIN_VALUE, random()))) *
+              Math.cos(2 * Math.PI * random());
+            sample = Math.round(
+              remaining * q + Math.sqrt(remaining * q * (1 - q)) * normal,
+            );
+            sample = Math.max(0, Math.min(remaining, sample));
+          }
+          quantity = flipped ? remaining - sample : sample;
+        }
+        if (!inventory[entry.type]) inventory[entry.type] = { count: 0 };
+        inventory[entry.type].count += quantity;
+        remaining -= quantity;
+        weight -= entry.rarity;
+      }
     }
 
     // ============================================
@@ -2460,21 +2467,85 @@
           EVENT: null,
         },
         careWindow: {
-          nextTrigger: Date.now() + 720000,
+          nextTrigger: this.getGameTime() + 720000,
           active: false,
           expiresAt: 0,
           lateUntil: 0,
         },
         careBonus: { modifier: 1, cyclesRemaining: 0 },
+        collectCounts: {},
         crates: [],
         rumors: { active: null },
         stats: { totalGoodsSold: 0, totalContractsCompleted: 0, totalBred: 0 },
-        lastFarmTick: Date.now(),
+        lastFarmTick: this.getGameTime(),
       };
     }
 
     getFarmCount() {
       return this.items.farm.count;
+    }
+
+    getActiveFarmTraitEffect(id, animals = this.farmState.animals) {
+      return animals.some((animal) => animal.traits?.includes(id))
+        ? this.farmTraitDefs.find((trait) => trait.id === id)?.effect
+        : null;
+    }
+
+    isAnimalBreeding(id) {
+      return this.farmState.breeding.slots.some(
+        (slot) => slot.active && (slot.parentA === id || slot.parentB === id),
+      );
+    }
+
+    getFarmRosterSignature() {
+      return JSON.stringify([
+        this.getFarmCount(),
+        this.farmState.feedPlans,
+        this.farmState.animals.map((a) => [
+          a.id,
+          a.name,
+          a.traits,
+          a.variant,
+          a.passport,
+          a.breedCooldown > 0,
+          this.isAnimalBreeding(a.id),
+        ]),
+      ]);
+    }
+
+    getBreedingRenderSignature() {
+      return JSON.stringify([
+        this.getFarmRosterSignature(),
+        this._breedSelection,
+        this._breedProgram,
+        this.farmState.breeding.slots.map((s) => [
+          s.active,
+          s.parentA,
+          s.parentB,
+          s.program,
+        ]),
+      ]);
+    }
+
+    getFarmCareCycles(type) {
+      const bonus = this.farmState.careBonus;
+      return bonus.cyclesByType
+        ? bonus.cyclesByType[type] || 0
+        : bonus.cyclesRemaining;
+    }
+
+    restoreFarmCareCycles() {
+      const bonus = this.farmState.careBonus;
+      // Old saves have only a global count. Preserve it for each currently owned species.
+      if (!bonus.cyclesByType)
+        bonus.cyclesByType = Object.fromEntries(
+          [...new Set(this.farmState.animals.map((a) => a.type))].map(
+            (type) => [type, bonus.cyclesRemaining],
+          ),
+        );
+      bonus.cyclesRemaining = Math.ceil(
+        Math.max(0, ...Object.values(bonus.cyclesByType)),
+      );
     }
 
     getEffectiveStorageCap(good) {
@@ -2546,7 +2617,7 @@
       return Math.floor(price);
     }
 
-    getProductionModifier(animalType) {
+    getProductionModifier(animalType, includeCare = true) {
       let mod = 1;
       const feedPlan = this.farmState.feedPlans[animalType] || "standard";
       if (feedPlan === "ration") mod *= 0.7;
@@ -2556,7 +2627,7 @@
       if (ml >= 5) mod *= 1.1;
       if (ml >= 14) mod *= 1.15;
       // Care bonus
-      if (this.farmState.careBonus.cyclesRemaining > 0) {
+      if (includeCare && this.getFarmCareCycles(animalType) > 0) {
         mod *= this.farmState.careBonus.modifier;
       }
       // PROD buff
@@ -2606,11 +2677,21 @@
     }
 
     // --- Core production tick ---
-    tickFarm(deltaSeconds) {
+    tickFarm(
+      deltaSeconds,
+      wallSeconds = deltaSeconds,
+      now = this.getGameTime(),
+    ) {
       const fc = this.getFarmCount();
-      if (fc < 1) return;
+      if (fc < 1) {
+        this.tickBuffExpiry(wallSeconds);
+        this.tickBreeding(wallSeconds);
+        return;
+      }
 
       const fs = this.farmState;
+      this.restoreFarmCareCycles();
+      const producingSeconds = {};
 
       // 1. Produce goods per animal type
       try {
@@ -2622,10 +2703,32 @@
           if (fs.storage[good] >= cap) continue;
 
           const baseRate = 1 / def.prodInterval;
-          const prodMod = this.getProductionModifier(type);
-          const totalRate = animals.length * baseRate * prodMod;
-          const produced = totalRate * deltaSeconds;
-          fs.storage[good] = Math.min(fs.storage[good] + produced, cap);
+          const normalRate = baseRate * this.getProductionModifier(type, false);
+          const cycles = this.getFarmCareCycles(type);
+          const careRate = normalRate * fs.careBonus.modifier;
+          if (!Number.isFinite(normalRate) || !Number.isFinite(careRate))
+            continue;
+          // A cycle is one animal's output interval, not one unit from the whole herd.
+          // Integrate the boundary so a long tick cannot extend the bonus past expiry.
+          const careSeconds =
+            cycles > 0 ? Math.min(deltaSeconds, cycles / careRate) : 0;
+          const careGoods = Math.min(
+            animals.length * careRate * careSeconds,
+            cap - fs.storage[good],
+          );
+          if (cycles > 0)
+            fs.careBonus.cyclesByType[type] = Math.max(
+              0,
+              cycles - careGoods / animals.length,
+            );
+          const normalGoods = Math.min(
+            animals.length * normalRate * (deltaSeconds - careSeconds),
+            cap - fs.storage[good] - careGoods,
+          );
+          producingSeconds[type] =
+            (careRate > 0 ? careGoods / (animals.length * careRate) : 0) +
+            (normalRate > 0 ? normalGoods / (animals.length * normalRate) : 0);
+          fs.storage[good] += careGoods + normalGoods;
         }
       } catch (e) {
         console.error("[Farm] production error:", e);
@@ -2633,21 +2736,26 @@
 
       // 2. Feed costs
       try {
-        this.applyFarmFeedCosts(deltaSeconds);
+        this.applyFarmFeedCosts(deltaSeconds, producingSeconds);
       } catch (e) {
         console.error("[Farm] feed cost error:", e);
       }
 
+      // Effects earned at the end of this segment start at that boundary, not
+      // its beginning. Expire old buffs before contract completion grants new ones.
+      if (this._settlingTime) this._simulationNow = now;
+      this.tickBuffExpiry(wallSeconds);
+
       // 3. Care window
       try {
-        this.tickCareWindow(Date.now());
+        this.tickCareWindow(now);
       } catch (e) {
         console.error("[Farm] care window error:", e);
       }
 
       // 4. Contract refresh
       try {
-        this.tickContractRefresh(Date.now());
+        this.tickContractRefresh(now);
       } catch (e) {
         console.error("[Farm] contract refresh error:", e);
       }
@@ -2661,16 +2769,9 @@
 
       // 6. Breeding
       try {
-        this.tickBreeding(deltaSeconds);
+        this.tickBreeding(wallSeconds);
       } catch (e) {
         console.error("[Farm] breeding error:", e);
-      }
-
-      // 7. Buff expiry
-      try {
-        this.tickBuffExpiry(deltaSeconds);
-      } catch (e) {
-        console.error("[Farm] buff expiry error:", e);
       }
 
       // 8. Auto-collect (FC 60 + Mastery 13)
@@ -2680,10 +2781,9 @@
         console.error("[Farm] auto-collect error:", e);
       }
 
-      // 9. Care bonus cycle tracking
-      if (fs.careBonus && fs.careBonus.cyclesRemaining > 0) {
-        // Decrement based on total production cycles completed
-      }
+      fs.careBonus.cyclesRemaining = Math.ceil(
+        Math.max(0, ...Object.values(fs.careBonus.cyclesByType)),
+      );
     }
 
     getFeedCostPerSecond(type) {
@@ -2720,16 +2820,18 @@
       return Math.max(baseCost, scaledCost) * (1 + feedDiscount);
     }
 
-    applyFarmFeedCosts(deltaSeconds) {
+    applyFarmFeedCosts(deltaSeconds, producingSeconds = null) {
       const fs = this.farmState;
       for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
         const plan = fs.feedPlans[type];
         if (plan === "standard") continue;
         const costPerSecond = this.getFeedCostPerSecond(type);
         if (costPerSecond <= 0) continue;
-        const totalCost = costPerSecond * deltaSeconds;
-        if (this.donutCount >= totalCost) {
-          this.donutCount -= totalCost;
+        const totalCost =
+          costPerSecond *
+          (producingSeconds ? producingSeconds[type] || 0 : deltaSeconds);
+        if (this.donutCount + 1e-8 >= totalCost) {
+          this.donutCount = Math.max(0, this.donutCount - totalCost);
         } else {
           fs.feedPlans[type] = "standard";
           this._forceBarnFullRender();
@@ -2742,30 +2844,50 @@
 
     tickCareWindow(now) {
       const fs = this.farmState;
-      const fc = this.getFarmCount();
-      if (fc < 10) return; // Care windows unlock at FC 10
-      if (fs.careWindow.active) {
-        if (now > fs.careWindow.expiresAt) {
-          fs.careWindow.active = false;
-          fs.careWindow.nextTrigger = now + 720000;
-          fs.careWindow.lateUntil = now + 180000;
-          const overlay = document.getElementById("farm-care-overlay");
-          if (overlay) overlay.classList.add("hidden");
-        }
-        return;
+      if (this.getFarmCount() < 10) return;
+      const window = fs.careWindow;
+      const alert = this.getActiveFarmTraitEffect("alert");
+      const duration = 90000 + (alert?.value || 0) * 1000;
+      if (window.active && now >= window.expiresAt) {
+        window.active = false;
+        window.nextTrigger = window.expiresAt + 720000;
+        window.lateUntil = window.expiresAt + 180000;
       }
-      if (now >= fs.careWindow.nextTrigger && !fs.careWindow.active) {
-        fs.careWindow.active = true;
-        fs.careWindow.expiresAt = now + 90000;
-        this.showFarmNotification("Care Window available!");
-        const overlay = document.getElementById("farm-care-overlay");
-        if (overlay) overlay.classList.remove("hidden");
+      if (!window.active && now >= window.nextTrigger) {
+        const cycle = 720000 + duration;
+        const trigger =
+          window.nextTrigger +
+          Math.floor((now - window.nextTrigger) / cycle) * cycle;
+        window.expiresAt = trigger + duration;
+        window.active = now < window.expiresAt;
+        window.nextTrigger = window.expiresAt + 720000;
+        window.lateUntil = window.active ? 0 : window.expiresAt + 180000;
       }
+      this.updateFarmCareDisplay(now);
+    }
+
+    updateFarmCareDisplay(now = this.getGameTime()) {
+      if (!this.canPresent() || this.getFarmCount() < 10) return;
+      const window = this.farmState.careWindow;
+      const overlay = document.getElementById("farm-care-overlay");
+      if (overlay) overlay.classList.toggle("hidden", !window.active);
+      const timer = document.getElementById("farm-care-timer");
+      if (timer)
+        timer.textContent =
+          Math.max(0, Math.ceil((window.expiresAt - now) / 1000)) +
+          "s remaining";
     }
 
     performCareAction(action) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
-      if (!fs.careWindow.active && Date.now() <= fs.careWindow.lateUntil) {
+      if (!["pet", "treat"].includes(action) || this.getFarmCount() < 10)
+        return false;
+      this.tickCareWindow(this.getGameTime());
+      const late =
+        !fs.careWindow.active && this.getGameTime() <= fs.careWindow.lateUntil;
+      if (!fs.careWindow.active && !late) return false;
+      if (late) {
         // Late actions
         if (action === "pet") {
           fs.careBonus = { modifier: 1.1, cyclesRemaining: 1 };
@@ -2793,22 +2915,43 @@
       if (hasCalm) {
         fs.careBonus.modifier *= 1.1;
       }
+      this.restoreFarmCareCycles();
       const overlay = document.getElementById("farm-care-overlay");
       if (overlay) overlay.classList.add("hidden");
       fs.careWindow.active = false;
-      fs.careWindow.nextTrigger = Date.now() + 720000;
+      fs.careWindow.lateUntil = 0;
+      fs.careWindow.nextTrigger = this.getGameTime() + 720000;
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
+      return true;
     }
 
     tickContractRefresh(now) {
       const fs = this.farmState;
-      const fc = this.getFarmCount();
-      if (fc < 5) return;
+      if (this.getFarmCount() < 5) return;
       if (
         now - fs.contracts.lastRefresh >= 600000 ||
         fs.contracts.board.length === 0
       ) {
-        this.generateContractBoard();
-        fs.contracts.lastRefresh = now;
+        const previous = fs.contracts.lastRefresh;
+        const at =
+          previous > 0
+            ? previous +
+              Math.floor(Math.max(0, now - previous) / 600000) * 600000
+            : now;
+        // Only the current board matters. Its own deterministic seed prevents
+        // skipped presentation-only refreshes from changing resource RNG.
+        this._boardRandomState =
+          ((Math.floor(at) >>> 0) ^ 0x9e3779b9) >>> 0 || 1;
+        const eventTime = this._simulationNow;
+        this._simulationNow = at;
+        try {
+          this.generateContractBoard();
+        } finally {
+          this._boardRandomState = undefined;
+          this._simulationNow = eventTime;
+        }
+        fs.contracts.lastRefresh = at;
         fs.contracts.rerollsUsed = 0;
       }
     }
@@ -2843,44 +2986,45 @@
 
       let duration, reqCount, goodCount;
       if (type === "rush") {
-        duration = 180 + Math.floor(Math.random() * 120); // 3-5min
-        reqCount = 2 + Math.floor(Math.random() * 4); // low qty
+        duration = 180 + Math.floor(this.timeRandom() * 120); // 3-5min
+        reqCount = 2 + Math.floor(this.timeRandom() * 4); // low qty
         goodCount = 1;
       } else if (type === "standard") {
-        duration = 480 + Math.floor(Math.random() * 420); // 8-15min
-        reqCount = 4 + Math.floor(Math.random() * 6);
+        duration = 480 + Math.floor(this.timeRandom() * 420); // 8-15min
+        reqCount = 4 + Math.floor(this.timeRandom() * 6);
         goodCount = Math.min(
-          1 + Math.floor(Math.random() * 2),
+          1 + Math.floor(this.timeRandom() * 2),
           availableGoods.length,
         );
       } else {
-        duration = 2700 + Math.floor(Math.random() * 2700); // 45-90min
-        reqCount = 8 + Math.floor(Math.random() * 8);
+        duration = 2700 + Math.floor(this.timeRandom() * 2700); // 45-90min
+        reqCount = 8 + Math.floor(this.timeRandom() * 8);
         goodCount = Math.min(
-          2 + Math.floor(Math.random() * 2),
+          2 + Math.floor(this.timeRandom() * 2),
           availableGoods.length,
         );
       }
 
       // Pick random goods
-      const shuffled = [...availableGoods].sort(() => Math.random() - 0.5);
-      const selectedGoods = shuffled.slice(0, goodCount);
-      const requirements = {};
-      for (const good of selectedGoods) {
-        requirements[good] = Math.max(1, Math.floor(reqCount / goodCount));
-      }
+      const shuffled = [...availableGoods].sort(() => this.timeRandom() - 0.5);
 
       // Roll affixes
       const maxAffixes = fc >= 100 ? 3 : 2;
       const affixes = [];
       for (let i = 0; i < maxAffixes; i++) {
-        if (Math.random() < 0.3 + i * 0.15) continue; // decreasing chance for more affixes
-        const roll = Math.random();
+        if (this.timeRandom() < 0.3 + i * 0.15) continue; // decreasing chance for more affixes
+        const roll = this.timeRandom();
         let cumulative = 0;
         for (const affix of this.farmAffixDefs) {
           cumulative += affix.rarity;
           if (roll <= cumulative) {
             if (affix.masteryReq && ml < affix.masteryReq) continue;
+            // Single-good and two-good promises cannot coexist on one contract.
+            if (
+              (affix.id === "focused" && affixes.includes("legendary")) ||
+              (affix.id === "legendary" && affixes.includes("focused"))
+            )
+              break;
             if (!affixes.includes(affix.id)) {
               affixes.push(affix.id);
             }
@@ -2888,6 +3032,16 @@
           }
         }
       }
+
+      if (affixes.includes("focused")) goodCount = 1;
+      const legendary = this.farmAffixDefs.find((a) => a.id === "legendary");
+      if (affixes.includes("legendary"))
+        goodCount = Math.min(legendary.effect.reqGoods, availableGoods.length);
+      const requirements = Object.fromEntries(
+        shuffled
+          .slice(0, goodCount)
+          .map((good) => [good, Math.max(1, Math.floor(reqCount / goodCount))]),
+      );
 
       // Apply affix modifiers
       let rewardMult = 1;
@@ -2912,23 +3066,44 @@
         baseReward += qty * this.getSellPrice(good) * 1.5;
       }
       const donutReward = Math.floor(baseReward * rewardMult);
+      // Presence bonuses apply once, not once per animal. Existing assignments stay frozen.
+      const diplomat = this.getActiveFarmTraitEffect("diplomat");
+      if (diplomat)
+        for (const good of Object.keys(requirements)) {
+          requirements[good] = Math.max(
+            1,
+            Math.ceil(requirements[good] * (1 + diplomat.value)),
+          );
+        }
 
       // Buff reward (standard and longhaul may have buffs)
       let buffReward = null;
-      if (type === "standard" && Math.random() < 0.4) {
+      if (type === "standard" && this.timeRandom() < 0.4) {
         buffReward = this.generateBuffReward(ml);
       } else if (type === "longhaul") {
         buffReward = this.generateBuffReward(ml);
       }
+      if (buffReward) {
+        for (const id of affixes) {
+          const effect = this.farmAffixDefs.find((a) => a.id === id).effect;
+          buffReward.duration *= effect.buffDurationMult || 1;
+          buffReward.strength *= effect.buffStrengthMult || 1;
+        }
+        const star = this.getActiveFarmTraitEffect("contract_star");
+        buffReward.duration *= 1 + (star?.buffDuration || 0);
+      }
 
       const names = this.farmContractNames[type];
       const id =
-        "contract_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        "contract_" +
+        this.getGameTime() +
+        "_" +
+        Math.floor(this.timeRandom() * 1000);
 
       return {
         id,
         type,
-        title: names[Math.floor(Math.random() * names.length)],
+        title: names[Math.floor(this.timeRandom() * names.length)],
         requirements,
         progress: Object.fromEntries(
           Object.keys(requirements).map((g) => [g, 0]),
@@ -2937,13 +3112,13 @@
         elapsed: 0,
         reward: { donuts: donutReward, buff: buffReward },
         affixes,
-        expiresAt: Date.now() + duration * 1000 + 600000,
+        expiresAt: this.getGameTime() + duration * 1000 + 600000,
       };
     }
 
     generateBuffReward(ml) {
       const cats = Object.keys(this.farmBuffCategories);
-      const cat = cats[Math.floor(Math.random() * cats.length)];
+      const cat = cats[Math.floor(this.timeRandom() * cats.length)];
       const base = this.farmBuffCategories[cat];
       return {
         category: cat,
@@ -2953,6 +3128,7 @@
     }
 
     acceptContract(contractId) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       if (fs.contracts.active.length >= 2) {
         this.showFarmNotification("Max 2 active contracts!");
@@ -2981,6 +3157,7 @@
       }
       fs.contracts.active.push(contract);
       this.updateFarmDisplay();
+      this.requestSave();
     }
 
     tickActiveContracts(deltaSeconds) {
@@ -2997,7 +3174,10 @@
         contract.elapsed += deltaSeconds;
         // Contract speed bonus from mastery
         if (fs.mastery.level >= 11) contract.elapsed += deltaSeconds * 0.05;
-        if (contract.elapsed >= contract.duration) {
+        const star = this.getActiveFarmTraitEffect("contract_star");
+        if (star) contract.elapsed += deltaSeconds * star.contractSpeed;
+        if (contract.elapsed >= contract.duration - 1e-7) {
+          contract.elapsed = Math.max(contract.elapsed, contract.duration);
           toComplete.push(contract);
         }
       }
@@ -3025,13 +3205,12 @@
       let donuts = contract.reward.donuts;
       // Volatile affix
       if (contract.affixes.includes("volatile")) {
-        donuts = Math.floor(donuts * (0.5 + Math.random() * 1.5));
+        donuts = Math.floor(donuts * (0.5 + this.timeRandom() * 1.5));
       }
       // Mastery contract reward bonus
       if (fs.mastery.level >= 16) donuts = Math.floor(donuts * 1.1);
 
-      this.donutCount += donuts;
-      this.totalDonutsEarned += donuts;
+      this.creditDonuts(donuts);
       this.showFarmNotification(
         "Contract complete! +" + this.formatNumber(donuts) + " donuts",
       );
@@ -3066,9 +3245,11 @@
       // Crate drop
       this.rollFarmCrate();
       this.updateFarmDisplay();
+      this.requestSave();
     }
 
     deliverContract(contractId) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const contract = fs.contracts.active.find((c) => c.id === contractId);
       if (!contract) return;
@@ -3080,8 +3261,15 @@
     }
 
     applyFarmBuff(buffData) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const cat = buffData.category;
+      if (cat !== "PROD") {
+        this.showFarmNotification(
+          cat + " buffs are not available yet; no buff applied.",
+        );
+        return false;
+      }
       const current = fs.buffs[cat];
       const newBuff = {
         strength: buffData.strength,
@@ -3100,7 +3288,7 @@
         fs.buffs[cat] = newBuff;
       } else {
         const consolation = Math.floor(this.donutCount * 0.001);
-        this.donutCount += consolation;
+        this.creditDonuts(consolation, false);
         this.showFarmNotification(
           "Buff blocked. +" +
             this.formatNumber(consolation) +
@@ -3114,7 +3302,7 @@
       for (const cat of Object.keys(fs.buffs)) {
         if (fs.buffs[cat] && fs.buffs[cat].remaining > 0) {
           fs.buffs[cat].remaining -= deltaSeconds;
-          if (fs.buffs[cat].remaining <= 0) {
+          if (fs.buffs[cat].remaining <= 1e-7) {
             fs.buffs[cat] = null;
           }
         }
@@ -3123,6 +3311,7 @@
 
     // --- Animal Purchase ---
     buyAnimal(type) {
+      this.settleBeforeMutation();
       const def = this.farmAnimalDefs[type];
       if (!def) return;
       if (this.getFarmCount() < def.unlockFC) return;
@@ -3137,7 +3326,7 @@
 
       // Roll random traits (1-2 for purchased animals)
       const traits = [];
-      const traitCount = 1 + (Math.random() < 0.3 ? 1 : 0);
+      const traitCount = 1 + (this.timeRandom() < 0.3 ? 1 : 0);
       for (let i = 0; i < traitCount; i++) {
         const trait = this.rollNewTrait(0);
         if (trait && !traits.includes(trait)) traits.push(trait);
@@ -3156,11 +3345,55 @@
       };
       this.farmState.animals.push(animal);
       this._forceBarnFullRender();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
+    }
+
+    releaseAnimal(animalId) {
+      this.settleBeforeMutation();
+      const fs = this.farmState;
+      const animal = fs.animals.find((a) => a.id === animalId);
+      if (!animal) return false;
+      if (this.isAnimalBreeding(animalId)) {
+        this.showFarmNotification(
+          "This animal is breeding. Wait for breeding to finish before releasing it.",
+        );
+        return false;
+      }
+      if (
+        !confirm(
+          "Release " +
+            (animal.name || animal.type) +
+            " permanently? No rewards will be given.",
+        )
+      )
+        return false;
+      fs.animals = fs.animals.filter((a) => a.id !== animalId);
+      for (const selection of Object.values(this._breedSelection || {})) {
+        if (selection.a === animalId) selection.a = null;
+        if (selection.b === animalId) selection.b = null;
+      }
+      for (const slot of fs.breeding.slots) {
+        if (!slot.active && slot.parentA === animalId) slot.parentA = null;
+        if (!slot.active && slot.parentB === animalId) slot.parentB = null;
+      }
+      if (
+        !fs.animals.some((a) => a.type === animal.type) &&
+        fs.careBonus.cyclesByType
+      ) {
+        delete fs.careBonus.cyclesByType[animal.type];
+        this.restoreFarmCareCycles();
+      }
+      this._forceBarnFullRender();
+      this.updateFarmDisplay();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
+      return true;
     }
 
     rollNewTrait(rareBonus, excludeIds) {
       const ex = excludeIds || [];
-      const roll = Math.random();
+      const roll = this.timeRandom();
       let pool;
       if (roll < 0.005) {
         // Epic (0.5% — rareBonus does NOT affect epic chance)
@@ -3168,7 +3401,7 @@
           (t) => t.rarity === "epic" && !ex.includes(t.id),
         );
         if (pool.length > 0)
-          return pool[Math.floor(Math.random() * pool.length)].id;
+          return pool[Math.floor(this.timeRandom() * pool.length)].id;
       }
       if (roll < 0.015 + rareBonus) {
         // Rare (1.5% base + rareBonus from program/feed)
@@ -3176,32 +3409,43 @@
           (t) => t.rarity === "rare" && !ex.includes(t.id),
         );
         if (pool.length > 0)
-          return pool[Math.floor(Math.random() * pool.length)].id;
+          return pool[Math.floor(this.timeRandom() * pool.length)].id;
       }
       // Common
       pool = this.farmTraitDefs.filter(
         (t) => t.rarity === "common" && !ex.includes(t.id),
       );
       if (pool.length > 0)
-        return pool[Math.floor(Math.random() * pool.length)].id;
+        return pool[Math.floor(this.timeRandom() * pool.length)].id;
       // Fallback: any trait not already owned
       pool = this.farmTraitDefs.filter((t) => !ex.includes(t.id));
       return pool.length > 0
-        ? pool[Math.floor(Math.random() * pool.length)].id
+        ? pool[Math.floor(this.timeRandom() * pool.length)].id
         : null;
     }
 
     // --- Selling Goods ---
     sellGoods(good) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const amount = Math.floor(fs.storage[good] || 0);
       if (amount <= 0) return;
       const price = this.getSellPrice(good);
       const total = amount * price;
       fs.storage[good] -= amount;
-      this.donutCount += total;
-      this.totalDonutsEarned += total;
+      this.creditDonuts(total);
       fs.stats.totalGoodsSold += amount;
+      fs.collectCounts[good] = (fs.collectCounts[good] || 0) + 1;
+      const producers = fs.animals.filter(
+        (a) => this.farmAnimalDefs[a.type].good === good,
+      );
+      const generous = this.getActiveFarmTraitEffect("generous", producers);
+      if (generous && fs.collectCounts[good] % generous.value === 0) {
+        fs.storage[good] = Math.min(
+          fs.storage[good] + 1,
+          this.getEffectiveStorageCap(good),
+        );
+      }
       this.gainMasteryXP(3);
       this.showFarmNotification(
         "Sold " +
@@ -3215,32 +3459,62 @@
       // Crate drop chance on collect/sell
       this.rollFarmCrate();
       this.updateFarmDisplay();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
     }
 
     // --- Breeding ---
     startBreeding(slotIndex, parentAId, parentBId, program) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const fc = this.getFarmCount();
-      if (slotIndex === 0 && fc < 15) return;
-      if (slotIndex === 1 && fc < 60) return;
+      if (![0, 1].includes(slotIndex) || (slotIndex === 0 ? fc < 15 : fc < 60))
+        return false;
       const slot = fs.breeding.slots[slotIndex];
-      if (slot.active) return;
+      if (!slot || slot.active || parentAId === parentBId) return false;
+      if (
+        !Object.hasOwn(this.farmBreedPrograms, program) ||
+        (program === "long" && fc < 25)
+      )
+        return false;
 
       const parentA = fs.animals.find((a) => a.id === parentAId);
       const parentB = fs.animals.find((a) => a.id === parentBId);
-      if (!parentA || !parentB) return;
+      if (
+        !parentA ||
+        !parentB ||
+        !Object.hasOwn(this.farmAnimalDefs, parentA.type) ||
+        !Array.isArray(parentA.traits) ||
+        !Array.isArray(parentB.traits) ||
+        this.isAnimalBreeding(parentAId) ||
+        this.isAnimalBreeding(parentBId)
+      )
+        return false;
       if (parentA.type !== parentB.type) {
         this.showFarmNotification("Parents must be the same type!");
-        return;
+        return false;
       }
-      if (parentA.breedCooldown > 0 || parentB.breedCooldown > 0) {
+      const def = this.farmAnimalDefs[parentA.type];
+      if (
+        fc < def.unlockFC ||
+        fs.animals.filter((a) => a.type === parentA.type).length >= 20
+      )
+        return false;
+      if (
+        ![parentA, parentB].every(
+          (a) =>
+            Number.isFinite(a.breedCooldown ?? 0) &&
+            (a.breedCooldown ?? 0) === 0,
+        )
+      ) {
         this.showFarmNotification("Parent(s) still on cooldown!");
-        return;
+        return false;
       }
       const prog = this.farmBreedPrograms[program];
       if (!prog) return;
       const cost = this.farmAnimalDefs[parentA.type].baseCost * prog.costMult;
-      if (this.donutCount < cost) return;
+      if (!Number.isFinite(this.donutCount) || this.donutCount < cost)
+        return false;
       this.donutCount -= cost;
 
       slot.active = true;
@@ -3250,9 +3524,12 @@
       slot.progress = 0;
       slot.duration = prog.duration;
 
-      parentA.breedCooldown = 3600; // 1 hour
-      parentB.breedCooldown = 3600;
+      if (this._breedSelection?.[slotIndex])
+        this._breedSelection[slotIndex] = { a: null, b: null };
       this.updateFarmDisplay();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
+      return true;
     }
 
     startBreedingFromUI(slotIndex) {
@@ -3291,9 +3568,7 @@
         }
       }
       const program = this._breedProgram || "quick";
-      this.startBreeding(slotIndex, sel.a, sel.b, program);
-      // Clear selection after starting
-      this._breedSelection[slotIndex] = { a: null, b: null };
+      return this.startBreeding(slotIndex, sel.a, sel.b, program);
     }
 
     // Build breeding preview showing possible trait outcomes
@@ -3313,7 +3588,17 @@
       const hasMentor =
         parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
       const isPremium = fs.feedPlans[parentA.type] === "premium";
-      const traitSlots = Math.min(prog.traitSlots + (hasMentor ? 1 : 0), 4);
+      const possibleVariants =
+        parentA.variant && parentB.variant
+          ? [parentA.variant, parentB.variant]
+          : parentA.variant || parentB.variant
+            ? [null, parentA.variant || parentB.variant]
+            : [null, ...this.farmVariants[parentA.type].map((v) => v.name)];
+      const capacities = possibleVariants.map((variant) =>
+        this.getBreedingTraitCapacity(parentA, parentB, prog, variant),
+      );
+      const traitSlots = Math.min(...capacities),
+        maxTraitSlots = Math.max(...capacities);
       const rareBonus = prog.rareBonus + (isPremium ? 0.05 : 0);
       const variantChance = programKey === "long" ? 0.15 : 0.08;
 
@@ -3335,6 +3620,8 @@
         parentA.variant === parentB.variant
       ) {
         variantInfo = `<span style="color:#fccb72;">Guaranteed: ${parentA.variant}</span>`;
+      } else if (parentA.variant && parentB.variant) {
+        variantInfo = `<span style="color:rgba(255,234,182,0.6);">50% each: ${parentA.variant} / ${parentB.variant}</span>`;
       } else if (parentA.variant || parentB.variant) {
         variantInfo = `<span style="color:rgba(255,234,182,0.6);">50%: ${parentA.variant || parentB.variant}</span>`;
       } else {
@@ -3375,6 +3662,7 @@
           <div class="breed-slot-plan"><span class="breed-slot-num">2</span> ${bestBDef ? `<span style="color:${rarityColors[bestBDef.rarity]}">${bestBDef.name}</span> <span class="breed-slot-guaranteed">guaranteed</span>` : "Random (no parent B traits)"}</div>
           <div class="breed-slot-plan"><span class="breed-slot-num">3</span> Mutation <span style="color:#64b5f6;">(${((rareBonus + 0.02 + 0.015) * 100).toFixed(1)}% rare+)</span></div>
           ${hasMentor ? `<div class="breed-slot-plan"><span class="breed-slot-num">4</span> Mentor bonus — Mutation</div>` : ""}
+          ${traitSlots > Math.min(prog.traitSlots + (hasMentor ? 1 : 0), 4) ? `<div class="breed-slot-plan"><span class="breed-slot-num">${traitSlots}</span> Variant bonus — Mutation</div>` : ""}
         </div>`;
       } else if (programKey === "quick") {
         slotBreakdown = `<div class="breed-preview-slots">`;
@@ -3402,7 +3690,7 @@
           </div>
           <div class="breed-preview-cell">
             <span class="breed-preview-label">Slots</span>
-            <span class="breed-preview-value">${traitSlots}${hasMentor ? " <small>(+1 Mentor)</small>" : ""}</span>
+            <span class="breed-preview-value">${traitSlots}${maxTraitSlots > traitSlots ? "–" + maxTraitSlots : ""}${hasMentor ? " <small>(includes Mentor)</small>" : ""}</span>
           </div>
           <div class="breed-preview-cell">
             <span class="breed-preview-label">Capacity</span>
@@ -3441,31 +3729,17 @@
         }
 
         ${isPremium ? `<div class="breed-preview-bonus">Premium Feed: +5% rare chance on mutations</div>` : ""}
+        <div class="breed-preview-mechanic">Offspring with a trait-slot variant receive +1 slot, including beyond the normal 4-slot limit.</div>
       </div>`;
 
       return html;
-    }
-
-    updateBreedPreview(slotIndex) {
-      const container = document.getElementById("breed-preview-" + slotIndex);
-      if (!container) return;
-      const sel = this._breedSelection && this._breedSelection[slotIndex];
-      if (!sel || !sel.a || !sel.b) {
-        container.innerHTML = "";
-        return;
-      }
-      container.innerHTML = this.getBreedingPreview(
-        sel.a,
-        sel.b,
-        this._breedProgram || "quick",
-      );
     }
 
     tickBreeding(deltaSeconds) {
       const fs = this.farmState;
       // Reduce breed cooldowns
       for (const animal of fs.animals) {
-        if (animal.breedCooldown > 0) {
+        if (animal.breedCooldown > 0 && !this.isAnimalBreeding(animal.id)) {
           animal.breedCooldown = Math.max(
             0,
             animal.breedCooldown - deltaSeconds,
@@ -3476,37 +3750,57 @@
         const slot = fs.breeding.slots[i];
         if (!slot.active) continue;
         slot.progress += deltaSeconds;
-        if (slot.progress >= slot.duration) {
+        if (slot.progress >= slot.duration - 1e-7) {
+          slot.progress = Math.max(slot.progress, slot.duration);
           this.completeBreeding(i);
         }
       }
     }
 
     completeBreeding(slotIndex) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const slot = fs.breeding.slots[slotIndex];
+      if (!slot?.active || slot.progress < slot.duration) return false;
       const parentA = fs.animals.find((a) => a.id === slot.parentA);
       const parentB = fs.animals.find((a) => a.id === slot.parentB);
-      if (!parentA || !parentB) {
+      if (
+        !parentA ||
+        !parentB ||
+        parentA.id === parentB.id ||
+        parentA.type !== parentB.type ||
+        !Object.hasOwn(this.farmBreedPrograms, slot.program)
+      ) {
         slot.active = false;
-        return;
+        this.updateFarmDisplay();
+        this.requestSave();
+        return false;
       }
 
       const prog = this.farmBreedPrograms[slot.program];
       const type = parentA.type;
       const def = this.farmAnimalDefs[type];
       const owned = fs.animals.filter((a) => a.type === type);
+      // Cooldowns begin after the program finishes, including a full-barn outcome.
+      for (const parent of [parentA, parentB]) {
+        const sturdy = this.getActiveFarmTraitEffect("sturdy", [parent]);
+        parent.breedCooldown =
+          3600 *
+          (1 + (sturdy?.value || 0)) *
+          (fs.feedPlans[parent.type] === "ration" ? 0.75 : 1);
+      }
       if (owned.length >= 20) {
         this.showFarmNotification("Max 20 " + def.name + "! Offspring lost.");
         slot.active = false;
+        this.updateFarmDisplay();
+        this.requestSave();
         return;
       }
 
-      // Roll traits (program-specific logic)
-      const traits = this.rollBreedingTraits(parentA, parentB, prog);
       // Roll variant (Long program gets 15% chance instead of 8%)
       const variantChance = slot.program === "long" ? 0.15 : 0.08;
       const variant = this.rollVariant(parentA, parentB, type, variantChance);
+      const traits = this.rollBreedingTraits(parentA, parentB, prog, variant);
 
       const offspring = {
         id: type + "_" + this.farmNextAnimalId++,
@@ -3535,6 +3829,8 @@
       this.rollFarmCrate();
       this.showFarmNotification("New " + def.name + " bred: " + offspring.name);
       this.updateFarmDisplay();
+      this.requestSave();
+      return true;
     }
 
     _getTraitRarityWeight(traitId) {
@@ -3550,7 +3846,7 @@
       if (!traitList || traitList.length === 0) return null;
       const weights = traitList.map((t) => this._getTraitRarityWeight(t));
       const totalWeight = weights.reduce((a, b) => a + b, 0);
-      let roll = Math.random() * totalWeight;
+      let roll = this.timeRandom() * totalWeight;
       for (let i = 0; i < traitList.length; i++) {
         roll -= weights[i];
         if (roll <= 0) return traitList[i];
@@ -3575,10 +3871,25 @@
       return best;
     }
 
-    rollBreedingTraits(parentA, parentB, program) {
+    getBreedingTraitCapacity(parentA, parentB, program, variant = null) {
       const hasMentor =
         parentA.traits.includes("mentor") || parentB.traits.includes("mentor");
-      let slots = Math.min(program.traitSlots + (hasMentor ? 1 : 0), 4);
+      const effect = this.farmVariants[parentA.type]?.find(
+        (v) => v.name === variant,
+      )?.effect;
+      return (
+        Math.min(program.traitSlots + (hasMentor ? 1 : 0), 4) +
+        (effect?.traitSlot || 0)
+      );
+    }
+
+    rollBreedingTraits(parentA, parentB, program, variant = null) {
+      const slots = this.getBreedingTraitCapacity(
+        parentA,
+        parentB,
+        program,
+        variant,
+      );
       const traits = [];
       const isPremium = this.farmState.feedPlans[parentA.type] === "premium";
       const rareBonus = program.rareBonus + (isPremium ? 0.05 : 0);
@@ -3597,7 +3908,7 @@
         // QUICK: High inherit (80%), NO mutation — predictable trait transfer
         for (let i = 0; i < slots; i++) {
           let candidate = null;
-          if (allParentTraits.length > 0 && Math.random() < 0.8) {
+          if (allParentTraits.length > 0 && this.timeRandom() < 0.8) {
             // Weighted pick from parent pool (rarer traits more likely to be picked)
             const pool = allParentTraits.filter((t) => !traits.includes(t));
             candidate = pool.length > 0 ? this._pickWeightedTrait(pool) : null;
@@ -3609,7 +3920,7 @@
             );
             candidate =
               commons.length > 0
-                ? commons[Math.floor(Math.random() * commons.length)].id
+                ? commons[Math.floor(this.timeRandom() * commons.length)].id
                 : null;
           }
           if (candidate && !traits.includes(candidate)) traits.push(candidate);
@@ -3643,7 +3954,7 @@
         // STANDARD: Balanced — inherit with rarity weighting + mutation chance
         for (let i = 0; i < slots; i++) {
           let candidate = null;
-          if (allParentTraits.length > 0 && Math.random() < 0.6) {
+          if (allParentTraits.length > 0 && this.timeRandom() < 0.6) {
             // 60% inherit from parents, weighted by rarity
             const pool = allParentTraits.filter((t) => !traits.includes(t));
             candidate = pool.length > 0 ? this._pickWeightedTrait(pool) : null;
@@ -3656,7 +3967,7 @@
         }
       }
 
-      return traits.slice(0, 4);
+      return traits.slice(0, slots);
     }
 
     rollVariant(parentA, parentB, type, variantChance) {
@@ -3671,18 +3982,18 @@
       }
       // Both parents have different variants → 50% either
       if (parentA.variant && parentB.variant) {
-        return Math.random() < 0.5 ? parentA.variant : parentB.variant;
+        return this.timeRandom() < 0.5 ? parentA.variant : parentB.variant;
       }
       // One parent has variant → 50% inherit
       if (parentA.variant || parentB.variant) {
-        if (Math.random() < 0.5) return parentA.variant || parentB.variant;
+        if (this.timeRandom() < 0.5) return parentA.variant || parentB.variant;
         return null;
       }
       // Neither parent → random chance
-      if (Math.random() < baseChance) {
+      if (this.timeRandom() < baseChance) {
         const variants = this.farmVariants[type];
         if (variants && variants.length > 0) {
-          return variants[Math.floor(Math.random() * variants.length)].name;
+          return variants[Math.floor(this.timeRandom() * variants.length)].name;
         }
       }
       return null;
@@ -3690,6 +4001,7 @@
 
     // --- Mastery XP ---
     gainMasteryXP(amount) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       fs.mastery.xp += amount;
       while (fs.mastery.level < 20) {
@@ -3709,9 +4021,11 @@
         }
       }
       this.updateFarmMasteryBadge();
+      this.updateDisplay(!this._settlingTime);
     }
 
     updateFarmMasteryBadge() {
+      if (!this.canPresent()) return;
       const badge = document.getElementById("farm-mastery-badge");
       if (!badge) return;
       const fs = this.farmState;
@@ -3719,11 +4033,8 @@
       const xp = fs.mastery.xp;
       const nextXp =
         level >= 20 ? 0 : Math.floor(100 * Math.pow(level + 1, 1.8));
-      const prevXp = level >= 1 ? Math.floor(100 * Math.pow(level, 1.8)) : 0;
       const pct =
-        level >= 20
-          ? 100
-          : Math.min(100, ((xp - prevXp) / (nextXp - prevXp)) * 100);
+        level >= 20 ? 100 : Math.max(0, Math.min(100, (xp / nextXp) * 100));
       badge.innerHTML = `<span title="${this.getFarmTooltip("mastery")}">Lv. ${level}</span>
         <div class="farm-mastery-xp-bar"><div class="farm-mastery-xp-fill" style="width:${pct}%"></div></div>
         <span class="farm-mastery-xp-text" style="font-size:0.52rem;color:rgba(255,234,182,0.4);">${level >= 20 ? "MAX" : this.formatNumber(xp) + "/" + this.formatNumber(nextXp)}</span>`;
@@ -3731,18 +4042,21 @@
 
     // --- Crate System ---
     rollFarmCrate() {
-      const roll = Math.random();
+      // Keep base tier probabilities; Keen Eye is a relative, once-per-Farm bonus.
+      const keenEye = this.getActiveFarmTraitEffect("keen_eye");
+      const roll = this.timeRandom() / (1 + (keenEye?.value || 0));
       let tier = null;
       if (roll < 0.0005) tier = "epic";
       else if (roll < 0.0035) tier = "gold";
       else if (roll < 0.0185) tier = "silver";
       else if (roll < 0.0685) tier = "wooden";
       if (!tier) return;
-      this.farmState.crates.push({ tier, id: "crate_" + Date.now() });
+      this.farmState.crates.push({ tier, id: "crate_" + this.getGameTime() });
       this.showFarmNotification("Found a " + tier + " crate!");
     }
 
     openFarmCrate(crateId) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const idx = fs.crates.findIndex((c) => c.id === crateId);
       if (idx === -1) return;
@@ -3757,41 +4071,39 @@
       } else if (crate.tier === "silver") {
         donutReward = Math.floor(cps * 300);
         this.addRandomGoods(3, 6);
-        if (Math.random() < 0.2)
+        if (this.timeRandom() < 0.2)
           this.applyFarmBuff(this.generateBuffReward(fs.mastery.level));
         this.gainMasteryXP(25);
       } else if (crate.tier === "gold") {
         donutReward = Math.floor(cps * 900);
         this.addRandomGoods(5, 10);
-        if (Math.random() < 0.5) {
-          // Award random passport
-          const passport =
-            this.farmPassports[
-              Math.floor(Math.random() * this.farmPassports.length)
-            ];
-          this.showFarmNotification("Found passport: " + passport.name + "!");
+        if (this.timeRandom() < 0.5) {
+          this.showFarmNotification("Passport rewards are not available yet.");
         }
         this.gainMasteryXP(60);
       } else if (crate.tier === "epic") {
         donutReward = Math.floor(cps * 1800);
         this.addRandomGoods(5, 10);
         this.gainMasteryXP(150);
-        this.showFarmNotification("Epic crate! Guaranteed passport!");
+        this.showFarmNotification(
+          "Epic crate! Passport rewards are not available yet.",
+        );
       }
-      this.donutCount += donutReward;
-      this.totalDonutsEarned += donutReward;
+      this.creditDonuts(donutReward);
       this.showFarmNotification(
         "Crate opened! +" + this.formatNumber(donutReward) + " donuts",
       );
       this.updateFarmDisplay();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
     }
 
     addRandomGoods(min, max) {
       const fs = this.farmState;
       const goods = Object.keys(fs.storage);
-      const count = min + Math.floor(Math.random() * (max - min + 1));
+      const count = min + Math.floor(this.timeRandom() * (max - min + 1));
       for (let i = 0; i < count; i++) {
-        const good = goods[Math.floor(Math.random() * goods.length)];
+        const good = goods[Math.floor(this.timeRandom() * goods.length)];
         const cap = this.getEffectiveStorageCap(good);
         fs.storage[good] = Math.min(fs.storage[good] + 1, cap);
       }
@@ -3799,6 +4111,7 @@
 
     // --- Contract Reroll ---
     rerollContracts() {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       if (fs.contracts.rerollsUsed >= 3) {
         this.showFarmNotification("Max rerolls reached this cycle!");
@@ -3812,6 +4125,8 @@
       fs.contracts.rerollsUsed++;
       this.generateContractBoard();
       this.updateFarmDisplay();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
     }
 
     // --- Auto-collect (FC 60 + Mastery 13) ---
@@ -3821,15 +4136,14 @@
       for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
         const good = def.good;
         const cap = this.getEffectiveStorageCap(good);
-        if (fs.storage[good] >= cap * 0.8 && fs.storage[good] > 0) {
+        if (fs.storage[good] >= cap * 0.8 - 1e-8 && fs.storage[good] > 0) {
           // Auto-sell when storage >= 80% (no crate drop for auto)
           const amount = Math.floor(fs.storage[good]);
           if (amount <= 0) continue;
           const price = this.getSellPrice(good);
           const total = amount * price;
           fs.storage[good] -= amount;
-          this.donutCount += total;
-          this.totalDonutsEarned += total;
+          this.creditDonuts(total);
           fs.stats.totalGoodsSold += amount;
         }
       }
@@ -3837,6 +4151,7 @@
 
     // --- Contract Cancel ---
     cancelContract(contractId) {
+      this.settleBeforeMutation();
       const fs = this.farmState;
       const idx = fs.contracts.active.findIndex((c) => c.id === contractId);
       if (idx === -1) return;
@@ -3849,6 +4164,7 @@
       }
       this.showFarmNotification("Contract cancelled. 80% goods returned.");
       this.updateFarmDisplay();
+      this.requestSave();
     }
 
     // --- Tooltip descriptions ---
@@ -3857,7 +4173,7 @@
         // Feed plans
         feedStandard: "Standard Feed: Free. Normal production speed (1x).",
         feedRation:
-          "Ration Feed: 0.7x production. Cost scales with your income (~0.08% CpS per type). Efficient trait reduces cost.",
+          "Ration Feed: 0.7x production, 25% shorter post-breeding cooldown (stacks multiplicatively with Sturdy). Cost scales with your income (~0.08% CpS per type). Efficient trait reduces cost.",
         feedPremium:
           "Premium Feed: 1.4x production + 5% rare breed chance. Cost scales with your income (~0.35% CpS per type). Efficient trait reduces cost.",
         // Buffs
@@ -3905,22 +4221,43 @@
           "Quality of Life Buff: Auto-collect, instant breed queue, etc.",
         buff_EVENT: "Event Buff: Special effects like 2x click value.",
       };
-      return tips[key] || "";
+      const unavailable = ["COST", "OFFLINE", "QOL", "EVENT"].some(
+        (cat) => key === cat || key === "buff_" + cat,
+      );
+      return unavailable
+        ? "Unavailable: this buff's effect is not implemented yet."
+        : tips[key] || "";
     }
 
     // --- Display Updates ---
+    isFarmPanelOpen() {
+      if (!this.canPresent()) return false;
+      const panel = document.getElementById("farm-panel");
+      return !!(
+        this.footerContainer?.classList.contains("visible") &&
+        !this.footerContainer.classList.contains("hidden") &&
+        panel &&
+        !panel.classList.contains("hidden")
+      );
+    }
+
     updateFarmDisplay() {
-      const fc = this.getFarmCount();
-      if (fc < 1) return;
-      // Only update the active tab for performance
-      if (this.farmActiveTab === "barn") this.updateFarmBarnTab();
-      else if (this.farmActiveTab === "contracts")
-        this.updateFarmContractsTab();
-      else if (this.farmActiveTab === "breeding")
-        this.updateFarmBreedingTabSmart();
-      else if (this.farmActiveTab === "collection")
-        this.updateFarmCollectionTab();
-      this.updateFarmKPIs();
+      if (!this.canPresent()) return;
+      return this.withProductionSnapshot(() => {
+        // Presentation sleeps while closed; settlement owns Farm simulation.
+        if (!this.isFarmPanelOpen()) return;
+        const fc = this.getFarmCount();
+        if (fc < 1) return;
+        // Only update the active tab for performance
+        if (this.farmActiveTab === "barn") this.updateFarmBarnTab();
+        else if (this.farmActiveTab === "contracts")
+          this.updateFarmContractsTab();
+        else if (this.farmActiveTab === "breeding")
+          this.updateFarmBreedingTabSmart();
+        else if (this.farmActiveTab === "collection")
+          this.updateFarmCollectionTab();
+        this.updateFarmKPIs();
+      }, this.getGameTime());
     }
 
     updateFarmBarnTab() {
@@ -3929,13 +4266,19 @@
       if (!grid || !storageSection) return;
 
       // If DOM already has content, try partial update (preserves scroll, inputs, focus)
-      if (grid.children.length > 0 && grid.querySelector(".farm-type-block")) {
+      const signature = this.getFarmRosterSignature();
+      if (
+        grid.children.length > 0 &&
+        grid.dataset.rosterSignature === signature &&
+        grid.querySelector(".farm-type-block")
+      ) {
         this._partialUpdateBarnTab(grid, storageSection);
         return;
       }
 
       // Full render (first time or after structural change)
       this._fullRenderBarnTab(grid, storageSection);
+      grid.dataset.rosterSignature = signature;
     }
 
     _fullRenderBarnTab(grid, storageSection) {
@@ -4020,7 +4363,7 @@
                     ? `
                   <div class="farm-feed-select">
                     <button class="farm-feed-btn ${plan === "standard" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','standard')" title="Free. Normal 1x production.">Std</button>
-                    ${fc >= 15 ? `<button class="farm-feed-btn ${plan === "ration" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','ration')" title="0.5% cost, 0.7x prod">Ration</button>` : ""}
+                    ${fc >= 15 ? `<button class="farm-feed-btn ${plan === "ration" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','ration')" title="${this.getFarmTooltip("feedRation")}">Ration</button>` : ""}
                     ${fc >= 40 ? `<button class="farm-feed-btn ${plan === "premium" ? "active" : ""}" onclick="window._game.setFeedPlan('${type}','premium')" title="2% cost, 1.4x prod, +5% rare breed">Prem</button>` : ""}
                   </div>
                   ${feedCostStr}
@@ -4139,6 +4482,9 @@
 
     _forceBarnFullRender() {
       const grid = document.getElementById("farm-animal-grid");
+      // Preserve invalidation for the next open without rebuilding hidden markup.
+      if (grid) delete grid.dataset.rosterSignature;
+      if (!this.isFarmPanelOpen()) return;
       if (grid) grid.innerHTML = "";
       this.updateFarmBarnTab();
     }
@@ -4169,6 +4515,7 @@
               ${animal.variant ? `<span class="farm-variant-tag" title="${variantDef ? variantDef.name + ": " + this.getVariantDescription(variantDef) : animal.variant}">${animal.variant}</span>` : ""}
               ${animal.passport ? `<span class="farm-passport-tag" title="${animal.passport}">${animal.passport}</span>` : ""}
               ${cooldownLeft > 0 ? `<span class="farm-cooldown-tag">${this.formatDuration(cooldownLeft)}</span>` : ""}
+              ${this.isAnimalBreeding(animal.id) ? '<span class="farm-cooldown-tag">Breeding</span>' : ""}
             </div>
             <div class="farm-roster-traits">
               ${
@@ -4184,6 +4531,7 @@
                   : '<span class="farm-roster-no-traits">No traits</span>'
               }
             </div>
+            <button class="farm-btn farm-btn-small" onclick="window._game.releaseAnimal('${animal.id}')" ${this.isAnimalBreeding(animal.id) ? "disabled" : ""}>Release</button>
           </div>
         `;
       }
@@ -4215,6 +4563,7 @@
       const trimmed = newName.trim().slice(0, 20);
       if (trimmed.length > 0) animal.name = trimmed;
       this._forceBarnFullRender();
+      this.requestSave();
     }
 
     getVariantDescription(vdef) {
@@ -4246,7 +4595,7 @@
       if (refreshTimer) {
         const remaining = Math.max(
           0,
-          600000 - (Date.now() - fs.contracts.lastRefresh),
+          600000 - (this.getGameTime() - fs.contracts.lastRefresh),
         );
         refreshTimer.textContent =
           "Refresh: " + Math.ceil(remaining / 1000) + "s";
@@ -4287,7 +4636,7 @@
             </div>
             <div class="contract-reward">
               <img src="img/donutMoney.webp" class="donut-money-icon" /> ${this.formatNumber(contract.reward.donuts)}
-              ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ""}
+              ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">${contract.reward.buff.category === "PROD" ? "+PROD" : contract.reward.buff.category + " (unavailable)"}</span>` : ""}
             </div>
             <div class="contract-actions">
               <button class="farm-btn farm-btn-buy" onclick="window._game.acceptContract('${contract.id}')">Accept</button>
@@ -4319,7 +4668,7 @@
               </div>
               <div class="contract-reward" style="font-size:0.62rem;">
                 <img src="img/donutMoney.webp" class="donut-money-icon" style="width:12px;height:12px;" /> ${this.formatNumber(contract.reward.donuts)}
-                ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">+${contract.reward.buff.category}</span>` : ""}
+                ${contract.reward.buff ? `<span class="farm-buff-preview" title="${this.getFarmTooltip("buff_" + contract.reward.buff.category)}">${contract.reward.buff.category === "PROD" ? "+PROD" : contract.reward.buff.category + " (unavailable)"}</span>` : ""}
               </div>
               <div class="contract-active-progress">
                 <div class="farm-progress"><div class="farm-progress-bar ${isReady ? "bar-ready" : ""}" style="width:${pct}%"></div></div>
@@ -4379,7 +4728,10 @@
       const fs = this.farmState;
       const container = document.getElementById("farm-breeding-slots");
       if (!container) return;
-      if (!container.dataset.rendered) {
+      if (
+        !container.dataset.rendered ||
+        container.dataset.signature !== this.getBreedingRenderSignature()
+      ) {
         this.updateFarmBreedingTab();
         return;
       }
@@ -4415,7 +4767,8 @@
           (s, idx) =>
             idx !== slotIndex && s && (s.a === animal.id || s.b === animal.id),
         );
-      const onCooldown = animal.breedCooldown > 0;
+      const onCooldown =
+        animal.breedCooldown > 0 || this.isAnimalBreeding(animal.id);
       const disabled = otherSlotUsed || onCooldown;
 
       const rarityColors = {
@@ -4556,7 +4909,8 @@
           : [];
         const available = {};
         for (const animal of fs.animals) {
-          if (animal.breedCooldown > 0) continue;
+          if (animal.breedCooldown > 0 || this.isAnimalBreeding(animal.id))
+            continue;
           if (!available[animal.type]) available[animal.type] = [];
           available[animal.type].push(animal);
         }
@@ -4628,6 +4982,7 @@
 
       container.innerHTML = html;
       container.dataset.rendered = "1";
+      container.dataset.signature = this.getBreedingRenderSignature();
     }
 
     _renderParentCard(animal) {
@@ -4720,6 +5075,10 @@
       if (buffSlots) {
         let buffHtml = "";
         for (const cat of Object.keys(this.farmBuffCategories)) {
+          if (cat !== "PROD") {
+            buffHtml += `<div class="farm-buff-slot" title="${this.getFarmTooltip("buff_" + cat)}">${cat}: unavailable</div>`;
+            continue;
+          }
           const buff = fs.buffs[cat];
           if (buff && buff.remaining > 0) {
             const mins = Math.floor(buff.remaining / 60);
@@ -4788,7 +5147,7 @@
         } else if (fs.careWindow.active) {
           const remaining = Math.max(
             0,
-            Math.ceil((fs.careWindow.expiresAt - Date.now()) / 1000),
+            Math.ceil((fs.careWindow.expiresAt - this.getGameTime()) / 1000),
           );
           careEl.textContent = "Care: " + remaining + "s ✦";
           careEl.title =
@@ -4796,7 +5155,7 @@
         } else {
           const next = Math.max(
             0,
-            Math.ceil((fs.careWindow.nextTrigger - Date.now()) / 1000),
+            Math.ceil((fs.careWindow.nextTrigger - this.getGameTime()) / 1000),
           );
           const mins = Math.floor(next / 60);
           const secs = next % 60;
@@ -4807,11 +5166,15 @@
     }
 
     setFeedPlan(animalType, plan) {
+      this.settleBeforeMutation();
       this.farmState.feedPlans[animalType] = plan;
       this._forceBarnFullRender();
+      this.updateDisplay(!this._settlingTime);
+      this.requestSave();
     }
 
     showFarmNotification(text) {
+      if (!this.canPresent()) return;
       const existing = document.querySelector(".farm-notification");
       if (existing) existing.remove();
       const notif = document.createElement("div");
@@ -4846,81 +5209,54 @@
       });
     }
 
-    calculateClickValue() {
-      let normalMultiplier = 1;
-      let x10Multiplier = 1;
-      let dynamicClickBonus = 0;
-      let dynamicCursorPerSecondContribution = 0;
-
-      // Cursor upgrade'lerinin etkisini hesapla
-      this.upgrades.cursor.forEach((upgrade) => {
-        if (upgrade.purchased && !upgrade.specialEffect) {
-          if (
-            upgrade === this.upgrades.cursor[5] || // Ruby Cursor
-            upgrade === this.upgrades.cursor[6] || // Verdant Precision
-            upgrade === this.upgrades.cursor[7] // Obsidian Whisper
-          ) {
-            x10Multiplier *= 10;
-          } else {
-            normalMultiplier *= upgrade.multiplier;
-          }
-        }
-      });
-
-      let clickValue = 1 * normalMultiplier * x10Multiplier;
-
-      // Donut Cursor bonusu: sadece non-cursor bina sayisi * 0.1.
-      // Bu bonus diger click boost'larindan etkilenmez.
-      const dynamicBoostUpgrade = this.upgrades.cursor[4];
-      if (dynamicBoostUpgrade.purchased) {
-        let nonCursorBuildingCount = 0;
-        // Tüm binaların toplamını hesapla (cursor hariç)
-        for (let key in this.items) {
-          if (key !== "cursor") {
-            nonCursorBuildingCount += this.items[key].count;
-          }
-        }
-        dynamicClickBonus = nonCursorBuildingCount * 0.1;
-        dynamicCursorPerSecondContribution =
-          this.items.cursor.count * dynamicClickBonus;
+    getClickBreakdown(now = this.getProductionQueryTime()) {
+      const production = this.getProductionBreakdown(now);
+      const cursorMultiplier = this.getBuildingUpgradeMultiplier("cursor");
+      let clickUpgradeCount = 0;
+      let cpsClickFraction = 0;
+      for (const upgrade of this.upgrades.nonItemUpgrades || []) {
+        if (!upgrade?.purchased || upgrade.specialEffect) continue;
+        clickUpgradeCount++;
+        // Each configured 1.01 contributes an additive 1% of boosted CPS.
+        cpsClickFraction += Math.max(
+          0,
+          this.economicFactor(upgrade.multiplier) - 1,
+        );
       }
-
-      // nonItemUpgrades için DPS bonus hesaplaması
-      const perSecond = Math.max(
-        0,
-        this.calculatePerSecond() - dynamicCursorPerSecondContribution,
-      );
-      const purchasedNonItemUpgrades = this.upgrades.nonItemUpgrades.filter(
-        (upgrade) => upgrade.purchased,
-      ).length;
-
-      if (purchasedNonItemUpgrades > 0) {
-        const perSecondBoost = perSecond * (0.01 * purchasedNonItemUpgrades);
-        clickValue += perSecondBoost;
-      }
-
-      // Aktif multiplier varsa uygula
-      if (this.activeMultipliers && this.activeMultipliers.length > 0) {
-        clickValue *= this.productionMultiplier;
-      }
-
-      return clickValue + dynamicClickBonus;
+      // Cursor upgrades multiply the manual base, not the CPS-derived component.
+      // The CPS component already includes prestige/globals/temporary effects once.
+      const baseClick = cursorMultiplier * production.temporaryMultiplier;
+      const cpsClick = production.boostedCPS * cpsClickFraction;
+      const clickValue = baseClick + cpsClick + production.dynamicClickBonus;
+      return {
+        cursorMultiplier,
+        clickUpgradeCount,
+        cpsClickFraction,
+        baseClick,
+        cpsClick,
+        flatClick: production.dynamicClickBonus,
+        clickValue:
+          production.valid && Number.isFinite(clickValue) ? clickValue : 0,
+      };
     }
+
+    calculateClickValue() {
+      return this.getClickBreakdown().clickValue;
+    }
+
     calculatePerSecond() {
-      let totalPerSecond = 0;
-      for (let key in this.items) {
-        totalPerSecond += this.items[key].count * this.items[key].production;
-      }
-      return totalPerSecond;
+      return this.getProductionBreakdown().effectiveCPS;
     }
     handleDonutClick(event) {
+      this.settleBeforeMutation();
       this.hasDonutClicked = true; // İlk tıklamada true olur
       this.totalClicks++;
 
-      const clickValue = this.calculateClickValue(); // Click value'yi hesapla
+      const clickValue = donutDebug.manualClickValue(
+        this.calculateClickValue(),
+      );
 
-      this.donutCount += clickValue;
-      this.totalDonutsEarned += clickValue;
+      this.creditDonuts(clickValue);
       this.lastClickValue = clickValue;
 
       // Görsel ve ses efektlerini çalıştır
@@ -4964,6 +5300,7 @@
       // Click milestones are checked in the main checkMilestoneProgress
     }
     showUpgrades() {
+      if (!this.canPresent()) return;
       const upgradeList = document.getElementById("upgrade-list");
       if (!upgradeList) return;
 
@@ -4975,7 +5312,7 @@
             return;
           }
 
-          if (this.isDonutUpgradeUnlocked(upgrade)) {
+          if (this.isUpgradeUnlocked("donutUpgrades", upgrade)) {
             allUpgrades.push({ key: "donutUpgrades", index, upgrade });
           }
         });
@@ -4988,8 +5325,7 @@
 
         this.upgrades[key].forEach((upgrade, index) => {
           if (upgrade.purchased) return;
-          if (this.items[key] && this.items[key].count < upgrade.requirement)
-            return;
+          if (!this.isUpgradeUnlocked(key, upgrade)) return;
           allUpgrades.push({ key, index, upgrade });
         });
       }
@@ -4999,11 +5335,7 @@
         this.upgrades.nonItemUpgrades.forEach((upgrade, index) => {
           if (upgrade.purchased) return;
 
-          if (upgrade.specialEffect === "automation") {
-            if (!this.comboActive) return;
-          } else {
-            if (this.totalClicks < upgrade.requirement) return;
-          }
+          if (!this.isUpgradeUnlocked("nonItemUpgrades", upgrade)) return;
 
           allUpgrades.push({ key: "nonItemUpgrades", index, upgrade });
         });
@@ -5080,6 +5412,32 @@
         }
       });
     }
+    getBulkPricePreview(key, amount = this.purchaseAmount) {
+      const item = this.items[key];
+      const cached = this.bulkPriceCache.get(key);
+      if (
+        cached &&
+        cached.item === item &&
+        cached.count === item.count &&
+        cached.baseCost === item.baseCost &&
+        cached.costMultiplier === item.costMultiplier &&
+        cached.amount === amount
+      ) {
+        return cached.price;
+      }
+      const price = this.calculateBulkPrice(item, amount);
+      // One current entry per building; balance/affordability are never cached.
+      this.bulkPriceCache.set(key, {
+        item,
+        count: item.count,
+        baseCost: item.baseCost,
+        costMultiplier: item.costMultiplier,
+        amount,
+        price,
+      });
+      return price;
+    }
+
     calculateBulkPrice(item, amount) {
       let totalCost = 0;
       let currentCost = item.baseCost;
@@ -5106,7 +5464,8 @@
         .querySelector(`.purchase-options button[data-amount="${amount}"]`)
         .classList.add("selected");
     }
-    buyItem(itemKey) {
+    buyItem(itemKey, isAutomatic = false) {
+      this.settleBeforeMutation();
       const item = this.items[itemKey];
       const bulkCost = this.calculateBulkPrice(item, this.purchaseAmount);
 
@@ -5135,6 +5494,13 @@
             this.addBakerWorker();
           }
         }
+
+        this.questTracking.currentRun.totalSpent =
+          this.economicNumber(this.questTracking.currentRun.totalSpent) +
+          bulkCost;
+
+        if (itemKey === "mine") this.refreshOreMarketReference();
+        this.refreshRecipeAvailability();
 
         // Farm için panel kontrolü
         if (isFirstFarm) {
@@ -5227,20 +5593,45 @@
         }
 
         this.updateTotalPerSecond();
-        this.checkQuestProgress();
+        const previousQuestSaveDelay = this._questSaveDelay;
+        this._questSaveDelay = isAutomatic ? 15000 : 1000;
+        try {
+          this.checkQuestProgress();
+        } finally {
+          this._questSaveDelay = previousQuestSaveDelay;
+        }
         this.updateDisplay();
         this.showUpgrades();
+        this.requestSave(isAutomatic ? 15000 : 1000);
       }
     }
-    buyUpgrade(itemKey, upgradeIndex) {
-      let upgrade;
+    isUpgradeUnlocked(itemKey, upgrade) {
+      if (!upgrade) return false;
+      if (itemKey === "donutUpgrades")
+        return this.isDonutUpgradeUnlocked(upgrade);
       if (itemKey === "nonItemUpgrades") {
-        upgrade = this.upgrades.nonItemUpgrades[upgradeIndex];
-      } else if (itemKey === "donutUpgrades") {
-        upgrade = this.upgrades.donutUpgrades[upgradeIndex];
-      } else {
-        upgrade = this.upgrades[itemKey][upgradeIndex];
+        return upgrade.specialEffect === "automation"
+          ? this.comboActive
+          : this.totalClicks >= upgrade.requirement;
       }
+      return (
+        !!this.items[itemKey] &&
+        this.items[itemKey].count >= upgrade.requirement
+      );
+    }
+
+    buyUpgrade(itemKey, upgradeIndex) {
+      if (
+        !Object.hasOwn(this.upgrades, itemKey) ||
+        !Number.isInteger(upgradeIndex) ||
+        upgradeIndex < 0
+      )
+        return;
+      const upgrade = this.upgrades[itemKey][upgradeIndex];
+      if (!upgrade || upgrade.purchased) return;
+      this.settleBeforeMutation();
+      // Validate after settlement, at the same authority that charges the price.
+      if (!this.isUpgradeUnlocked(itemKey, upgrade)) return;
 
       if (this.donutCount >= upgrade.cost && !upgrade.purchased) {
         this.donutCount -= upgrade.cost;
@@ -5249,15 +5640,6 @@
         if (itemKey === "nonItemUpgrades") {
           if (upgrade.specialEffect === "automation") {
             this.autoCatcherEnabled = true;
-          }
-        } else if (itemKey === "cursor") {
-          // Cursor için özel bir işlem yapmıyoruz
-          // Cursor multiplier'ları updateTotalPerSecond'da hesaplanıyor
-        } else {
-          // Diğer itemlar için (donutUpgrades dahil)
-          const item = this.items[itemKey];
-          if (item && item.originalProduction) {
-            item.originalProduction *= upgrade.multiplier;
           }
         }
 
@@ -5278,9 +5660,12 @@
         this.updateTotalPerSecond();
         this.updateDisplay();
         this.showUpgrades();
+        this.requestSave();
       }
     }
     setupRecipeBook() {
+      if (this._recipeBookBound) return;
+      this._recipeBookBound = true;
       const recipeBookBtn = document.getElementById("recipe-book-btn");
       const modal = document.querySelector(".book-modal");
       const closeBtn = modal.querySelector(".close-btn");
@@ -5342,7 +5727,9 @@
         const effect = recipe.effects?.[buildingKey];
         if (!effect || !recipe.craftCount) return;
 
-        totalBonus += effect.productionBonus * recipe.craftCount;
+        totalBonus +=
+          this.economicNumber(effect.productionBonus) *
+          this.economicNumber(recipe.craftCount);
       });
 
       return totalBonus;
@@ -5364,59 +5751,74 @@
     }
 
     updateRecipeBook() {
+      if (!this.canPresent()) return;
       const recipesList = document.querySelector(".recipes-list");
-      recipesList.innerHTML = "";
+      if (!this._recipeCards) this._recipeCards = new Map();
 
       Object.entries(this.recipes).forEach(([recipeName, recipe]) => {
-        const recipeItem = document.createElement("div");
-        recipeItem.className = "recipe-item";
-        const canCraftRecipe = this.canMakeRecipe(recipeName);
-        const recipeLockReason = this.getRecipeLockReason(recipeName);
+        let card = this._recipeCards.get(recipeName);
+        if (!card) {
+          const recipeItem = document.createElement("div");
+          recipeItem.className = "recipe-item";
+          recipeItem.innerHTML = `
+          <div class="recipe-header">
+            <img src="img/${recipe.image}" alt="${recipeName}" />
+            <span class="recipe-name">${recipeName}</span>
+          </div>
+          <div class="recipe-ingredients"></div>
+          <button class="make-btn" data-recipe="${recipeName}">Make!</button>
+        `;
 
-        const scaleCurrent = recipe.scaling?.ingredients?.current || 1;
-        const ingredientsHTML = Object.entries(recipe.ingredients)
-          .map(([ingredient, amount]) => {
-            const scaled = Math.ceil(amount * scaleCurrent);
-            const hasEnough = this.hasEnoughIngredients(ingredient, scaled);
-            return `<span class="ingredient ${hasEnough ? "available" : "unavailable"}">
-            <img src="img/${ingredient.toLowerCase()}.webp" alt="${ingredient}" />${scaled}x
-          </span>`;
+          recipesList.appendChild(recipeItem);
+
+          // Hover ile sağ sayfada detay göster
+          recipeItem.addEventListener("mouseenter", () => {
+            this.showRecipeDetail(recipeName);
+          });
+
+          // Make butonu
+          const makeBtn = recipeItem.querySelector(".make-btn");
+          makeBtn.addEventListener("click", () => {
+            this.craftDonut(recipeName);
+          });
+          card = {
+            ingredients: recipeItem.querySelector(".recipe-ingredients"),
+            button: makeBtn,
+          };
+          this._recipeCards.set(recipeName, card);
+        }
+        const requirements = this.getRecipeRequirements(recipeName);
+        card.ingredients.innerHTML = Object.keys(recipe.ingredients)
+          .map((ingredient) => {
+            const amount = requirements?.[ingredient];
+            const enough =
+              amount !== undefined &&
+              this.hasEnoughIngredients(ingredient, amount);
+            return `<span class="ingredient ${enough ? "available" : "unavailable"}"><img src="img/${ingredient.toLowerCase()}.webp" alt="${ingredient}" />${amount === undefined ? "Unavailable" : `${amount}x`}</span>`;
           })
           .join("");
-
-        recipeItem.innerHTML = `
-        <div class="recipe-header">
-          <img src="img/${recipe.image}" alt="${recipeName}" />
-          <span class="recipe-name">${recipeName}</span>
-        </div>
-        <div class="recipe-ingredients">
-          ${ingredientsHTML}
-        </div>
-        <button class="make-btn" data-recipe="${recipeName}" ${
-          canCraftRecipe ? "" : "disabled"
-        } title="${canCraftRecipe ? "Make!" : recipeLockReason || "Not enough ingredients"}">Make!</button>
-      `;
-
-        recipesList.appendChild(recipeItem);
-
-        // Hover ile sağ sayfada detay göster
-        recipeItem.addEventListener("mouseenter", () => {
-          this.showRecipeDetail(recipeName);
-        });
-
-        // Make butonu
-        const makeBtn = recipeItem.querySelector(".make-btn");
-        makeBtn.addEventListener("click", () => {
-          if (this.canMakeRecipe(recipeName)) {
-            this.craftDonut(recipeName);
-          }
-        });
+        card.button.disabled = !this.canMakeRecipe(recipeName);
+        card.button.title = !card.button.disabled
+          ? "Make!"
+          : this.getRecipeLockReason(recipeName) ||
+            (requirements
+              ? "Not enough ingredients"
+              : "Recipe cost cannot be represented safely");
       });
+      if (this._detailRecipeName) this.showRecipeDetail(this._detailRecipeName);
+    }
+
+    refreshRecipeAvailability() {
+      if (!this.canPresent()) return;
+      if (document.querySelector(".book-modal")?.classList.contains("show"))
+        this.updateRecipeBook();
+      this.updateCraftButton();
     }
 
     showRecipeDetail(recipeName) {
       const recipe = this.recipes[recipeName];
       if (!recipe) return;
+      this._detailRecipeName = recipeName;
 
       const panel = document.getElementById("recipe-detail-panel");
       if (!panel) return;
@@ -5476,6 +5878,7 @@
     }
 
     updateCraftButton() {
+      if (!this.canPresent()) return;
       const craftBtn = document.getElementById("craft-btn");
       if (!craftBtn) return;
 
@@ -5497,88 +5900,150 @@
           : "Not enough ingredients";
     }
 
-    craftDonut(recipeName) {
+    getRecipeScale(recipe, count = recipe?.craftCount ?? 0) {
+      const multiplier = recipe?.scaling?.ingredients?.multiplier;
+      if (
+        !Number.isInteger(count) ||
+        count < 0 ||
+        !Number.isFinite(multiplier) ||
+        multiplier <= 1
+      )
+        return null;
+      // Match historical repeated multiplication, including its ceil-boundary rounding.
+      // Overflow ends this loop after at most ~1751 crafts for configured recipes.
+      let scale = 1;
+      for (let i = 0; i < count; i++) {
+        scale *= multiplier;
+        if (!Number.isFinite(scale)) return null;
+      }
+      return scale;
+    }
+
+    getRecipeRequirements(recipeName) {
       const recipe = this.recipes[recipeName];
-      if (!recipe || !this.canMakeRecipe(recipeName)) return;
-
-      // Malzemeleri kullan
-      Object.entries(recipe.ingredients).forEach(([ingredient, amount]) => {
-        const scaledAmount = Math.ceil(
-          amount * (recipe.scaling?.ingredients?.current || 1),
-        );
-        this.ingredients[ingredient].count -= scaledAmount;
-      });
-
-      // Üretim miktarını hesapla
-      const productionAmount = recipe.production * this.productionMultiplier;
-
-      // Donut üret
-      this.donutCount += productionAmount;
-      this.totalDonutsEarned += productionAmount;
-
-      // craftCount'u artır
-      recipe.craftCount = (recipe.craftCount || 0) + 1;
-
-      // Bina bonus efektlerini uygula
-      if (recipe.effects) {
-        Object.entries(recipe.effects).forEach(([buildingKey, effect]) => {
-          const building = this.items[buildingKey];
-          if (building) {
-            const totalBonus = recipe.craftCount * effect.productionBonus;
-            building.production =
-              building.originalProduction * (1 + totalBonus);
-          }
-        });
+      const scale = this.getRecipeScale(recipe);
+      if (scale === null || !recipe?.ingredients) return null;
+      const requirements = {};
+      for (const [ingredient, base] of Object.entries(recipe.ingredients)) {
+        const amount = Math.ceil(base * scale);
+        if (
+          !this.ingredientTypes.some((i) => i.type === ingredient) ||
+          !Number.isInteger(base) ||
+          base <= 0 ||
+          !Number.isFinite(amount) ||
+          !Number.isInteger(amount) ||
+          amount <= 0
+        )
+          return null;
+        requirements[ingredient] = amount;
       }
+      return Object.keys(requirements).length ? requirements : null;
+    }
 
-      // Malzeme ihtiyacını artır (eğer scaling varsa)
-      if (recipe.scaling?.ingredients) {
-        recipe.scaling.ingredients.current *=
-          recipe.scaling.ingredients.multiplier;
+    getRecipeCraftPlan(recipeName) {
+      const recipe = this.recipes[recipeName];
+      if (
+        !recipe ||
+        !this.getRecipeTargetBuildingKey(recipeName) ||
+        !this.isRecipeUnlocked(recipeName)
+      )
+        return null;
+      const requirements = this.getRecipeRequirements(recipeName);
+      const count = recipe.craftCount ?? 0;
+      const nextCount = count + 1;
+      const nextScale = this.getRecipeScale(recipe, nextCount);
+      if (
+        !requirements ||
+        !Number.isInteger(nextCount) ||
+        nextCount - count !== 1 ||
+        nextScale === null
+      )
+        return null;
+      if (
+        !recipe.effects ||
+        !Object.entries(recipe.effects).every(
+          ([key, effect]) =>
+            this.items[key] &&
+            Number.isFinite(effect.productionBonus) &&
+            effect.productionBonus >= 0 &&
+            Number.isFinite(1 + nextCount * effect.productionBonus),
+        )
+      )
+        return null;
+      const inventory = {};
+      for (const [ingredient, amount] of Object.entries(requirements)) {
+        if (!this.hasEnoughIngredients(ingredient, amount)) return null;
+        const current = this.ingredients[ingredient].count;
+        const remaining = current - amount;
+        if (
+          !Number.isInteger(remaining) ||
+          remaining < 0 ||
+          current - remaining !== amount
+        )
+          return null;
+        inventory[ingredient] = remaining;
       }
+      const payout =
+        recipe.production * this.getProductionModifiers().temporaryMultiplier;
+      if (!Number.isFinite(payout) || payout < 0) return null;
+      return { inventory, nextCount, nextScale, payout };
+    }
 
-      // Bildirimi göster
+    craftDonut(recipeName) {
+      this.settleBeforeMutation();
+      const plan = this.getRecipeCraftPlan(recipeName);
+      if (!plan) return false;
+      // Credit is the only fallible economic operation. Refusal aborts the whole
+      // craft; all remaining commits are prevalidated synchronous assignments.
+      if (!this.creditDonuts(plan.payout)) return false;
+      const recipe = this.recipes[recipeName];
+      for (const [ingredient, count] of Object.entries(plan.inventory))
+        this.ingredients[ingredient].count = count;
+      recipe.craftCount = plan.nextCount;
+      recipe.scaling.ingredients.current = plan.nextScale; // Compatibility mirror only.
       this.showNotification(
-        `Crafted ${this.formatNumber(productionAmount)} ${recipeName}!`,
+        `Crafted ${recipeName}! +${this.formatNumber(plan.payout)} donuts.`,
       );
-
-      // UI'ı güncelle
+      this.updateTotalPerSecond();
       this.updateDisplay();
       this.updateIngredientList();
-      this.updateRecipeBook();
-      this.updateTotalPerSecond();
+      this.requestSave();
+      return true;
     }
 
     canMakeRecipe(recipeName) {
-      const recipe = this.recipes[recipeName];
-      if (!recipe || !this.isRecipeUnlocked(recipeName)) return false;
-
-      return Object.entries(recipe.ingredients).every(
-        ([ingredient, amount]) => {
-          const scaledAmount = Math.ceil(
-            amount * (recipe.scaling?.ingredients?.current || 1),
-          );
-          return this.ingredients[ingredient]?.count >= scaledAmount;
-        },
-      );
+      return this.getRecipeCraftPlan(recipeName) !== null;
     }
 
     hasEnoughIngredients(ingredient, amount) {
-      return this.ingredients[ingredient]?.count >= amount;
+      const count = this.ingredients[ingredient]?.count;
+      return (
+        Number.isFinite(count) &&
+        Number.isInteger(count) &&
+        count >= 0 &&
+        count >= amount
+      );
     }
 
     addBakerWorker() {
-      if (this.items.baker.count <= 0) return;
-      this.bakers.push({
-        productionRate: this.bakerIngredientsPerCycle, // Her calisan 2 malzeme uretir
-      });
+      this.reconcileBakerWorkers();
+    }
 
+    reconcileBakerWorkers() {
+      // Owned buildings determine output. productionRate is legacy save data.
+      this.bakers = (this.bakers || []).slice(0, this.items.baker.count);
+      while (this.bakers.length < this.items.baker.count)
+        this.bakers.push({ productionRate: this.bakerIngredientsPerCycle });
+      this.updateBakerWorkerCount();
+    }
+    updateBakerWorkerCount() {
+      if (!this.canPresent()) return;
       const workerCountElem = document.getElementById("bakerWorkerCount");
-      if (workerCountElem) {
-        workerCountElem.textContent = this.bakers.length;
-      }
+      if (workerCountElem)
+        workerCountElem.textContent = String(this.bakers.length);
     }
     updateTotalIngredientCount() {
+      if (!this.canPresent()) return;
       const totalIngredientCount = Object.values(this.ingredients).reduce(
         (sum, ingredient) => sum + ingredient.count,
         0,
@@ -5590,6 +6055,8 @@
       }
     }
     generateIngredient() {
+      // Uncalled legacy path. Shared settlement uses produceBakerResources();
+      // never wire this timestamp/worker-rate implementation back into gameplay.
       if (this.items.baker.count <= 0) return;
 
       // Süre kontrolü
@@ -5620,11 +6087,12 @@
       this.bakerCycleRemainingTime = this.bakerProductionInterval;
       this.ingredientPurchaseLimit = 10;
 
-      this.updateTotalIngredientCount();
       this.updateIngredientList();
     }
     updateIngredientList() {
-      if (this.items.baker.count <= 0) return;
+      if (!this.canPresent()) return;
+      this.updateTotalIngredientCount();
+      this.refreshRecipeAvailability();
       const ingredientList = document.getElementById("ingredientList");
       ingredientList.innerHTML = "";
 
@@ -5643,17 +6111,139 @@
       });
     }
     addWorker() {
-      if (this.items.mine.count <= 0) return;
-      this.workers.push({
-        productionRate: 3,
-      });
+      this.reconcileMineWorkers();
+    }
 
+    reconcileMineWorkers() {
+      // Mine ownership is authoritative; retained worker fields are legacy data.
+      this.workers = (this.workers || []).slice(0, this.items.mine.count);
+      while (this.workers.length < this.items.mine.count)
+        this.workers.push({ productionRate: 3 });
+      this.updateWorkerCount();
+    }
+
+    updateWorkerCount() {
+      if (!this.canPresent()) return;
       const workerCountElem = document.getElementById("workerCount");
       if (workerCountElem) {
-        workerCountElem.textContent = this.workers.length;
+        workerCountElem.textContent = String(this.workers.length);
       }
     }
+
+    normalizeOreCount(value) {
+      return typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? Math.floor(value)
+        : 0;
+    }
+
+    isValidOreMarketReference(state) {
+      return (
+        state !== null &&
+        typeof state === "object" &&
+        !Array.isArray(state) &&
+        Number.isFinite(state.referenceScale) &&
+        state.referenceScale > 0 &&
+        Number.isFinite(state.productionBand) &&
+        state.productionBand > 0 &&
+        Number.isInteger(state.workforce) &&
+        state.workforce > 0 &&
+        Number.isInteger(state.stage) &&
+        state.stage >= 0 &&
+        state.stage < Object.keys(this.items).length &&
+        this.oreTypes.every(
+          (ore) =>
+            Number.isFinite(ore.basePrice * state.referenceScale) &&
+            ore.basePrice * state.referenceScale > 0,
+        )
+      );
+    }
+
+    refreshOreMarketReference(preserveQuotes = false) {
+      // Never reprice held ore on a building/upgrade purchase. Refresh only at an
+      // empty-stock production/purchase checkpoint, using permanent canonical CPS.
+      if (
+        this.items.mine.count <= 0 ||
+        (!preserveQuotes &&
+          this.oreTypes.some((ore) => this.ores[ore.type]?.count > 0))
+      )
+        return;
+      const production = this.getProductionBreakdown();
+      const capacity =
+        production.boostedCPS / production.temporaryMultiplier +
+        production.flatCPS;
+      if (!production.valid || !Number.isFinite(capacity) || capacity <= 0)
+        return;
+      const keys = Object.keys(this.items);
+      const stage = keys.reduce(
+        (highest, key, i) => (this.items[key].count > 0 ? i : highest),
+        0,
+      );
+      const share = Math.max(
+        0.03,
+        0.2 / (1 + Math.max(0, stage - keys.indexOf("mine"))),
+      );
+      // Absorb roundoff from removing temporary factors at an exact band boundary.
+      const productionBand = Math.pow(
+        2,
+        Math.floor(Math.log2(capacity) + 1e-12),
+      );
+      const workforce = this.items.mine.count;
+      const expectedValue =
+        this.oreTypes.reduce(
+          (sum, ore) => sum + ore.basePrice * ore.rarity,
+          0,
+        ) / this.oreTypes.reduce((sum, ore) => sum + ore.rarity, 0);
+      const referenceScale =
+        (productionBand / workforce) * ((60 * share) / (5 * expectedValue));
+      const next = { referenceScale, productionBand, workforce, stage };
+      if (!this.isValidOreMarketReference(next)) return;
+      const previousScale = this.oreMarket?.referenceScale;
+      if (!preserveQuotes && previousScale !== referenceScale) {
+        const quotes = this.oreTypes.map((ore) => {
+          const ratio = previousScale
+            ? ore.price / (ore.basePrice * previousScale)
+            : 1;
+          return (
+            ore.basePrice * referenceScale * Math.max(0.5, Math.min(2.5, ratio))
+          );
+        });
+        if (quotes.some((quote) => !Number.isFinite(quote) || quote <= 0))
+          return;
+        this.oreTypes.forEach((ore, i) => {
+          ore.price = quotes[i];
+          ore.priceHistory = [ore.price]; // A reference change is not a trading return.
+        });
+      }
+      this.oreMarket = next;
+    }
+
+    getOreReferencePrice(ore) {
+      return ore.basePrice * (this.oreMarket?.referenceScale || 1);
+    }
+
+    isOreTransitionQuote(ore) {
+      // Ordinary initialized paths cannot reach the safety bounds: the maximum
+      // log displacement is 1.2 * volatility / 0.15. Old outliers are sell-only.
+      const displacement =
+        Math.log(ore.price) - Math.log(this.getOreReferencePrice(ore));
+      return Math.abs(displacement) > (1.2 * ore.volatility) / 0.15 + 1e-12;
+    }
+
+    getSafeOreMarketState(state, basePrice) {
+      const positive = (value) =>
+        typeof value === "number" && Number.isFinite(value) && value > 0;
+      return {
+        price: positive(state?.price) ? state.price : basePrice,
+        trend: Number.isFinite(state?.trend)
+          ? Math.max(-1, Math.min(1, state.trend))
+          : 0,
+        priceHistory: Array.isArray(state?.priceHistory)
+          ? state.priceHistory.filter(positive).slice(-20)
+          : [],
+      };
+    }
     updateOreList() {
+      if (!this.canPresent()) return;
       if (this.items.mine.count <= 0) return;
 
       const oreList = document.getElementById("oreList");
@@ -5683,6 +6273,7 @@
       }
     }
     updateMarketDisplay() {
+      if (!this.canPresent()) return;
       if (this.items.mine.count <= 0) return;
       const marketList = document.getElementById("marketList");
       marketList.innerHTML = "";
@@ -5693,14 +6284,18 @@
         card.dataset.oreType = ore.type;
 
         // Fiyat değişim yüzdesini hesapla
-        const history = ore.priceHistory;
-        let changePercent = 0;
+        const history = this.getSafeOreMarketState(
+          ore,
+          ore.basePrice,
+        ).priceHistory;
+        let changePercent = null;
         let isUp = true;
         if (history.length >= 2) {
           const prev = history[history.length - 2];
           const curr = history[history.length - 1];
-          changePercent = ((curr - prev) / prev) * 100;
-          isUp = changePercent >= 0;
+          const percent = ((curr - prev) / prev) * 100;
+          if (Number.isFinite(percent)) changePercent = percent;
+          isUp = curr >= prev;
         }
 
         // Ore icon
@@ -5716,6 +6311,11 @@
         const nameSpan = document.createElement("span");
         nameSpan.className = "market-ore-name";
         nameSpan.textContent = ore.type;
+        card.title =
+          `Reference: ${this.formatNumber(this.getOreReferencePrice(ore))} donuts. ` +
+          (this.isOreTransitionQuote(ore)
+            ? "Transition quote: sell only while returning to the normal range."
+            : "Prices fluctuate around this reference; Copper is most stable, Diamond most volatile.");
 
         // Sparkline canvas
         const canvas = document.createElement("canvas");
@@ -5736,14 +6336,17 @@
         donutIcon.className = "donut-money-icon";
 
         const priceText = document.createElement("span");
-        priceText.textContent = this.formatNumber(ore.price);
+        priceText.textContent =
+          Number.isFinite(ore.price) && ore.price > 0
+            ? this.formatNumber(ore.price)
+            : "Unavailable";
         priceText.className = isUp ? "price-up" : "price-down";
 
         priceDiv.appendChild(donutIcon);
         priceDiv.appendChild(priceText);
 
         // Fiyat değişimi badge
-        if (history.length >= 2) {
+        if (changePercent !== null) {
           const changeSpan = document.createElement("span");
           changeSpan.className = `price-change ${isUp ? "price-change-up" : "price-change-down"}`;
           changeSpan.textContent = `${isUp ? "+" : ""}${changePercent.toFixed(1)}%`;
@@ -5823,28 +6426,47 @@
       ctx.fillStyle = gradient;
       ctx.fill();
     }
-    updateMarketPrices() {
+    updateMarketPrices(random = Math.random) {
       if (this.items.mine.count <= 0) return;
 
       this.oreTypes.forEach((ore) => {
-        // Trend random walk: yavaşça kayar, fiyat bir yöne gidince devam eder
-        const trendDrift = (Math.random() - 0.5) * 0.4;
+        Object.assign(ore, this.getSafeOreMarketState(ore, ore.basePrice));
+        // Retain trend memory, with 15% mean reversion in log-price space.
+        const trendDrift = (random() - 0.5) * 0.4;
         ore.trend = Math.max(-1, Math.min(1, ore.trend * 0.85 + trendDrift));
 
         // Fiyat değişimi = trend yönü + rastgele gürültü (ore'a özel volatilite)
-        const noise = (Math.random() - 0.5) * ore.volatility;
+        const noise = (random() - 0.5) * ore.volatility;
         const trendEffect = ore.trend * ore.volatility * 0.7;
         const changeFactor = trendEffect + noise;
 
-        // Minimum fiyat koruması (basePrice'ın %20'si)
-        const minPrice = ore.basePrice * 0.2;
-        ore.price = Math.max(minPrice, ore.price * (1 + changeFactor));
+        const reference = this.getOreReferencePrice(ore);
+        const logReference = Math.log(reference);
+        const candidate = Math.exp(
+          logReference +
+            0.85 * (Math.log(ore.price) - logReference) +
+            changeFactor,
+        );
+        if (Number.isFinite(candidate) && candidate > 0) {
+          if (this.isOreTransitionQuote(ore)) {
+            // Grandfather legacy holdings: no load-time haircut or growing old
+            // outliers. Run off toward the ordinary band by at most 5%/cycle.
+            ore.price =
+              ore.price > reference
+                ? Math.max(ore.price * 0.95, Math.min(ore.price, candidate))
+                : Math.min(ore.price * 1.05, Math.max(ore.price, candidate));
+          } else {
+            const bounded = Math.max(
+              reference * 0.5,
+              Math.min(reference * 2.5, candidate),
+            );
+            if (Number.isFinite(bounded) && bounded > 0) ore.price = bounded;
+          }
+        }
 
         // Fiyat geçmişini kaydet (max 20 nokta)
         ore.priceHistory.push(ore.price);
-        if (ore.priceHistory.length > 20) {
-          ore.priceHistory.shift();
-        }
+        ore.priceHistory = ore.priceHistory.slice(-20);
       });
 
       // Trade limitini her döngüde sıfırla
@@ -5906,53 +6528,106 @@
         card.classList.toggle("sell-hover", this.isSelling);
       });
     }
+    transactOres(quantities, buying = false) {
+      this.settleBeforeMutation();
+      // One call is one market action. Only sales may batch multiple units.
+      const allowance = this.orePurchaseLimit;
+      if (
+        !Number.isInteger(allowance) ||
+        allowance < 1 ||
+        allowance > 10 ||
+        !quantities ||
+        Array.isArray(quantities)
+      )
+        return false;
+      const changes = [];
+      let units = 0,
+        value = 0;
+      for (const [type, quantity] of Object.entries(quantities)) {
+        const ore = this.oreTypes.find((o) => o.type === type);
+        const stock = this.ores[type]?.count;
+        if (
+          !ore ||
+          !Number.isInteger(quantity) ||
+          quantity <= 0 ||
+          !Number.isInteger(stock) ||
+          stock < 0 ||
+          !Number.isFinite(ore.price) ||
+          ore.price <= 0
+        )
+          return false;
+        if (buying && (quantity !== 1 || this.isOreTransitionQuote(ore)))
+          return false;
+        const nextStock = stock + (buying ? quantity : -quantity);
+        if (
+          !Number.isInteger(nextStock) ||
+          nextStock < 0 ||
+          Math.abs(nextStock - stock) !== quantity
+        )
+          return false;
+        units += quantity;
+        value += ore.price * quantity;
+        changes.push({ type, count: nextStock });
+      }
+      const balance = this.donutCount;
+      const nextBalance = balance + (buying ? -value : value);
+      if (
+        !units ||
+        !Number.isFinite(units) ||
+        (buying && units !== 1) ||
+        !Number.isFinite(value) ||
+        value <= 0 ||
+        !Number.isFinite(balance) ||
+        balance < 0 ||
+        !Number.isFinite(nextBalance) ||
+        nextBalance < 0 ||
+        (buying ? nextBalance >= balance : nextBalance <= balance)
+      )
+        return false;
+      if (buying) this.donutCount = nextBalance;
+      else if (!this.creditDonuts(value, false)) return false;
+      for (const change of changes) this.ores[change.type].count = change.count;
+      this.orePurchaseLimit--;
+      return { units, value };
+    }
+
     handleMarketTransaction(oreType) {
       const ore = this.oreTypes.find((o) => o.type === oreType);
       if (!ore) return;
 
-      const orePrice = ore.price;
-
       if (this.orePurchaseLimit <= 0) {
-        this.showTransactionError("No trades left! Wait for next cycle.");
+        this.showTransactionError(
+          "No market actions left! Wait for next cycle.",
+        );
         return;
       }
 
-      if (this.isBuying) {
-        if (this.donutCount >= orePrice) {
-          this.donutCount -= orePrice;
-          this.ores[oreType].count++;
-          this.orePurchaseLimit--;
-          this.updatePurchaseLimitBadge();
-          this.updateDisplay();
-          this.updateOreList();
-        } else {
-          this.showTransactionError("Not enough donuts!");
-        }
-      } else if (this.isSelling) {
-        if (this.ores[oreType].count > 0) {
-          this.donutCount += orePrice;
-          this.ores[oreType].count--;
-          this.orePurchaseLimit--;
-          this.updatePurchaseLimitBadge();
-          this.updateDisplay();
-          this.updateOreList();
-        } else {
-          // Liste öğesine geçici bir efekt ekle
-          const listItem = document.querySelector(
-            `#marketList .market-ore-card[data-ore-type="${oreType}"]`,
-          );
-          if (listItem) {
-            listItem.classList.add("shake-error");
-            setTimeout(() => listItem.classList.remove("shake-error"), 500);
-          }
-        }
+      if (!this.isBuying && !this.isSelling) return;
+      if (this.isBuying && this.isOreTransitionQuote(ore)) {
+        this.showTransactionError(
+          "This legacy quote is sell only while returning to the normal market range.",
+        );
+        return;
       }
+      if (!this.transactOres({ [oreType]: 1 }, this.isBuying)) {
+        this.showTransactionError(
+          "Trade could not be completed. Check funds, stock and market price.",
+        );
+        return;
+      }
+      this.updatePurchaseLimitBadge();
+      this.updateDisplay();
+      this.updateOreList();
+      this.requestSave();
     }
 
     updatePurchaseLimitBadge() {
+      if (!this.canPresent()) return;
       const badge = document.getElementById("remainingChances");
       if (badge) {
         badge.textContent = `${this.orePurchaseLimit} / 10`;
+        badge.title =
+          "Market actions remaining. Buy one, Sell one or Sell All each costs one action.";
       }
     }
 
@@ -6121,8 +6796,7 @@
           this.updatePurchaseLimitBadge();
         } else if (type === "baker") {
           this.updateIngredientList();
-          this.setupRecipeBook(); // Yeni eklenen
-          this.updateCraftButton(); // Yeni eklenen
+          this.setupRecipeBook();
         } else if (type === "farm") {
           this.updateFarmDisplay();
         }
@@ -6209,7 +6883,8 @@
       infoPanel.style.display = "none";
     }
     showItemInfo(itemKey) {
-      if (window.innerWidth <= 764) return;
+      if (!this.canPresent() || window.innerWidth <= 764) return;
+      this._hideItemInfo?.();
 
       const item = this.items[itemKey];
       const itemInfoPanel = document.getElementById("item-info-panel");
@@ -6268,7 +6943,8 @@
       };
 
       const updateItemInfo = () => {
-        let currentProduction = item.production;
+        const production = this.getProductionBreakdown();
+        const currentProduction = production.buildings[itemKey].perUnit;
 
         const ownedText = `Owned: ${item.count}`;
         if (featureCache.owned !== ownedText) {
@@ -6276,8 +6952,12 @@
           featureCache.owned = ownedText;
         }
 
-        const costColor = this.donutCount >= item.baseCost ? "#6f6" : "red";
-        const formattedCost = this.formatNumber(item.baseCost, "cost");
+        const purchaseCost = this.getBulkPricePreview(
+          itemKey,
+          this.purchaseAmount,
+        );
+        const costColor = this.donutCount >= purchaseCost ? "#6f6" : "red";
+        const formattedCost = this.formatNumber(purchaseCost, "cost");
         if (
           featureCache.cost !== formattedCost ||
           featureCache.costColor !== costColor
@@ -6290,7 +6970,7 @@
           featureCache.costColor = costColor;
         }
 
-        const itemProduction = item.count * currentProduction;
+        const itemProduction = production.buildings[itemKey].effectiveCPS;
         const formattedCurrentProduction = this.formatNumber(
           currentProduction,
           "perSecond",
@@ -6299,7 +6979,7 @@
           itemProduction < 1000
             ? this.formatNumber(itemProduction, "perSecond")
             : this.formatNumber(itemProduction, "count");
-        const totalProduction = this.calculatePerSecond();
+        const totalProduction = production.effectiveCPS;
 
         // Contributing yüzdesini hesapla
         let percentageOfTotal = 0;
@@ -6376,6 +7056,10 @@
       const UPDATE_INTERVAL = this.isMobile ? 320 : 220;
 
       const tick = (timestamp) => {
+        if (!this.canPresent()) {
+          hidePanel();
+          return;
+        }
         if (timestamp - lastUpdate >= UPDATE_INTERVAL) {
           updateItemInfo();
           lastUpdate = timestamp;
@@ -6412,8 +7096,10 @@
         cancelAnimationFrame(frameRequest);
         itemInfoPanel.style.display = "none";
         storeItem.removeEventListener("mouseleave", hidePanel);
+        if (this._hideItemInfo === hidePanel) this._hideItemInfo = null;
       };
 
+      this._hideItemInfo = hidePanel;
       storeItem.addEventListener("mouseleave", hidePanel);
     }
     calculatePrestigeThreshold(prestigeCount = 0) {
@@ -6427,9 +7113,17 @@
       return this.totalDonutsEarned >= this.nextPrestigeThreshold;
     }
     resetRunStateForPrestige() {
+      this.invalidateProductionSnapshot();
+      this.timeState.mineProgress = 0;
+      this.timeState.bakerProgress = 0;
+      this.lastUpdateTime = this.timeState.settledAt;
+      this.oreMarket = null;
       this.workers = [];
+      this.updateWorkerCount();
       this.bakers = [];
       this.ingredients = {};
+      this.reconcileBakerWorkers();
+      this.updateIngredientList();
       this.ores = this.oreTypes.reduce((acc, ore) => {
         acc[ore.type] = { count: 0 };
         return acc;
@@ -6440,13 +7134,24 @@
         ore.trend = 0;
       });
       this.orePurchaseLimit = 10;
+      const mastery = { ...this.farmState.mastery };
       this.farmState = this.createDefaultFarmState();
+      this.farmState.mastery = mastery;
       this.farmNextAnimalId = 1;
-      this.lastBakerProduction = Date.now();
-      this.lastMineProduction = Date.now();
+      this._breedSelection = {};
+      this._breedProgram = "quick";
+      this._expandedAnimalTypes = {};
+      const barn = document.getElementById("farm-animal-grid");
+      if (barn) barn.innerHTML = "";
+      const breeding = document.getElementById("farm-breeding-slots");
+      if (breeding) delete breeding.dataset.rendered;
+      this.updateFarmMasteryBadge();
+      this.lastBakerProduction = this.timeState.settledAt;
+      this.lastMineProduction = this.timeState.settledAt;
       this.closePanel();
     }
     updatePrestigeBar() {
+      if (!this.canPresent()) return;
       const prestigeBarFill = document.getElementById("prestigeBarFill");
       const prestigePoints = document.getElementById("prestigePoints");
       const nextPrestigeText = document.getElementById("nextPrestigeThreshold");
@@ -6469,6 +7174,7 @@
       )} donuts`;
     }
     performPrestige() {
+      this.settleBeforeMutation();
       if (!this.canPrestige()) return;
 
       this.prestigeCount++;
@@ -6490,7 +7196,6 @@
 
       this.donutCount = 0;
       this.totalDonutsEarned = 0;
-      this.totalPerSecond = 0;
       this.totalClicks = 0;
       this.nextPrestigeThreshold = this.calculatePrestigeThreshold(
         this.prestigeCount,
@@ -6504,15 +7209,8 @@
         questsCompleted: 0,
       };
 
-      // Update prestige multiplier source
-      this.multiplierSources.prestige = Math.pow(
-        this.prestigeMultiplier,
-        this.prestigeCount,
-      );
-
       // Reset multiplier state
       this.multiplierState = { active: null, queued: null };
-      this.multiplierSources.questBuff = 1;
       this.activeMultipliers = [];
 
       // Reset milestone quests (run-based)
@@ -6530,7 +7228,9 @@
       this.clearUpgradeList();
       this.updatePrestigeBar();
       this.updateDisplay();
+      this.invalidateProductionSnapshot();
       this.updateTotalPerSecond();
+      this.saveGame({ silent: true });
     }
     setupPrestigeModal() {
       const prestigeModal = document.getElementById("prestigeModal");
@@ -6578,7 +7278,7 @@
 
       return this.upgrades.donutUpgrades.reduce((multiplier, upgrade) => {
         if (!upgrade.purchased) return multiplier;
-        return multiplier * upgrade.multiplier;
+        return multiplier * this.economicFactor(upgrade.multiplier);
       }, 1);
     }
 
@@ -6649,67 +7349,51 @@
     getRandomDistance() {
       return Math.floor(Math.random() * 20) + 10;
     }
-    calculateOfflineEarnings(lastActiveTime) {
+    restoreTimeState(saved) {
       const now = Date.now();
-      let offlineTime = now - lastActiveTime;
-
-      // Limit kontrolü (12 saat)
-      if (offlineTime > this.MAX_OFFLINE_TIME) {
-        offlineTime = this.MAX_OFFLINE_TIME;
-      }
-
-      // Minimum 1 dakika geçmiş olmalı
-      if (offlineTime < 60000) return;
-
-      const offlineSeconds = offlineTime / 1000;
-      const earnings =
-        offlineSeconds * this.totalPerSecond * this.OFFLINE_EFFICIENCY;
-
-      // Offline farm production at 25% efficiency
-      if (this.farmState && this.getFarmCount() >= 1) {
-        const offlineFarmSeconds = offlineSeconds * this.OFFLINE_EFFICIENCY;
-        for (const [type, def] of Object.entries(this.farmAnimalDefs)) {
-          const animals = this.farmState.animals.filter((a) => a.type === type);
-          if (animals.length === 0) continue;
-          const good = def.good;
-          const cap = this.getEffectiveStorageCap(good);
-          const baseRate = animals.length / def.prodInterval;
-          const produced = baseRate * offlineFarmSeconds;
-          this.farmState.storage[good] = Math.min(
-            this.farmState.storage[good] + produced,
-            cap,
-          );
-        }
-        // Offline breeding progresses at 100%
-        for (const slot of this.farmState.breeding.slots) {
-          if (slot.active) {
-            slot.progress += offlineSeconds;
-            if (slot.progress >= slot.duration) {
-              this.completeBreeding(
-                this.farmState.breeding.slots.indexOf(slot),
+      if (saved.timeState) this.timeState = { ...saved.timeState };
+      else {
+        const at = saved.lastActiveTime ?? now;
+        this.timeState = this.createTimeState(at);
+        this.timeState.randomState =
+          parseInt(this.generateChecksum(saved), 36) >>> 0 || 1;
+        this.timeState.mineProgress =
+          saved.lastMineProduction === undefined
+            ? 0
+            : Math.max(
+                0,
+                Math.min(
+                  this.workerProductionInterval - 0.001,
+                  at - saved.lastMineProduction,
+                ),
               );
-            }
-          }
-        }
-        // Offline contracts at 25% speed
-        const offlineContracts = [...this.farmState.contracts.active];
-        for (const contract of offlineContracts) {
-          contract.elapsed += offlineFarmSeconds;
-          if (contract.elapsed >= contract.duration) {
-            try {
-              this.completeContract(contract);
-            } catch (e) {
-              console.error("[Farm] offline contract error:", e);
-            }
-          }
-        }
+        this.timeState.bakerProgress =
+          saved.lastBakerProduction === undefined
+            ? 0
+            : Math.max(
+                0,
+                Math.min(
+                  this.bakerProductionInterval - 0.001,
+                  at - saved.lastBakerProduction,
+                ),
+              );
       }
+      if (!this.timeState.inactive) this.timeState.inactiveElapsed = 0;
+      this.timeState.inactive = true;
+      const gap = Math.max(0, now - this.timeState.settledAt);
+      this._timeMonotonic = performance.now();
+      const earnings = this.settleTime(now);
+      this.timeState.inactive = document.visibilityState === "hidden";
+      if (!this.timeState.inactive) this.timeState.inactiveElapsed = 0;
+      this._timeMonotonic = performance.now();
+      // Notification threshold is presentation only; even short gaps are credited.
+      if (gap >= 60000 && earnings > 0)
+        this.showOfflineModal(Math.min(gap, this.MAX_OFFLINE_TIME), earnings);
+    }
 
-      if (earnings > 0) {
-        this.donutCount += earnings;
-        this.totalDonutsEarned += earnings;
-        this.showOfflineModal(offlineTime, earnings);
-      }
+    calculateOfflineEarnings() {
+      // Compatibility adapter: never backdate or independently replay a checkpoint.
+      return this.settleTime();
     }
 
     showOfflineModal(offlineTime, earnings) {
@@ -6843,6 +7527,7 @@
       return result || number.toString();
     }
     updateTitleWithDonuts() {
+      if (!this.canPresent()) return;
       if (!this.hasDonutClicked) return;
       document.title = `${this.formatNumber(
         this.donutCount,
@@ -6850,46 +7535,47 @@
     }
 
     updateStatsDisplay() {
-      // DOM elementlerini bir kere seç
-      const elements = {
-        totalDonuts: document.getElementById("total-donuts"),
-        donutsProduced: document.getElementById("donuts-produced"),
-        totalItems: document.getElementById("total-items"),
-        donutsPerSecond: document.getElementById("donuts-per-second"),
-        clickValue: document.getElementById("click-value"),
-        totalClicks: document.getElementById("total-clicks"),
-      };
+      if (!this.canPresent() || !this.isStatsPanelOpen()) return;
+      return this.withProductionSnapshot(() => {
+        // DOM elementlerini bir kere seç
+        const elements = {
+          totalDonuts: document.getElementById("total-donuts"),
+          donutsProduced: document.getElementById("donuts-produced"),
+          totalItems: document.getElementById("total-items"),
+          donutsPerSecond: document.getElementById("donuts-per-second"),
+          clickValue: document.getElementById("click-value"),
+          totalClicks: document.getElementById("total-clicks"),
+        };
 
-      // Değerleri hesapla
-      const totalItems = Object.values(this.items).reduce(
-        (acc, item) => acc + item.count,
-        0,
-      );
-      this.lastClickValue = this.calculateClickValue();
+        // Değerleri hesapla
+        const totalItems = Object.values(this.items).reduce(
+          (acc, item) => acc + item.count,
+          0,
+        );
+        this.lastClickValue = this.calculateClickValue();
 
-      // Tek seferde DOM güncellemelerini yap
-      const updates = {
-        totalDonuts: this.donutCount,
-        donutsProduced: this.totalDonutsEarned,
-        totalItems: totalItems,
-        donutsPerSecond: this.totalPerSecond,
-        clickValue: this.lastClickValue,
-        totalClicks: this.totalClicks,
-      };
-      const formatTypes = {
-        totalDonuts:
-          this.donutCount < 1000 && this.totalPerSecond < 10
-            ? "perSecond"
-            : "count",
-        donutsProduced: this.totalDonutsEarned < 1000 ? "perSecond" : "count",
-        totalItems: "count",
-        donutsPerSecond: "perSecond",
-        clickValue: "perSecond",
-        totalClicks: "count",
-      };
+        // Tek seferde DOM güncellemelerini yap
+        const updates = {
+          totalDonuts: this.donutCount,
+          donutsProduced: this.totalDonutsEarned,
+          totalItems: totalItems,
+          donutsPerSecond: this.totalPerSecond,
+          clickValue: this.lastClickValue,
+          totalClicks: this.totalClicks,
+        };
+        const formatTypes = {
+          totalDonuts:
+            this.donutCount < 1000 && this.totalPerSecond < 10
+              ? "perSecond"
+              : "count",
+          donutsProduced: this.totalDonutsEarned < 1000 ? "perSecond" : "count",
+          totalItems: "count",
+          donutsPerSecond: "perSecond",
+          clickValue: "perSecond",
+          totalClicks: "count",
+        };
 
-      // RAF kullanarak DOM güncellemelerini yap
-      requestAnimationFrame(() => {
+        // Already a paced/open-view request; write current values without a RAF queue.
         for (const [key, value] of Object.entries(updates)) {
           if (elements[key]) {
             elements[key].textContent = this.formatNumber(
@@ -6898,11 +7584,15 @@
             );
           }
         }
-      });
+      }, this.getGameTime());
     }
 
     // Notification yönetimi için yeni bir sınıf özelliği
     _showNotification(message, duration = 3000, options = {}) {
+      if (!this.canPresent()) {
+        if (options.storageWarning) this._pendingStorageWarning = message;
+        return;
+      }
       if (!this._notificationQueue) {
         this._notificationQueue = [];
       }
@@ -6956,7 +7646,12 @@
           }
         };
 
-        requestAnimationFrame(() => {
+        this._notificationFrame = requestAnimationFrame(() => {
+          this._notificationFrame = null;
+          if (!this.canPresent()) {
+            this._notificationActive = false;
+            return;
+          }
           document.body.appendChild(notification);
           notification.style.opacity = "1";
           notification.style.transform = "translateY(0)";
@@ -7011,48 +7706,54 @@
     }
 
     updateActiveMultiplierDisplay() {
-      requestAnimationFrame(() => {
-        const display = document.getElementById("active-multiplier-display");
-        if (display) {
-          display.textContent = `Active Multiplier: ${this.productionMultiplier.toFixed(
-            2,
-          )}x`;
-        }
-      });
+      if (!this.canPresent()) return;
+      const display = document.getElementById("active-multiplier-display");
+      if (display) {
+        display.textContent = `Active Multiplier: ${this.getProductionModifiers().temporaryMultiplier.toFixed(
+          2,
+        )}x`;
+      }
     }
 
     sellAllOres() {
-      const sales = this.oreTypes.reduce(
-        (acc, ore) => {
-          const count = this.ores[ore.type]?.count || 0;
-          if (count > 0) {
-            const earnings = ore.price * count;
-            this.ores[ore.type].count = 0;
-            return {
-              earnings: acc.earnings + earnings,
-              count: acc.count + count,
-            };
-          }
-          return acc;
-        },
-        { earnings: 0, count: 0 },
-      );
-
-      if (sales.count > 0) {
-        this.donutCount += sales.earnings;
-        this.showNotification(
-          `Sold ${this.formatNumber(sales.count)} ores for ${this.formatNumber(
-            sales.earnings,
-          )} donuts!`,
+      this.settleBeforeMutation();
+      if (this.orePurchaseLimit <= 0) {
+        this.showTransactionError(
+          "No market actions left! Wait for next cycle.",
         );
-
-        requestAnimationFrame(() => {
-          this.updateDisplay();
-          this.updateOreList();
-        });
-      } else {
-        this.showNotification("No ores to sell!");
+        return false;
       }
+      const quantities = {};
+      // Full liquidation in visible ore order, prepared/credited as one action.
+      for (const ore of this.oreTypes) {
+        const count = this.ores[ore.type]?.count;
+        if (!Number.isInteger(count) || count < 0) {
+          this.showTransactionError(
+            "Ore inventory is invalid. No ores were sold.",
+          );
+          return false;
+        }
+        if (count > 0) quantities[ore.type] = count;
+      }
+      if (!Object.keys(quantities).length) {
+        this.showNotification("No ores to sell!");
+        return false;
+      }
+      const sale = this.transactOres(quantities);
+      if (!sale) {
+        this.showTransactionError(
+          "Sale could not be completed safely. Your ores and trades have been kept.",
+        );
+        return false;
+      }
+      this.showNotification(
+        `Sold ${this.formatNumber(sale.units)} ores for ${this.formatNumber(sale.value)} donuts! Used 1 market action.`,
+      );
+      this.updatePurchaseLimitBadge();
+      this.updateDisplay();
+      this.updateOreList();
+      this.requestSave();
+      return true;
     }
     getRandomBakeryName() {
       const randomIndex = Math.floor(Math.random() * this.bakeryNames.length);
@@ -7062,10 +7763,11 @@
       const bakeryNameElement = document.getElementById("bakery-name");
       if (bakeryNameElement) {
         // Eğer localStorage'da isim varsa onu kullan, yoksa rastgele bir isim ata VE kaydet
-        let savedName = localStorage.getItem("bakeryName");
+        let savedName =
+          this.readStorage("bakeryName").value || this.currentBakeryName;
         if (!savedName) {
           savedName = this.getRandomBakeryName() + "'s Bakery";
-          localStorage.setItem("bakeryName", savedName);
+          this.writeStorage("bakeryName", savedName);
         }
         this.currentBakeryName = savedName;
         bakeryNameElement.textContent = this.currentBakeryName;
@@ -7157,11 +7859,13 @@
 
       // Bu event listener'lar her iki modda da çalışmalı
       if (volumeSlider) {
+        volumeSlider.value = this.clickSounds[0].volume;
         volumeSlider.addEventListener("input", (event) => {
           const volume = event.target.value;
           this.clickSounds.forEach((sound) => {
             sound.volume = volume;
           });
+          this.requestSave();
         });
       }
 
@@ -7218,7 +7922,7 @@
       if (!popup || !closeBtn) return;
 
       // Check if user already closed it
-      if (localStorage.getItem("feedbackClosed") === "true") {
+      if (this.readStorage("feedbackClosed").value === "true") {
         popup.classList.add("hidden");
         return;
       }
@@ -7230,7 +7934,7 @@
 
       closeBtn.addEventListener("click", () => {
         popup.classList.add("hidden");
-        localStorage.setItem("feedbackClosed", "true");
+        this.writeStorage("feedbackClosed", "true");
       });
     }
 
@@ -7247,6 +7951,7 @@
           .trim();
         nameInput.value = currentName;
         requestAnimationFrame(() => {
+          if (!this.canPresent()) return;
           nameInput.focus();
           nameInput.select();
         });
@@ -7276,113 +7981,400 @@
         }
 
         // Kullanıcı isim değiştirdiğinde yeni ismi kaydet
-        localStorage.setItem("bakeryName", this.currentBakeryName);
+        this.writeStorage("bakeryName", this.currentBakeryName);
+        this.requestSave();
         this.closeChangeNameModal();
       }
     }
-    saveGame() {
-      // Sadece dinamik verileri seçerek kaydet (Save boyutu %90 küçülür)
-      const itemData = {};
-      for (let key in this.items) {
-        itemData[key] = {
-          count: this.items[key].count,
-          totalProduced: this.items[key].totalProduced,
-          baseCost: this.items[key].baseCost, // Fiyatı da saklayalım (opsiyonel ama güvenli)
-        };
-      }
-
-      const upgradeData = {};
-      for (let key in this.upgrades) {
-        upgradeData[key] = this.upgrades[key].map((u) => u.purchased);
-      }
-
-      // New quest system save data
-      const questSystemData = {
-        milestoneQuests: this.milestoneQuests,
-        dynamicSlots: {},
-        multiplierState: this.multiplierState,
-        questTracking: this.questTracking,
-        cpsHistory: this.cpsHistory.slice(-20), // Keep last 20 entries
-      };
-
-      // Save dynamic slots (serialize currentQuest and cooldownEnd)
-      for (const slotId of Object.keys(this.dynamicSlots)) {
-        const slot = this.dynamicSlots[slotId];
-        questSystemData.dynamicSlots[slotId] = {
-          currentQuest: slot.currentQuest,
-          cooldownEnd: slot.cooldownEnd,
-        };
-      }
-
-      // Legacy quest data for backward compatibility
-      const questData = {};
-      for (let key in this.quests) {
-        questData[key] = {
-          progress: this.quests[key].progress,
-          completed: this.quests[key].completed,
-          claimed: this.quests[key].claimed,
-        };
-      }
-
-      const recipeData = {};
-      for (let key in this.recipes) {
-        recipeData[key] = {
-          craftCount: this.recipes[key].craftCount || 0,
-          currentScaling: this.recipes[key].scaling?.ingredients?.current || 1,
-        };
-      }
-
-      const gameState = {
-        gameVersion: this.currentVersion,
-        items: itemData,
-        upgrades: upgradeData,
-        quests: questData,
-        questSystem: questSystemData, // New quest system
-        recipes: recipeData,
-        donutCount: this.donutCount,
-        totalDonutsEarned: this.totalDonutsEarned,
-        totalClicks: this.totalClicks,
-        prestigeCount: this.prestigeCount,
-        nextPrestigeThreshold: this.nextPrestigeThreshold,
-        ores: this.ores,
-        oreTypePrices: this.oreTypes.map((o) => ({
-          type: o.type,
-          price: o.price,
-          priceHistory: o.priceHistory,
-          trend: o.trend,
-        })),
-        workers: this.workers,
-        bakers: this.bakers,
-        ingredients: this.ingredients,
-        hasDonutClicked: this.hasDonutClicked,
-        productionMultiplier: this.productionMultiplier,
-        activeMultipliers: this.activeMultipliers,
-        currentBakeryName: this.currentBakeryName,
-        donutCoin: this.donutCoin,
-        farmState: this.farmState,
-        farmNextAnimalId: this.farmNextAnimalId,
-        lastActiveTime: Date.now(),
-      };
-
-      const secureData = this.encryptSave(gameState);
-      localStorage.setItem("gameState", secureData);
-      this.showGameSaved();
+    warnAboutStorage(key, message) {
+      if (this._storageWarnings.has(key)) return;
+      this._storageWarnings.add(key);
+      this.showNotification(message, 6000, { storageWarning: true });
     }
-    loadGame() {
-      const savedGame = localStorage.getItem("gameState");
-      if (savedGame) {
-        let gameState;
 
-        // Geriye dönük uyumluluk: Eğer veri { ile başlıyorsa eski düz JSON'dır
-        if (savedGame.startsWith("{")) {
-          gameState = JSON.parse(savedGame);
-        } else {
-          // Yeni şifreli format
-          gameState = this.decryptSave(savedGame);
+    readStorage(key) {
+      try {
+        return { ok: true, value: localStorage.getItem(key) };
+      } catch (error) {
+        this.warnAboutStorage(
+          "storage",
+          "Browser storage is unavailable. You can keep playing, but progress may not be saved.",
+        );
+        return { ok: false, value: null };
+      }
+    }
+
+    writeStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (error) {
+        this.warnAboutStorage(
+          "storage",
+          "Browser storage is unavailable. You can keep playing, but progress may not be saved.",
+        );
+        return false;
+      }
+    }
+
+    removeStorage(key) {
+      try {
+        localStorage.removeItem(key);
+        return true;
+      } catch (error) {
+        this.warnAboutStorage(
+          "storage",
+          "Browser storage is unavailable. You can keep playing, but progress may not be saved.",
+        );
+        return false;
+      }
+    }
+
+    requestSave(delay = 1000) {
+      if (
+        !this._saveReady ||
+        this.saveWritesBlocked ||
+        this._savingTimeSettlement
+      )
+        return;
+      const deadline = Date.now() + delay;
+      if (this._saveTimer !== null && this._saveDeadline <= deadline) return;
+      clearTimeout(this._saveTimer);
+      this._saveDeadline = deadline;
+      this._saveTimer = setTimeout(
+        () => this.saveGame({ silent: true }),
+        delay,
+      );
+    }
+
+    canPresent() {
+      return (
+        !this._presentationSuspended && document.visibilityState !== "hidden"
+      );
+    }
+
+    isStatsPanelOpen() {
+      const menu = document.getElementById("stats-menu");
+      return (
+        !!menu &&
+        (this.isMobile
+          ? menu.classList.contains("mobile-active")
+          : !menu.classList.contains("hidden"))
+      );
+    }
+
+    startPresentationPolling() {
+      if (!this.canPresent() || this._presentationTimers) return;
+      this._presentationTimers = [
+        setInterval(() => this.updateTitleWithDonuts(), 1000),
+        setInterval(() => this.updateStatsDisplay(), 5000),
+        setInterval(() => this.updateDonutCoinDisplay(), 1000),
+      ];
+    }
+
+    suspendPresentation() {
+      this._presentationSuspended = true;
+      for (const timer of this._presentationTimers || []) clearInterval(timer);
+      this._presentationTimers = null;
+      cancelAnimationFrame(this.gameLoopHandle);
+      this.gameLoopHandle = null;
+      cancelAnimationFrame(this._displayUpdateHandle);
+      this._displayUpdateHandle = null;
+      this._displayUpdateScheduled = false;
+      this._hideItemInfo?.();
+      if (this._notificationFrame != null) {
+        cancelAnimationFrame(this._notificationFrame);
+        this._notificationFrame = null;
+        this._notificationActive = false;
+      }
+      if (this._notificationQueue) this._notificationQueue.length = 0;
+      this._notificationOverflowCount = 0;
+    }
+
+    resumePresentation() {
+      if (!this._presentationSuspended || document.visibilityState === "hidden")
+        return;
+      this._presentationSuspended = false;
+      // Settlement has finished. Read only current state; no missed callbacks replay.
+      this.lastSlowUiUpdateTime =
+        this.lastFarmUiUpdateTime =
+        this.lastTimerUiUpdateTime =
+          -Infinity;
+      this._hudDirty = this._hudImmediate = true;
+      this.flushDisplay();
+      this.updateProductionDisplays(Date.now());
+      this.updateFarmCareDisplay();
+      this.updateFarmMasteryBadge();
+      const footerOpen =
+        this.footerContainer?.classList.contains("visible") &&
+        !this.footerContainer.classList.contains("hidden");
+      if (
+        footerOpen &&
+        !document.getElementById("mine-panel")?.classList.contains("hidden")
+      ) {
+        this.updateWorkerCount();
+        this.updateOreList();
+        this.updateMarketDisplay();
+        this.updatePurchaseLimitBadge();
+      }
+      if (
+        footerOpen &&
+        !document.getElementById("baker-panel")?.classList.contains("hidden")
+      ) {
+        this.updateBakerWorkerCount();
+        this.updateIngredientList();
+      }
+      this.refreshRecipeAvailability();
+      if (this.questsMenu && !this.questsMenu.classList.contains("hidden"))
+        this.updateQuestDisplay();
+      this.updateStatsDisplay();
+      this.updateDonutCoinDisplay();
+      this.updateTitleWithDonuts();
+      if (this._pendingStorageWarning) {
+        const warning = this._pendingStorageWarning;
+        this._pendingStorageWarning = null;
+        this.showNotification(warning, 6000, { storageWarning: true });
+      }
+      this.startPresentationPolling();
+      this.startGameLoop();
+    }
+
+    setupSaveLifecycle() {
+      const checkpoint = () => {
+        // visibilitychange and pagehide commonly arrive together.
+        if (this._saveTimer === null && Date.now() - this._lastSaveTime < 1000)
+          return;
+        this.saveGame({ silent: true });
+      };
+      const transition = (hidden) => {
+        // Suppress simulation-originated DOM writes on both sides of settlement.
+        this.suspendPresentation();
+        this.setTimeVisibility(hidden);
+        if (!hidden) this.resumePresentation();
+      };
+      const show = () => {
+        if (document.visibilityState === "hidden") transition(true);
+        else if (this._presentationSuspended) transition(false);
+        else this.setTimeVisibility(false);
+      };
+      if (document.visibilityState === "hidden") this.suspendPresentation();
+      document.addEventListener("visibilitychange", () => {
+        const hidden = document.visibilityState === "hidden";
+        if (hidden) transition(true);
+        else show();
+        if (hidden) checkpoint();
+      });
+      window.addEventListener("pagehide", () => {
+        transition(true);
+        checkpoint();
+      });
+      window.addEventListener("pageshow", show);
+    }
+
+    saveGame({ silent = false } = {}) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      this._saveDeadline = 0;
+      if (!this._saveReady) return false;
+      this._savingTimeSettlement = true;
+      try {
+        this.settleBeforeMutation();
+      } finally {
+        this._savingTimeSettlement = false;
+      }
+      if (this.saveWritesBlocked) {
+        this.warnAboutStorage(
+          "protected",
+          "Saving is paused to protect stored progress. Reload after restoring your save, or use Reset Game to start over.",
+        );
+        return false;
+      }
+
+      const primary = this.readStorage("gameState");
+      if (!primary.ok) return false;
+      // Optimistic guard: never replace a snapshot changed by another tab.
+      // It also notices legacy writers and resets, without requiring metadata.
+      if (primary.value !== this._loadedPrimarySave) {
+        this.saveWritesBlocked = true;
+        this.warnAboutStorage(
+          "protected",
+          "Stored progress changed in another tab. Saving in this tab is paused; reload to use the stored save.",
+        );
+        return false;
+      }
+
+      try {
+        // Sadece dinamik verileri seçerek kaydet (Save boyutu %90 küçülür)
+        const itemData = {};
+        for (let key in this.items) {
+          itemData[key] = {
+            count: this.items[key].count,
+            totalProduced: this.items[key].totalProduced,
+            baseCost: this.items[key].baseCost, // Fiyatı da saklayalım (opsiyonel ama güvenli)
+          };
         }
 
-        if (!gameState) return;
+        const upgradeData = {};
+        for (let key in this.upgrades) {
+          upgradeData[key] = this.upgrades[key].map((u) => u.purchased);
+        }
 
+        // New quest system save data
+        const questSystemData = {
+          milestoneQuests: this.milestoneQuests,
+          dynamicSlots: {},
+          multiplierState: this.multiplierState,
+          questTracking: this.questTracking,
+          cpsHistory: this.cpsHistory.slice(-20), // Keep last 20 entries
+        };
+
+        // Save dynamic slots (serialize currentQuest and cooldownEnd)
+        for (const slotId of Object.keys(this.dynamicSlots)) {
+          const slot = this.dynamicSlots[slotId];
+          questSystemData.dynamicSlots[slotId] = {
+            currentQuest: slot.currentQuest,
+            cooldownEnd: slot.cooldownEnd,
+          };
+        }
+
+        // Legacy quest data for backward compatibility
+        const questData = {};
+        for (let key in this.quests) {
+          questData[key] = {
+            progress: this.quests[key].progress,
+            completed: this.quests[key].completed,
+            claimed: this.quests[key].claimed,
+          };
+        }
+
+        const recipeData = {};
+        for (let key in this.recipes) {
+          recipeData[key] = {
+            craftCount: this.recipes[key].craftCount || 0,
+            currentScaling:
+              this.getRecipeScale(this.recipes[key]) ?? Number.MAX_VALUE,
+          };
+        }
+
+        const gameState = {
+          saveVersion: this.saveVersion,
+          gameVersion: this.currentVersion,
+          items: itemData,
+          upgrades: upgradeData,
+          quests: questData,
+          questSystem: questSystemData, // New quest system
+          recipes: recipeData,
+          donutCount: this.donutCount,
+          totalDonutsEarned: this.totalDonutsEarned,
+          totalClicks: this.totalClicks,
+          prestigeCount: this.prestigeCount,
+          nextPrestigeThreshold: this.nextPrestigeThreshold,
+          ores: this.ores,
+          oreMarket: this.oreMarket,
+          oreTypePrices: this.oreTypes.map((o) => ({
+            type: o.type,
+            price: o.price,
+            priceHistory: o.priceHistory,
+            trend: o.trend,
+          })),
+          workers: this.workers,
+          bakers: this.bakers,
+          ingredients: this.ingredients,
+          hasDonutClicked: this.hasDonutClicked,
+          productionMultiplier:
+            this.getProductionModifiers().temporaryMultiplier,
+          activeMultipliers: this.activeMultipliers,
+          currentBakeryName: this.currentBakeryName,
+          donutCoin: this.donutCoin,
+          farmState: this.farmState,
+          farmNextAnimalId: this.farmNextAnimalId,
+          autoBuyer: this.autoBuyer,
+          soundVolume: this.clickSounds[0].volume,
+          lastMineProduction: this.lastMineProduction,
+          lastBakerProduction: this.lastBakerProduction,
+          orePurchaseLimit: this.orePurchaseLimit,
+          lastActiveTime: this.timeState.settledAt,
+          timeState: { ...this.timeState },
+        };
+
+        const secureData = this.encryptSave(gameState);
+        if (!this.decodeSave(secureData)) {
+          this.warnAboutStorage(
+            "invalid-state",
+            "The current game could not be saved safely. Your previous saves have been kept.",
+          );
+          return false;
+        }
+        if (secureData === primary.value) {
+          this._lastSaveTime = Date.now();
+          if (!silent) this.showGameSaved();
+          return true;
+        }
+
+        if (this.decodeSave(primary.value)) {
+          const backup = this.readStorage("gameStateBackup");
+          if (!backup.ok) return false;
+          if (
+            backup.value !== primary.value &&
+            !this.writeStorage("gameStateBackup", primary.value)
+          ) {
+            return false; // Keep the primary if its backup cannot be secured.
+          }
+        }
+        if (!this.writeStorage("gameState", secureData)) return false;
+        this._loadedPrimarySave = secureData;
+        this._lastSaveTime = Date.now();
+        if (!silent) this.showGameSaved();
+        return true;
+      } catch (error) {
+        this.warnAboutStorage(
+          "invalid-state",
+          "The current game could not be saved safely. Your previous saves have been kept.",
+        );
+        return false;
+      }
+    }
+    loadGame() {
+      this.invalidateDerivedCaches();
+      this._saveReady = false;
+      const primary = this.readStorage("gameState");
+      this._loadedPrimarySave = primary.ok ? primary.value : undefined;
+      let gameState = primary.ok
+        ? this.decodeSave(primary.value, {
+            recoverMineState: true,
+            recoverBakerState: true,
+          })
+        : null;
+      let recovered = false;
+      if (!gameState) {
+        const backup = this.readStorage("gameStateBackup");
+        gameState = backup.ok
+          ? this.decodeSave(backup.value, {
+              recoverMineState: true,
+              recoverBakerState: true,
+            })
+          : null;
+        recovered = Boolean(gameState);
+        if (!gameState) {
+          this.saveWritesBlocked =
+            !primary.ok ||
+            !backup.ok ||
+            primary.value !== null ||
+            backup.value !== null;
+          this._saveReady = true;
+          if (this.saveWritesBlocked) {
+            this.warnAboutStorage(
+              "protected",
+              "Stored progress could not be loaded. Saving is paused to protect it; you can keep playing in memory.",
+            );
+          }
+          return false;
+        }
+      }
+
+      this.saveWritesBlocked = false;
+      this._questStateLoading = true;
+      try {
         // --- Verileri Giydirme (Merging) ---
 
         // Items yükle
@@ -7489,6 +8481,19 @@
               for (const [target, quest] of Object.entries(
                 qs.milestoneQuests.upgrades,
               )) {
+                if (
+                  !this.milestoneQuests.upgrades[target] &&
+                  [75, 100].includes(Number(target)) &&
+                  (quest.completed || quest.claimed)
+                ) {
+                  this.milestoneQuests.upgrades[target] = {
+                    id: `upgrades_${target}`,
+                    type: "upgrades",
+                    target: Number(target),
+                    tierIndex: target === "75" ? 9 : 10,
+                    retired: true,
+                  };
+                }
                 if (this.milestoneQuests.upgrades[target]) {
                   this.hydrateMilestoneQuestState(
                     this.milestoneQuests.upgrades[target],
@@ -7530,23 +8535,31 @@
 
           // Load multiplier state
           if (qs.multiplierState) {
-            this.multiplierState = qs.multiplierState;
-            // Update questBuff source from loaded state
-            this.multiplierSources.questBuff =
-              this.multiplierState.active?.amount || 1;
+            this.multiplierState = {
+              active: null,
+              queued: null,
+              ...qs.multiplierState,
+            };
           }
 
           // Load quest tracking
           if (qs.questTracking) {
-            this.questTracking = qs.questTracking;
+            this.questTracking = {
+              currentRun: {
+                ...this.questTracking.currentRun,
+                ...qs.questTracking.currentRun,
+              },
+              lifetime: {
+                ...this.questTracking.lifetime,
+                ...qs.questTracking.lifetime,
+              },
+            };
           }
 
           // Load CPS history
           if (qs.cpsHistory) {
             this.cpsHistory = qs.cpsHistory;
           }
-
-          this.freezeCompletedMilestoneRewards();
         }
         // Legacy quest migration (for old saves without questSystem)
         else if (gameState.quests) {
@@ -7560,12 +8573,8 @@
               const savedRecipe = gameState.recipes[key];
               this.recipes[key].craftCount = savedRecipe.craftCount || 0;
               if (this.recipes[key].scaling?.ingredients) {
-                const savedScaling =
-                  typeof savedRecipe.currentScaling === "number"
-                    ? savedRecipe.currentScaling
-                    : savedRecipe.scaling?.ingredients?.current;
                 this.recipes[key].scaling.ingredients.current =
-                  typeof savedScaling === "number" ? savedScaling : 1;
+                  this.getRecipeScale(this.recipes[key]) ?? Number.MAX_VALUE;
               }
             }
           }
@@ -7581,20 +8590,21 @@
         const minimumPrestigeThreshold = this.calculatePrestigeThreshold(
           this.prestigeCount,
         );
-        this.nextPrestigeThreshold = Math.max(
-          savedPrestigeThreshold,
-          minimumPrestigeThreshold,
+        // Undo V2's exact 10T curve on load, without changing earned progress or
+        // purchase flags. Other saved thresholds retain the pre-V2 max policy.
+        const v2PrestigeThreshold = Math.ceil(
+          10000000000000 * Math.pow(2, this.prestigeCount),
         );
+        this.nextPrestigeThreshold =
+          savedPrestigeThreshold === v2PrestigeThreshold
+            ? minimumPrestigeThreshold
+            : Math.max(savedPrestigeThreshold, minimumPrestigeThreshold);
         this.currentBakeryName =
           gameState.currentBakeryName || "My Awesome Bakery";
         this.hasDonutClicked = gameState.hasDonutClicked || false;
         this.productionMultiplier = gameState.productionMultiplier || 1;
         this.activeMultipliers = gameState.activeMultipliers || [];
-        this.multiplierSources.prestige = Math.pow(
-          this.prestigeMultiplier,
-          this.prestigeCount,
-        );
-        this.ores = gameState.ores || this.ores;
+        this.ores = { ...this.ores, ...gameState.ores };
 
         // Ore fiyatları ve geçmişini yükle
         if (gameState.oreTypePrices) {
@@ -7609,10 +8619,36 @@
         }
 
         this.workers = gameState.workers || [];
+        this.reconcileMineWorkers();
         this.bakers = gameState.bakers || [];
+        this.reconcileBakerWorkers();
         this.ingredients = gameState.ingredients || {};
-        this.lastBakerProduction = gameState.lastBakerProduction || Date.now();
-        this.lastMineProduction = gameState.lastMineProduction || Date.now();
+        this.lastBakerProduction = this.restoreProductionCheckpoint(
+          gameState,
+          "lastBakerProduction",
+          this.bakerProductionInterval,
+        );
+        this.lastMineProduction = this.restoreProductionCheckpoint(
+          gameState,
+          "lastMineProduction",
+          this.workerProductionInterval,
+        );
+        this.orePurchaseLimit = gameState.orePurchaseLimit ?? 10;
+        if (gameState.autoBuyer) {
+          this.autoBuyer.enabled = gameState.autoBuyer.enabled ?? false;
+          for (const key of Object.keys(this.autoBuyer.settings)) {
+            const saved = gameState.autoBuyer.settings?.[key];
+            if (saved)
+              this.autoBuyer.settings[key] = {
+                ...this.autoBuyer.settings[key],
+                ...saved,
+              };
+          }
+        }
+        const soundVolume = gameState.soundVolume ?? 0.1;
+        this.clickSounds.forEach((sound) => {
+          sound.volume = soundVolume;
+        });
         this.lastUpdateTime = Date.now(); // Bu satırda kalmalı.
 
         // Farm state yükle
@@ -7648,6 +8684,10 @@
           };
           this.farmState.careBonus =
             gameState.farmState.careBonus || defaults.careBonus;
+          this.farmState.collectCounts = {
+            ...defaults.collectCounts,
+            ...gameState.farmState.collectCounts,
+          };
           this.farmState.crates = gameState.farmState.crates || [];
           this.farmState.rumors = gameState.farmState.rumors || defaults.rumors;
           this.farmState.stats = {
@@ -7658,6 +8698,8 @@
         if (gameState.farmNextAnimalId) {
           this.farmNextAnimalId = gameState.farmNextAnimalId;
         }
+        this.restoreFarmCareCycles();
+        this.updateFarmMasteryBadge();
 
         // DonutCoin verilerini yükle
         this.donutCoin = gameState.donutCoin || {
@@ -7671,10 +8713,20 @@
         // totalPerSecond'ın doğru hesaplandığından emin ol
         this.updateTotalPerSecond();
 
+        this.fixBuildingCosts();
+        // Reference restoration waits for upgrades, recipes, prestige and mastery.
+        // Legacy quotes/history/holdings are preserved, including old outliers.
+        this.oreMarket = gameState.oreMarket || null;
+        if (!this.oreMarket) this.refreshOreMarketReference(true);
+        this._questStateLoading = false;
+        this.restoreQuestLifecycle(gameState.lastActiveTime);
+
+        // Freeze missing legacy rewards only after ALL economic state is hydrated.
+        // Existing frozen rewards remain unchanged; their policy is still stable CPS.
+        if (gameState.questSystem) this.freezeCompletedMilestoneRewards();
+
         // Çevrimdışı kazanç hesapla
-        if (gameState.lastActiveTime) {
-          this.calculateOfflineEarnings(gameState.lastActiveTime);
-        }
+        this.restoreTimeState(gameState);
 
         // UI ve Display güncellemeleri
         document.getElementById("bakery-name").textContent =
@@ -7687,10 +8739,36 @@
         this.showUpgrades();
         this.updatePrestigeBar();
         this.updateTotalPerSecond();
-
-        // Fiyat Düzeltme Yaması (Save Bug Fix)
-        this.fixBuildingCosts();
+      } catch (error) {
+        this._questStateLoading = false;
+        this.saveWritesBlocked = true;
+        this.warnAboutStorage(
+          "protected",
+          "Stored progress could not be fully loaded. Saving is paused to protect your saves.",
+        );
+        this._saveReady = true;
+        return false;
       }
+      this._saveReady = true;
+      if (recovered)
+        this.showNotification(
+          "Your backup save was loaded. The backup has been kept.",
+          6000,
+        );
+      return true;
+    }
+
+    restoreProductionCheckpoint(gameState, key, interval) {
+      const checkpoint = gameState[key];
+      if (checkpoint === undefined) return Date.now();
+      if (!gameState.saveVersion) return checkpoint || Date.now();
+      // Preserve the saved cycle position. Closed sessions still do not produce
+      // ore/ingredients; their existing offline rules are unchanged.
+      const elapsed = Math.max(
+        0,
+        Math.min(interval, gameState.lastActiveTime - checkpoint),
+      );
+      return Date.now() - elapsed;
     }
 
     fixBuildingCosts() {
@@ -7706,29 +8784,483 @@
     }
 
     rebuildItemProductionsFromSaveState() {
-      const prestigeMultiplier = Math.pow(
-        this.prestigeMultiplier,
-        this.prestigeCount || 0,
+      this.invalidateProductionSnapshot();
+      // Old saves stored mutated rates; current definitions + ownership are canonical.
+      this.updateTotalPerSecond();
+    }
+    hasSafeSaveKeys(value) {
+      if (value === null || typeof value !== "object") return true;
+      return Object.entries(value).every(
+        ([key, entry]) =>
+          !["__proto__", "constructor", "prototype"].includes(key) &&
+          this.hasSafeSaveKeys(entry),
       );
+    }
 
-      for (const [itemKey, item] of Object.entries(this.items)) {
-        const baseProduction =
-          this.baseItemProductions[itemKey] ?? item.originalProduction;
-        item.originalProduction = baseProduction * prestigeMultiplier;
+    recoverMineSaveData(data) {
+      if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+      const recovered = { ...data };
+      if (
+        data.oreMarket !== undefined &&
+        data.oreMarket !== null &&
+        !this.isValidOreMarketReference(data.oreMarket)
+      ) {
+        recovered.oreMarket = null;
+      }
+      if (
+        data.ores &&
+        typeof data.ores === "object" &&
+        !Array.isArray(data.ores)
+      ) {
+        recovered.ores = Object.fromEntries(
+          Object.entries(data.ores).map(([type, entry]) => [
+            type,
+            {
+              ...(entry && typeof entry === "object" && !Array.isArray(entry)
+                ? entry
+                : {}),
+              count: this.normalizeOreCount(entry?.count),
+            },
+          ]),
+        );
+      }
+      if (Array.isArray(data.oreTypePrices)) {
+        recovered.oreTypePrices = data.oreTypePrices.map((entry) => {
+          const definition = this.oreTypes.find(
+            (ore) => ore.type === entry?.type,
+          );
+          return definition
+            ? {
+                ...entry,
+                ...this.getSafeOreMarketState(entry, definition.basePrice),
+              }
+            : entry;
+        });
+      }
+      return recovered;
+    }
 
-        if (itemKey !== "cursor" && this.upgrades[itemKey]) {
-          this.upgrades[itemKey].forEach((upgrade) => {
-            if (upgrade.purchased && !upgrade.specialEffect) {
-              item.originalProduction *= upgrade.multiplier;
-            }
-          });
-        }
+    recoverBakerSaveData(data) {
+      if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+      const recovered = { ...data };
+      if (
+        data.ingredients &&
+        typeof data.ingredients === "object" &&
+        !Array.isArray(data.ingredients)
+      ) {
+        recovered.ingredients = Object.fromEntries(
+          Object.entries(data.ingredients).map(([type, entry]) => [
+            type,
+            {
+              ...(entry && typeof entry === "object" && !Array.isArray(entry)
+                ? entry
+                : {}),
+              count:
+                typeof entry?.count === "number" &&
+                Number.isFinite(entry.count) &&
+                entry.count >= 0
+                  ? Math.floor(entry.count)
+                  : 0,
+            },
+          ]),
+        );
+      }
+      return recovered;
+    }
 
-        item.production = item.originalProduction;
+    decodeSave(
+      raw,
+      { recoverMineState = false, recoverBakerState = false } = {},
+    ) {
+      if (typeof raw !== "string" || !raw.trim()) return null;
+      try {
+        const text = raw.trim();
+        // Keep both historical plain JSON and the existing v2 checksum envelope.
+        let data = text.startsWith("{")
+          ? JSON.parse(text)
+          : this.decryptSave(text);
+        // Verify the historical checksum BEFORE targeted load-only repairs.
+        // Strict candidate/backup validation never repairs an invalid stored slot.
+        if (!this.hasSafeSaveKeys(data)) return null;
+        if (recoverMineState) data = this.recoverMineSaveData(data);
+        if (recoverBakerState) data = this.recoverBakerSaveData(data);
+        return this.isValidSaveData(data) ? data : null;
+      } catch (error) {
+        return null;
       }
     }
 
-    // --- Save Güvenlik Metotları ---
+    isValidSaveData(data) {
+      // Validate data consumed by the loader/simulation, not static content or
+      // game balance. Missing legacy fields retain their existing defaults.
+      const object = (v) =>
+        v !== null && typeof v === "object" && !Array.isArray(v);
+      const number = (v) => typeof v === "number" && Number.isFinite(v);
+      const count = (v) => number(v) && v >= 0;
+      const integer = (v) => count(v) && Number.isInteger(v);
+      const positive = (v) => number(v) && v > 0;
+      const string = (v) => typeof v === "string";
+      const boolean = (v) => typeof v === "boolean";
+      const nullable = (check) => (v) => v === null || check(v);
+      const array = (check) => (v) => Array.isArray(v) && v.every(check);
+      const record = (check) => (v) =>
+        object(v) && Object.values(v).every(check);
+      const fields = (v, rules) =>
+        object(v) &&
+        Object.entries(rules).every(
+          ([key, check]) => v[key] === undefined || check(v[key]),
+        );
+      const safeJSON = (v) => {
+        if (typeof v === "number") return number(v);
+        if (v === null || typeof v !== "object") return true;
+        return Object.values(v).every(safeJSON);
+      };
+      if (
+        !object(data) ||
+        !this.hasSafeSaveKeys(data) ||
+        !safeJSON(data) ||
+        !count(data.donutCount) ||
+        !object(data.items)
+      )
+        return false;
+      if (
+        !Object.keys(data.items).some((key) => Object.hasOwn(this.items, key))
+      )
+        return false;
+      if (
+        !record(
+          (item) =>
+            object(item) &&
+            integer(item.count) &&
+            fields(item, {
+              totalProduced: count,
+              baseCost: count,
+            }),
+        )(data.items)
+      )
+        return false;
+      if (
+        data.saveVersion !== undefined &&
+        ![0, this.saveVersion].includes(data.saveVersion)
+      )
+        return false;
+
+      const milestone = (v) =>
+        fields(v, {
+          progress: count,
+          completed: boolean,
+          claimed: boolean,
+          frozenReward: nullable(count),
+          completionTime: nullable(count),
+        });
+      const timedMultiplier = (v) =>
+        object(v) && positive(v.amount) && count(v.endTime);
+      const queuedMultiplier = (v) =>
+        object(v) && positive(v.amount) && positive(v.duration);
+      const reward = (v) =>
+        object(v) &&
+        ["donuts", "multiplier"].includes(v.type) &&
+        count(v.amount) &&
+        (v.type !== "multiplier" || positive(v.duration));
+      const dynamicQuest = (v) => {
+        if (
+          !object(v) ||
+          !string(v.id) ||
+          !string(v.title) ||
+          !string(v.description) ||
+          !positive(v.target) ||
+          !reward(v.reward)
+        )
+          return false;
+        if (
+          ![
+            "click",
+            "produce",
+            "buyAny",
+            "buySpecific",
+            "timedProduce",
+            "multiplier",
+            "efficiency",
+            "combo",
+            "spending",
+          ].includes(v.type)
+        )
+          return false;
+        if (
+          v.type === "buySpecific" &&
+          !Object.hasOwn(this.items, v.buildingType)
+        )
+          return false;
+        if (
+          v.type === "combo" &&
+          (!positive(v.clickTarget) || !positive(v.produceTarget))
+        )
+          return false;
+        if (
+          v.type === "timedProduce" &&
+          (!positive(v.timeLimit) || !count(v.timedStartTime))
+        )
+          return false;
+        return fields(v, {
+          progress: count,
+          completed: boolean,
+          claimed: boolean,
+          startTime: count,
+          startClicks: count,
+          startProduction: count,
+          startBuildings: count,
+          startCount: count,
+          startCPS: count,
+          startSpent: count,
+        });
+      };
+      const questTracking = (v) =>
+        object(v) &&
+        object(v.currentRun) &&
+        record(record(count))(v.currentRun.spentAtTier) &&
+        fields(v.currentRun, {
+          totalProduced: count,
+          totalSpent: count,
+          questsCompleted: integer,
+        }) &&
+        fields(v, { lifetime: (l) => fields(l, { totalClicks: integer }) });
+      const questSystem = (v) =>
+        fields(v, {
+          milestoneQuests: (m) =>
+            fields(m, {
+              building: record(record(milestone)),
+              production: record(milestone),
+              clicks: record(milestone),
+              cps: record(milestone),
+              totalBuildings: record(milestone),
+              upgrades: record(milestone),
+              questsCompleted: record(milestone),
+            }),
+          dynamicSlots: record((s) =>
+            fields(s, {
+              currentQuest: nullable(dynamicQuest),
+              cooldownEnd: nullable(count),
+            }),
+          ),
+          multiplierState: (m) =>
+            fields(m, {
+              active: nullable(timedMultiplier),
+              queued: nullable(queuedMultiplier),
+            }),
+          questTracking,
+          cpsHistory: array((h) => object(h) && count(h.cps) && count(h.time)),
+        });
+      const farmBuff = (v) =>
+        object(v) &&
+        Object.hasOwn(this.farmBuffCategories, v.category) &&
+        positive(v.strength) &&
+        positive(v.duration);
+      const contract = (v) =>
+        object(v) &&
+        string(v.id) &&
+        string(v.title) &&
+        record(count)(v.requirements) &&
+        record(count)(v.progress) &&
+        positive(v.duration) &&
+        count(v.elapsed) &&
+        array(string)(v.affixes) &&
+        object(v.reward) &&
+        count(v.reward.donuts) &&
+        fields(v.reward, { buff: nullable(farmBuff) });
+      const animal = (v) =>
+        object(v) &&
+        string(v.id) &&
+        Object.hasOwn(this.farmAnimalDefs, v.type) &&
+        array(string)(v.traits) &&
+        fields(v, {
+          name: string,
+          variant: nullable(string),
+          passport: nullable(string),
+          breedCooldown: count,
+          productionTimer: count,
+        });
+      const breedingSlot = (v) =>
+        object(v) &&
+        boolean(v.active) &&
+        (!v.active ||
+          (Object.hasOwn(this.farmBreedPrograms, v.program) &&
+            string(v.parentA) &&
+            string(v.parentB) &&
+            positive(v.duration) &&
+            count(v.progress)));
+      const farmState = (v) =>
+        fields(v, {
+          animals: array(animal),
+          storage: record(count),
+          feedPlans: record((p) =>
+            ["standard", "ration", "premium"].includes(p),
+          ),
+          contracts: (c) =>
+            fields(c, {
+              board: array(nullable(contract)),
+              active: array(contract),
+              lastRefresh: count,
+              rerollsUsed: integer,
+            }),
+          breeding: (b) =>
+            object(b) &&
+            Array.isArray(b.slots) &&
+            b.slots.length === 2 &&
+            b.slots.every(breedingSlot),
+          mastery: (m) => fields(m, { xp: count, level: integer }),
+          buffs: record(
+            nullable(
+              (b) =>
+                object(b) &&
+                positive(b.strength) &&
+                positive(b.duration) &&
+                number(b.remaining),
+            ),
+          ),
+          careWindow: (c) =>
+            fields(c, {
+              active: boolean,
+              nextTrigger: count,
+              expiresAt: count,
+              lateUntil: count,
+            }),
+          careBonus: (c) =>
+            object(c) &&
+            positive(c.modifier) &&
+            integer(c.cyclesRemaining) &&
+            fields(c, { cyclesByType: record(count) }),
+          collectCounts: record(integer),
+          crates: array(
+            (c) =>
+              object(c) &&
+              string(c.id) &&
+              ["wooden", "silver", "gold", "epic"].includes(c.tier),
+          ),
+          stats: (s) =>
+            fields(s, {
+              totalGoodsSold: count,
+              totalContractsCompleted: integer,
+              totalBred: integer,
+            }),
+        });
+      if (
+        !fields(data, {
+          gameVersion: string,
+          totalDonutsEarned: count,
+          totalClicks: integer,
+          prestigeCount: integer,
+          nextPrestigeThreshold: count,
+          hasDonutClicked: boolean,
+          productionMultiplier: count,
+          currentBakeryName: string,
+          lastActiveTime: count,
+          lastMineProduction: count,
+          lastBakerProduction: count,
+          farmNextAnimalId: integer,
+          upgrades: record(
+            array((u) => boolean(u) || fields(u, { purchased: boolean })),
+          ),
+          quests: record(milestone),
+          questSystem,
+          recipes: record((r) =>
+            fields(r, {
+              craftCount: integer,
+              currentScaling: positive,
+              scaling: (s) =>
+                fields(s, {
+                  ingredients: (i) => fields(i, { current: positive }),
+                }),
+            }),
+          ),
+          ores: record((o) => object(o) && integer(o.count)),
+          oreMarket: nullable((state) => this.isValidOreMarketReference(state)),
+          ingredients: record((i) => object(i) && integer(i.count)),
+          oreTypePrices: array(
+            (o) =>
+              object(o) &&
+              string(o.type) &&
+              positive(o.price) &&
+              fields(o, {
+                priceHistory: (h) => array(positive)(h) && h.length <= 20,
+                trend: (t) => number(t) && t >= -1 && t <= 1,
+              }),
+          ),
+          workers: array((w) => fields(w, { productionRate: count })),
+          bakers: array((b) => fields(b, { productionRate: count })),
+          activeMultipliers: array(
+            (m) => timedMultiplier(m) && fields(m, { duration: positive }),
+          ),
+          donutCoin: (c) =>
+            object(c) &&
+            integer(c.count) &&
+            count(c.lastClaimTime) &&
+            positive(c.claimInterval),
+          farmState,
+          autoBuyer: (a) =>
+            fields(a, {
+              enabled: boolean,
+              settings: record((s) =>
+                fields(s, {
+                  enabled: boolean,
+                  threshold: (t) => number(t) && t >= 1,
+                }),
+              ),
+            }),
+          soundVolume: (v) => number(v) && v >= 0 && v <= 1,
+          orePurchaseLimit: (v) => integer(v) && v <= 10,
+          timeState: (t) =>
+            object(t) &&
+            count(t.settledAt) &&
+            boolean(t.inactive) &&
+            count(t.inactiveElapsed) &&
+            t.inactiveElapsed <= this.MAX_OFFLINE_TIME &&
+            count(t.mineProgress) &&
+            t.mineProgress < this.workerProductionInterval &&
+            count(t.bakerProgress) &&
+            t.bakerProgress < this.bakerProductionInterval &&
+            integer(t.randomState) &&
+            t.randomState > 0 &&
+            t.randomState <= 0xffffffff,
+        })
+      )
+        return false;
+      if (data.saveVersion === this.saveVersion) {
+        // A new-format snapshot must be complete before it can replace a backup.
+        const required = [
+          "gameVersion",
+          "upgrades",
+          "quests",
+          "questSystem",
+          "recipes",
+          "totalDonutsEarned",
+          "totalClicks",
+          "prestigeCount",
+          "nextPrestigeThreshold",
+          "ores",
+          "oreTypePrices",
+          "workers",
+          "bakers",
+          "ingredients",
+          "hasDonutClicked",
+          "productionMultiplier",
+          "activeMultipliers",
+          "currentBakeryName",
+          "donutCoin",
+          "farmState",
+          "farmNextAnimalId",
+          "autoBuyer",
+          "soundVolume",
+          "lastMineProduction",
+          "lastBakerProduction",
+          "orePurchaseLimit",
+          "lastActiveTime",
+        ];
+        if (!required.every((key) => Object.hasOwn(data, key))) return false;
+      }
+      return true;
+    }
+
+    // Existing checksum envelope retained for backward compatibility.
     generateChecksum(data) {
       const str = JSON.stringify(data);
       let hash = 0;
@@ -7975,7 +9507,8 @@
 
       // Oyun versiyonunu güncelle
       gameState.gameVersion = this.currentVersion;
-      localStorage.setItem("gameState", JSON.stringify(gameState));
+      // This legacy helper must not bypass validation, backups, or write guards.
+      this.requestSave();
     }
     showResetConfirmModal() {
       const modal = document.getElementById("reset-confirm-modal");
@@ -8034,8 +9567,13 @@
       const confirmation = await this.showResetConfirmModal();
       if (!confirmation) return;
 
-      localStorage.removeItem("gameState");
-      localStorage.removeItem("bakeryName");
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      this.saveWritesBlocked = true;
+      // A confirmed reset must clear the backup too, or loading would revive it.
+      if (!this.removeStorage("gameStateBackup")) return;
+      if (!this.removeStorage("gameState")) return;
+      this.removeStorage("bakeryName");
       location.reload();
     }
 
@@ -8168,8 +9706,15 @@
     hydrateMilestoneQuestState(targetQuest, savedQuest) {
       if (!targetQuest || !savedQuest) return;
 
-      targetQuest.progress = savedQuest.progress || 0;
-      targetQuest.completed = savedQuest.completed || false;
+      targetQuest.progress = this.economicNumber(savedQuest.progress);
+      targetQuest.completed = Boolean(
+        savedQuest.completed || savedQuest.claimed,
+      );
+      if (targetQuest.completed)
+        targetQuest.progress = Math.max(
+          targetQuest.progress,
+          targetQuest.target,
+        );
       targetQuest.claimed = savedQuest.claimed || false;
       targetQuest.frozenReward = Number.isFinite(savedQuest.frozenReward)
         ? savedQuest.frozenReward
@@ -8351,114 +9896,206 @@
     //
     // REWARD PRINCIPLE:
     // Reward = (Effort Value) × (Small Bonus Rate)
-    // Where bonus rate is 5-15% depending on difficulty
-    // and all caps/minimums use the same stabilized CPS reference
+    // Recurring goals/rewards use bounded human work and canonical production
+    // snapshots; milestone rewards retain their existing stabilized-CPS policy.
     //
     // ============================================================
 
-    calculateDynamicReward(slot, questType = "produce", questData = null) {
-      const cps = this.getStableCPS();
-      const stage = this.getGameStage();
-      const difficulty = slot.difficulty;
+    getDynamicQuestBalance(difficulty) {
+      return (
+        this.dynamicQuestBalance[difficulty] || this.dynamicQuestBalance.easy
+      );
+    }
 
-      // Bonus rates - these are INTENTIONALLY SMALL
-      // Quests should feel rewarding but not game-breaking
-      const bonusRates = {
-        easy: 0.05, // 5% bonus on effort
-        medium: 0.08, // 8% bonus
-        hard: 0.12, // 12% bonus
-        special: 0.15, // 15% bonus
+    getQuestBalanceContext() {
+      return this.withProductionSnapshot(() => {
+        const production = this.getProductionBreakdown();
+        // Planning policy, not a production engine: project the canonical snapshot
+        // without short-lived boosts so their expiry cannot strand a new objective.
+        const unboostedCPS =
+          production.boostedCPS / production.temporaryMultiplier +
+          production.flatCPS;
+        const cps = Math.min(production.effectiveCPS, unboostedCPS);
+        return {
+          production,
+          cps,
+          currentCPS: production.effectiveCPS,
+          rate: Math.max(2, cps),
+          stage: this.getGameStage(),
+        };
+      }, this.getGameTime());
+    }
+
+    getQuestClickTarget(policy, stage) {
+      // Human input does not scale with CPS. Plan at two deliberate clicks/sec.
+      return Math.ceil(
+        Math.min(
+          policy.maxClicks,
+          policy.baseClicks * (1 + 0.05 * (stage - 1)),
+        ),
+      );
+    }
+
+    getQuestPurchaseBudget(context, policy) {
+      const income = context.rate * policy.seconds;
+      return (
+        income + Math.min(this.economicNumber(this.donutCount), income) * 0.25
+      );
+    }
+
+    getQuestPurchasePlan(type, context, policy, chooseRandom = false) {
+      const budget = this.getQuestPurchaseBudget(context, policy);
+      const meaningfulCost = context.rate * policy.seconds * 0.75;
+      if (type === "buyAny") {
+        let count = 1;
+        for (let n = 2; n <= policy.maxPurchases; n++) {
+          if (this.estimateBuyQuestCost(n, "buyAny") > budget) break;
+          count = n;
+        }
+        const cost = this.estimateBuyQuestCost(count, "buyAny");
+        return {
+          count,
+          cost,
+          feasible: cost <= budget,
+          meaningful: cost >= meaningfulCost,
+        };
+      }
+      const options = [];
+      for (const [key, item] of Object.entries(this.items)) {
+        if (!Number.isFinite(item.baseCost) || item.baseCost > budget) continue;
+        let count = 1;
+        for (let n = 2; n <= policy.maxPurchases; n++) {
+          if (this.estimateBuildingPurchaseCost(key, n) > budget) break;
+          count = n;
+        }
+        options.push({
+          key,
+          count,
+          cost: this.estimateBuildingPurchaseCost(key, count),
+        });
+      }
+      const meaningful = options.filter(
+        (option) => option.cost >= meaningfulCost,
+      );
+      const choices = meaningful.length ? meaningful : options;
+      const chosen =
+        choices[chooseRandom ? Math.floor(Math.random() * choices.length) : 0];
+      if (chosen)
+        return {
+          ...chosen,
+          feasible: true,
+          meaningful: chosen.cost >= meaningfulCost,
+        };
+      const key = Object.keys(this.items).reduce(
+        (best, key) =>
+          this.items[key].baseCost < this.items[best].baseCost ? key : best,
+        "cursor",
+      );
+      return {
+        key,
+        count: 1,
+        cost: this.items[key].baseCost,
+        feasible: false,
+        meaningful: false,
       };
-      const bonusRate = bonusRates[difficulty] || 0.05;
+    }
 
-      let reward = 0;
+    getQuestEfficiencyTarget(context, policy) {
+      const budget = this.getQuestPurchaseBudget(context, policy);
+      let affordableGain = 0;
+      for (const [key, item] of Object.entries(this.items)) {
+        if (item.baseCost <= budget)
+          affordableGain = Math.max(
+            affordableGain,
+            context.production.buildings[key].perUnit,
+          );
+      }
+      // One affordable building can satisfy the goal; extra Cursor synergy only helps.
+      const gain = Math.min(
+        Math.max(0.1, context.currentCPS * 0.05),
+        affordableGain,
+      );
+      return context.currentCPS + gain;
+    }
 
+    isQuestTypeSuitable(type, context, policy) {
+      if (type === "buyAny" || type === "buySpecific") {
+        const plan = this.getQuestPurchasePlan(type, context, policy);
+        return plan.feasible && plan.meaningful;
+      }
+      if (type === "spending")
+        return (
+          this.estimateBuyQuestCost(1, "buyAny") * 2 <=
+          this.getQuestPurchaseBudget(context, policy)
+        );
+      if (type === "efficiency")
+        return (
+          context.production.temporaryMultiplier === 1 &&
+          this.getQuestEfficiencyTarget(context, policy) > context.currentCPS
+        );
+      return true;
+    }
+
+    calculateDynamicReward(slot, questType = "produce", questData = null) {
+      if (questType === "multiplier") return 0; // The existing timed multiplier IS the reward.
+      const context = this.getQuestBalanceContext();
+      const policy = this.getDynamicQuestBalance(slot.difficulty);
+      const data = questData || {};
+      const clicks =
+        data.target ?? this.getQuestClickTarget(policy, context.stage);
+      let effort;
+      let transactionCap = Infinity;
       switch (questType) {
-        case "click": {
-          // 10 clicks = 10 donuts earned naturally (click value = 1)
-          // Reward = small bonus on top of that
-          const clicks = questData?.target || 10;
-          const naturalEarnings = clicks * this.getClickValue();
-          reward = naturalEarnings * bonusRate;
+        case "click":
+          effort = Math.max(
+            clicks * this.calculateClickValue(),
+            context.cps * (clicks / 2),
+          );
           break;
-        }
-
-        case "produce": {
-          // Producing X donuts = you already HAVE X donuts
-          // Reward = bonus based on TIME spent, not production amount
-          const target = questData?.target || 100;
-          const timeSpent = cps > 0 ? target / cps : 60; // seconds of effort
-          // Bonus = a few extra seconds worth of production
-          reward = cps * timeSpent * bonusRate;
-          break;
-        }
-
         case "buyAny":
         case "buySpecific": {
-          // Buying = you SPENT donuts, you have buildings
-          // Reward = tiny cashback (not refund!)
-          const count = questData?.target || 1;
-          const estCost = this.estimateBuyQuestCost(
-            count,
+          const cost = this.estimateBuyQuestCost(
+            data.target || 1,
             questType,
-            questData,
+            data,
           );
-          // Cashback = 3-8% of spending
-          reward = estCost * bonusRate * 0.5;
+          effort = cost * 0.5;
+          transactionCap = Math.max(1, Math.floor(effort * policy.bonusRate));
           break;
         }
-
-        case "timedProduce": {
-          // Time pressure deserves slightly better bonus
-          const target = questData?.target || 100;
-          const timeSpent = cps > 0 ? target / cps : 45;
-          reward = cps * timeSpent * bonusRate * 1.2;
+        case "spending":
+          effort = (data.target || context.rate * policy.seconds) * 0.3;
+          transactionCap = Math.max(1, Math.floor(effort * policy.bonusRate));
           break;
-        }
-
-        case "efficiency": {
-          // Reaching higher CPS = strategic effort
-          const targetCPS = questData?.target || cps * 1.1;
-          const cpsGain = Math.max(0, targetCPS - cps);
-          // Reward = 20 seconds of the CPS gain
-          reward = cpsGain * 20 * bonusRate * 2;
+        case "timedProduce":
+          effort = (data.target || context.rate * 45) * 1.2;
           break;
-        }
-
-        case "combo": {
-          // Combined effort of both tasks
-          const clickBonus =
-            (questData?.clickTarget || 20) * this.getClickValue() * bonusRate;
-          const produceTime =
-            cps > 0 ? (questData?.produceTarget || 50) / cps : 30;
-          const produceBonus = cps * produceTime * bonusRate;
-          reward = clickBonus + produceBonus;
+        case "combo":
+          // Clicking and production overlap; do not count the same earned donuts twice.
+          effort =
+            Math.max(
+              data.produceTarget || context.rate * policy.seconds,
+              (data.clickTarget || clicks / 2) * this.calculateClickValue(),
+            ) * 1.2;
           break;
-        }
-
-        case "spending": {
-          // You spent donuts, tiny cashback
-          const spent = questData?.target || 100;
-          reward = spent * bonusRate * 0.3;
+        case "efficiency":
+          effort = context.cps * policy.seconds;
           break;
-        }
-
-        case "multiplier":
-          return 0; // Multiplier IS the reward
-
         default:
-          reward = cps * 10 * bonusRate;
+          effort = data.target || context.rate * policy.seconds;
       }
-
-      // Apply stage-appropriate minimum (prevents 0 rewards, stays tiny)
-      const minReward = this.getDynamicRewardMinimum(stage, difficulty);
-      reward = Math.max(reward, minReward);
-
-      // Apply economic cap (NEVER break progression)
-      const maxReward = this.getEconomicCap(stage, difficulty);
-      reward = Math.min(reward, maxReward);
-
-      return Math.floor(reward);
+      const minimum = this.getDynamicRewardMinimum(
+        context.stage,
+        slot.difficulty,
+      );
+      const cap = this.getEconomicCap(context.stage, slot.difficulty);
+      return Math.floor(
+        Math.min(
+          Math.max(effort * policy.bonusRate, minimum),
+          cap,
+          transactionCap,
+        ),
+      );
     }
 
     // Get current game stage for scaling
@@ -8498,40 +10135,24 @@
       return baseMin * (diffFloor[difficulty] || 1);
     }
 
-    // Economic cap - prevents breaking game progression
-    // Cap = X% of next building cost OR Y seconds of CPS, whichever is SMALLER
+    // Recurring rewards stay bounded in production time without a cheap-building collapse.
     getEconomicCap(stage, difficulty) {
-      const cps = this.getStableCPS();
-      const nextBuilding = this.getNextMeaningfulPurchaseCost();
-
-      // Cap as percentage of next building
-      const buildingPercent = {
-        easy: 0.02, // 2% of next building max
-        medium: 0.04, // 4%
-        hard: 0.06, // 6%
-        special: 0.1, // 10%
-      };
-
-      // Cap as seconds of CPS
-      const cpsSeconds = {
-        easy: 15, // 15 seconds of CPS max
-        medium: 30, // 30 seconds
-        hard: 60, // 60 seconds
-        special: 90, // 90 seconds
-      };
-
-      const buildingCap = nextBuilding * (buildingPercent[difficulty] || 0.02);
-      const cpsCap = cps * (cpsSeconds[difficulty] || 15);
-
-      // Use SMALLER cap (conservative approach)
-      const cap = Math.min(buildingCap, cpsCap);
-
-      // Never below stage+difficulty minimum
-      return Math.max(cap, this.getDynamicRewardMinimum(stage, difficulty));
+      const context = this.getQuestBalanceContext();
+      const policy = this.getDynamicQuestBalance(difficulty);
+      const purchaseCap =
+        this.getNextMeaningfulPurchaseCost() * policy.purchaseCap;
+      // Cheap old buildings must not collapse a late-game objective to tiny rewards.
+      // This is a floor on the CAP, not a guaranteed reward or an income multiplier.
+      const cap = Math.min(
+        context.cps * policy.maxCapSeconds,
+        Math.max(purchaseCap, context.cps * policy.minCapSeconds),
+      );
+      return Math.max(this.getDynamicRewardMinimum(stage, difficulty), cap);
     }
 
-    // Click value (base 1 + tiny CPS bonus)
-    getClickValue() {
+    // Legacy quest effort estimate retained for compatibility. New recurring rewards
+    // use canonical click value and bounded human work; this is not playable click power.
+    getQuestClickEffortEstimate() {
       return 1 + this.getStableCPS() * 0.005;
     }
 
@@ -8548,7 +10169,19 @@
           count,
         );
       }
-      return this.getAverageBuildingCost() * count;
+      const prices = Object.values(this.items).map((item) => ({
+        cost: item.baseCost,
+        factor: item.costMultiplier,
+      }));
+      let total = 0;
+      for (let n = 0; n < count; n++) {
+        const cheapest = prices.reduce((best, price) =>
+          price.cost < best.cost ? price : best,
+        );
+        total += cheapest.cost;
+        cheapest.cost *= cheapest.factor;
+      }
+      return total;
     }
 
     // Estimate the real cumulative cost for buying N copies of a building
@@ -8581,27 +10214,23 @@
       return { ...building, key };
     }
 
-    // Average building cost
-    getAverageBuildingCost() {
-      const costs = Object.values(this.items)
-        .filter(
-          (item) => item.count > 0 || this.donutCount >= item.baseCost * 0.2,
-        )
-        .map((item) => item.baseCost);
-      return costs.length > 0
-        ? costs.reduce((a, b) => a + b, 0) / costs.length
-        : 15;
-    }
-
     // Stabilized CPS (120s rolling median)
     getStableCPS() {
-      if (this.cpsHistory.length === 0) return this.calculatePerSecond();
-
-      const sorted = [...this.cpsHistory].sort((a, b) => a.cps - b.cps);
+      const now = this.getGameTime();
+      const sorted = this.cpsHistory
+        .filter(
+          (sample) =>
+            Number.isFinite(sample.cps) &&
+            sample.cps >= 0 &&
+            Number.isFinite(sample.time) &&
+            sample.time > now - 120000 &&
+            sample.time <= now,
+        )
+        .sort((a, b) => a.cps - b.cps);
+      if (sorted.length === 0) return this.calculatePerSecond();
       const mid = Math.floor(sorted.length / 2);
-
       return sorted.length % 2 === 0
-        ? (sorted[mid - 1].cps + sorted[mid].cps) / 2
+        ? sorted[mid - 1].cps / 2 + sorted[mid].cps / 2
         : sorted[mid].cps;
     }
 
@@ -8719,22 +10348,24 @@
     }
 
     freezeMilestoneReward(questType, quest, questKey, tierKey = null) {
-      if (!quest) return 0;
+      if (!quest || this._questStateLoading) return null;
 
       const frozenReward = this.getFrozenMilestoneReward(quest);
       if (frozenReward !== null) {
-        quest.completionTime = quest.completionTime || Date.now();
+        quest.completionTime = quest.completionTime || this.getGameTime();
         return frozenReward;
       }
 
+      if (!this.getProductionBreakdown().valid) return null;
       const reward = this.calculateMilestoneRewardEstimate(
         questType,
         quest,
         questKey,
         tierKey,
       );
+      if (!Number.isFinite(reward) || reward < 0) return null;
       quest.frozenReward = reward;
-      quest.completionTime = quest.completionTime || Date.now();
+      quest.completionTime = quest.completionTime || this.getGameTime();
       return reward;
     }
 
@@ -8770,7 +10401,7 @@
     // Update CPS history (called in game loop)
     updateCPSHistory() {
       const currentCPS = this.calculatePerSecond();
-      const now = Date.now();
+      const now = this.getGameTime();
 
       this.cpsHistory.push({ cps: currentCPS, time: now });
 
@@ -8781,51 +10412,69 @@
 
     // Get final production multiplier (multiplicative)
     getFinalProductionMultiplier() {
-      return (
-        this.multiplierSources.prestige *
-        this.multiplierSources.questBuff *
-        this.multiplierSources.farmBuff *
-        this.multiplierSources.eventBuff
-      );
+      // Compatibility API: never multiply this into an already effective CPS.
+      const modifiers = this.getProductionModifiers();
+      return modifiers.prestigeMultiplier * modifiers.temporaryMultiplier;
     }
 
     // Update multipliers (tick-based, no setTimeout)
-    updateQuestMultipliers() {
-      const now = Date.now();
+    updateQuestMultipliers(now = this.getGameTime()) {
+      this.settleBeforeMutation();
+      this.activeMultipliers = this.activeMultipliers.filter(
+        (m) => m && Number.isFinite(m.endTime) && m.endTime > now,
+      );
 
       if (
         this.multiplierState.active &&
         now >= this.multiplierState.active.endTime
       ) {
+        const expiredAt = this.multiplierState.active.endTime;
         this.multiplierState.active = null;
 
         // Activate queued multiplier
         if (this.multiplierState.queued) {
           const queued = this.multiplierState.queued;
           this.multiplierState.queued = null;
-          this.startQuestMultiplier(queued.amount, queued.duration);
+          this.startQuestMultiplier(queued.amount, queued.duration, expiredAt);
           this.showNotification(
             `Queued ${queued.amount.toFixed(2)}x multiplier activated!`,
           );
+          if (this.multiplierState.active.endTime <= now)
+            this.multiplierState.active = null;
         }
       }
-
-      // Update questBuff source
-      this.multiplierSources.questBuff =
-        this.multiplierState.active?.amount || 1;
     }
 
     // Start a quest multiplier
-    startQuestMultiplier(amount, duration) {
+    startQuestMultiplier(amount, duration, startedAt = this.getGameTime()) {
+      this.settleBeforeMutation();
+      if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        !Number.isFinite(duration) ||
+        duration <= 0
+      )
+        return false;
       this.multiplierState.active = {
         amount: amount,
-        endTime: Date.now() + duration,
+        endTime: startedAt + duration,
       };
-      this.multiplierSources.questBuff = amount;
+      this.updateTotalPerSecond();
+      this.updateDisplay(!this._settlingTime);
+      return true;
     }
 
     // Apply multiplier reward with queue system
     applyMultiplierReward(amount, duration) {
+      this.settleBeforeMutation();
+      if (
+        !Number.isFinite(amount) ||
+        amount <= 0 ||
+        !Number.isFinite(duration) ||
+        duration <= 0
+      )
+        return false;
+      this.updateQuestMultipliers();
       if (!this.multiplierState.active) {
         this.startQuestMultiplier(amount, duration);
         this.showNotification(
@@ -8834,6 +10483,7 @@
         return true;
       } else if (!this.multiplierState.queued) {
         this.multiplierState.queued = { amount, duration };
+        this.updateDisplay(!this._settlingTime);
         this.showNotification(`${amount.toFixed(2)}x multiplier queued!`);
         return true;
       } else {
@@ -8845,35 +10495,70 @@
     // Generate dynamic quest for a slot
     generateQuestForSlot(slotId) {
       const slot = this.dynamicSlots[slotId];
-      if (!slot) return;
+      if (
+        !slot ||
+        this._questStateLoading ||
+        slot.currentQuest ||
+        (slot.cooldownEnd && this.getGameTime() < slot.cooldownEnd)
+      )
+        return false;
 
       // Filter pool if queue is full (no multiplier quests)
       let pool = [...slot.questPool];
       if (this.multiplierState.queued !== null) {
         pool = pool.filter((t) => t !== "multiplier");
       }
-      if (pool.length === 0) pool = ["produce"]; // Fallback
+      const context = this.getQuestBalanceContext();
+      const policy = this.getDynamicQuestBalance(slot.difficulty);
+      pool = pool.filter((type) =>
+        this.isQuestTypeSuitable(type, context, policy),
+      );
+      const activeTypes = Object.values(this.dynamicSlots)
+        .filter(
+          (other) =>
+            other !== slot && other.currentQuest && !other.currentQuest.claimed,
+        )
+        .map((other) => other.currentQuest.type);
+      const family = (type) =>
+        ["produce", "timedProduce", "multiplier"].includes(type)
+          ? "production"
+          : ["click", "combo"].includes(type)
+            ? "clicking"
+            : ["buyAny", "buySpecific", "spending"].includes(type)
+              ? "purchasing"
+              : type;
+      const distinctTypes = pool.filter((type) => !activeTypes.includes(type));
+      if (distinctTypes.length) pool = distinctTypes;
+      const familyLoad = (type) =>
+        activeTypes.filter((active) => family(active) === family(type)).length;
+      const leastLoad = Math.min(...pool.map(familyLoad));
+      pool = pool.filter((type) => familyLoad(type) === leastLoad);
+      if (pool.length === 0) pool = ["produce"]; // Always offer an achievable existing type.
 
       const questType = pool[Math.floor(Math.random() * pool.length)];
       const quest = this.createDynamicQuest(questType, slot);
 
+      if (
+        !quest ||
+        !Number.isFinite(quest.target) ||
+        quest.target <= 0 ||
+        !this.isValidQuestReward(quest.reward)
+      )
+        return false;
       slot.currentQuest = quest;
       slot.cooldownEnd = null;
+      this.requestQuestCheckpoint();
+      return true;
     }
 
     // Create a dynamic quest based on type
     createDynamicQuest(type, slot) {
-      const cps = this.getStableCPS();
+      if (this._questStateLoading || !this.getProductionBreakdown().valid)
+        return null;
+      const context = this.getQuestBalanceContext();
       const difficulty = slot.difficulty;
-      const baseId = `dynamic_${slot.id}_${Date.now()}`;
-
-      const difficultyMultipliers = {
-        easy: 1,
-        medium: 2,
-        hard: 3,
-        special: 5,
-      };
-      const mult = difficultyMultipliers[difficulty] || 1;
+      const policy = this.getDynamicQuestBalance(difficulty);
+      const baseId = `dynamic_${slot.id}_${this.getGameTime()}`;
 
       let quest = {
         id: baseId,
@@ -8882,13 +10567,12 @@
         progress: 0,
         completed: false,
         claimed: false,
-        startTime: Date.now(),
+        startTime: this.getGameTime(),
       };
 
       switch (type) {
         case "click":
-          const clickTarget = Math.ceil((30 + cps * 0.05) * mult);
-          quest.target = Math.max(10, clickTarget);
+          quest.target = this.getQuestClickTarget(policy, context.stage);
           quest.title = `Click ${this.formatNumber(quest.target)} times`;
           quest.description = `Click the donut ${this.formatNumber(quest.target)} times`;
           quest.reward = {
@@ -8901,8 +10585,7 @@
           break;
 
         case "produce":
-          const produceTarget = Math.ceil(cps * 60 * mult);
-          quest.target = Math.max(50, produceTarget);
+          quest.target = Math.ceil(context.rate * policy.seconds);
           quest.title = `Produce ${this.formatNumber(quest.target)} donuts`;
           quest.description = `Produce ${this.formatNumber(quest.target)} donuts`;
           quest.reward = {
@@ -8915,8 +10598,11 @@
           break;
 
         case "buyAny":
-          const buyTarget = Math.ceil(2 * mult);
-          quest.target = Math.max(1, buyTarget);
+          quest.target = this.getQuestPurchasePlan(
+            "buyAny",
+            context,
+            policy,
+          ).count;
           quest.title = `Buy ${quest.target} building${quest.target > 1 ? "s" : ""}`;
           quest.description = `Purchase any ${quest.target} building${quest.target > 1 ? "s" : ""}`;
           quest.reward = {
@@ -8932,16 +10618,14 @@
           break;
 
         case "buySpecific":
-          const buildingKeys = Object.keys(this.items).filter(
-            (k) =>
-              this.items[k].count > 0 ||
-              this.donutCount >= this.items[k].baseCost * 0.5,
+          const purchasePlan = this.getQuestPurchasePlan(
+            "buySpecific",
+            context,
+            policy,
+            true,
           );
-          const targetBuilding =
-            buildingKeys[Math.floor(Math.random() * buildingKeys.length)] ||
-            "cursor";
-          const buySpecificTarget = Math.ceil(1.5 * mult);
-          quest.target = Math.max(1, buySpecificTarget);
+          const targetBuilding = purchasePlan.key;
+          quest.target = purchasePlan.count;
           quest.buildingType = targetBuilding;
           quest.title = `Buy ${quest.target} ${this.items[targetBuilding].name}${quest.target > 1 ? "s" : ""}`;
           quest.description = `Purchase ${quest.target} ${this.items[targetBuilding].name}${quest.target > 1 ? "s" : ""}`;
@@ -8956,8 +10640,7 @@
           break;
 
         case "timedProduce":
-          const timedTarget = Math.ceil(cps * 45);
-          quest.target = Math.max(50, timedTarget);
+          quest.target = Math.ceil(context.rate * 45);
           quest.timeLimit = 60000; // 60 seconds
           quest.title = `Quick Production`;
           quest.description = `Produce ${this.formatNumber(quest.target)} donuts in 60 seconds`;
@@ -8968,7 +10651,7 @@
             }),
           };
           quest.startProduction = this.totalDonutsEarned;
-          quest.timedStartTime = Date.now();
+          quest.timedStartTime = this.getGameTime();
           break;
 
         case "multiplier":
@@ -8984,8 +10667,7 @@
             hard: 45000,
             special: 60000,
           };
-          quest.target = Math.ceil(cps * 45 * mult);
-          quest.target = Math.max(50, quest.target);
+          quest.target = Math.ceil(context.rate * policy.seconds);
           quest.title = `Multiplier Challenge`;
           quest.description = `Produce ${this.formatNumber(quest.target)} donuts for ${multiplierAmounts[difficulty]}x boost`;
           quest.reward = {
@@ -8997,8 +10679,7 @@
           break;
 
         case "efficiency":
-          const efficiencyTarget = Math.ceil((cps + 0.5) * (1 + mult * 0.1));
-          quest.target = Math.max(cps + 0.1, efficiencyTarget);
+          quest.target = this.getQuestEfficiencyTarget(context, policy);
           quest.title = `Efficiency Challenge`;
           quest.description = `Reach ${this.formatNumber(quest.target)} donuts/sec`;
           quest.reward = {
@@ -9007,14 +10688,14 @@
               target: quest.target,
             }),
           };
-          quest.startCPS = cps;
+          quest.startCPS = context.currentCPS;
           break;
 
         case "combo":
-          const comboClickTarget = Math.ceil((20 + cps * 0.02) * mult);
-          const comboProduceTarget = Math.ceil(cps * 20 * mult);
-          quest.clickTarget = Math.max(5, comboClickTarget);
-          quest.produceTarget = Math.max(25, comboProduceTarget);
+          quest.clickTarget = Math.ceil(
+            this.getQuestClickTarget(policy, context.stage) * 0.5,
+          );
+          quest.produceTarget = Math.ceil(context.rate * policy.seconds);
           quest.target = 100; // Percentage
           quest.title = `Combo Challenge`;
           quest.description = `Click ${this.formatNumber(quest.clickTarget)}x AND produce ${this.formatNumber(quest.produceTarget)} donuts`;
@@ -9031,10 +10712,12 @@
 
         case "spending":
           // Spend donuts on buildings - gives small rebate
-          const spendingTarget = Math.ceil(
-            this.getNextMeaningfulPurchaseCost() * mult * 0.3,
+          quest.target = Math.ceil(
+            Math.max(
+              context.rate * policy.seconds,
+              this.estimateBuyQuestCost(1, "buyAny") * 2,
+            ),
           );
-          quest.target = Math.max(50, spendingTarget);
           quest.title = `Spending Spree`;
           quest.description = `Spend ${this.formatNumber(quest.target)} donuts on buildings`;
           quest.reward = {
@@ -9047,122 +10730,262 @@
           break;
       }
 
-      return quest;
+      return Number.isFinite(quest.target) &&
+        quest.target > 0 &&
+        this.isValidQuestReward(quest.reward)
+        ? quest
+        : null;
     }
 
-    // Update dynamic slots (called in game loop)
-    updateDynamicSlots() {
-      const now = Date.now();
-
-      for (const slotId of Object.keys(this.dynamicSlots)) {
-        const slot = this.dynamicSlots[slotId];
-
-        // If no quest and cooldown ended, generate new quest
-        if (
-          !slot.currentQuest &&
-          (!slot.cooldownEnd || now >= slot.cooldownEnd)
-        ) {
-          this.generateQuestForSlot(slotId);
-        }
-
-        // Check timed quest expiry
-        if (slot.currentQuest && slot.currentQuest.type === "timedProduce") {
-          const quest = slot.currentQuest;
-          if (
-            now > quest.timedStartTime + quest.timeLimit &&
-            !quest.completed
-          ) {
-            // Time expired, fail the quest
-            slot.currentQuest = null;
-            slot.cooldownEnd = now + slot.cooldown;
-            this.showNotification("Timed quest expired!");
-          }
-        }
-      }
+    requestQuestCheckpoint() {
+      const delay =
+        this._questSaveDelay ??
+        (this._saveTimer !== null
+          ? Math.max(0, this._saveDeadline - this.getGameTime())
+          : 1000);
+      this.requestSave(delay);
     }
 
-    // Check dynamic quest progress
-    checkDynamicQuestProgress() {
-      for (const slotId of Object.keys(this.dynamicSlots)) {
-        const slot = this.dynamicSlots[slotId];
+    isValidQuestReward(reward) {
+      return (
+        reward &&
+        Number.isFinite(reward.amount) &&
+        reward.amount >= 0 &&
+        (reward.type === "donuts" ||
+          (reward.type === "multiplier" &&
+            reward.amount > 0 &&
+            Number.isFinite(reward.duration) &&
+            reward.duration > 0))
+      );
+    }
+
+    restoreQuestLifecycle(savedAt) {
+      for (const slot of Object.values(this.dynamicSlots)) {
         const quest = slot.currentQuest;
-        if (!quest || quest.completed) continue;
-
-        let newProgress = 0;
-
+        // A legacy claimed slot is a receipt, never an active reward to grant again.
+        if (quest?.claimed) {
+          slot.currentQuest = null;
+          slot.cooldownEnd =
+            slot.cooldownEnd ?? (savedAt ?? this.getGameTime()) + slot.cooldown;
+          continue;
+        }
+        if (!quest) continue;
+        quest.progress = this.economicNumber(quest.progress);
+        if (quest.completed)
+          quest.progress = Math.max(quest.progress, quest.target);
+        // Missing legacy baselines must not count an entire run as new progress.
+        // Reconstruct only absent fields from the saved progress; explicit zero is valid.
+        const restoreStart = (key, current, progress = quest.progress) => {
+          if (quest[key] === undefined)
+            quest[key] = Math.max(0, this.economicNumber(current) - progress);
+        };
         switch (quest.type) {
           case "click":
-            newProgress = this.totalClicks - (quest.startClicks || 0);
+            restoreStart("startClicks", this.totalClicks);
             break;
           case "produce":
           case "timedProduce":
           case "multiplier":
-            newProgress = this.totalDonutsEarned - (quest.startProduction || 0);
+            restoreStart("startProduction", this.totalDonutsEarned);
             break;
           case "buyAny":
-            const currentTotal = Object.values(this.items).reduce(
-              (s, i) => s + i.count,
-              0,
+            restoreStart(
+              "startBuildings",
+              Object.values(this.items).reduce(
+                (sum, item) => sum + item.count,
+                0,
+              ),
             );
-            newProgress = currentTotal - (quest.startBuildings || 0);
             break;
           case "buySpecific":
-            newProgress =
-              this.items[quest.buildingType].count - (quest.startCount || 0);
-            break;
-          case "efficiency":
-            // Track CPS progress
-            newProgress = this.calculatePerSecond();
-            break;
-          case "combo":
-            // Track both click and production progress
-            const clickProgress = this.totalClicks - (quest.startClicks || 0);
-            const produceProgress =
-              this.totalDonutsEarned - (quest.startProduction || 0);
-            const clickPercent = Math.min(
-              (clickProgress / quest.clickTarget) * 100,
-              100,
-            );
-            const producePercent = Math.min(
-              (produceProgress / quest.produceTarget) * 100,
-              100,
-            );
-            // Both must be completed - show lower progress
-            newProgress = Math.min(clickPercent, producePercent);
+            restoreStart("startCount", this.items[quest.buildingType]?.count);
             break;
           case "spending":
-            // Track spending progress
-            const currentSpent =
-              this.questTracking?.currentRun?.totalSpent || 0;
-            newProgress = currentSpent - (quest.startSpent || 0);
+            restoreStart(
+              "startSpent",
+              this.questTracking.currentRun.totalSpent,
+            );
             break;
+          case "combo": {
+            // Overall combo progress proves at least this fraction of BOTH objectives.
+            const fraction = Math.min(1, quest.progress / 100);
+            restoreStart(
+              "startClicks",
+              this.totalClicks,
+              fraction * quest.clickTarget,
+            );
+            restoreStart(
+              "startProduction",
+              this.totalDonutsEarned,
+              fraction * quest.produceTarget,
+            );
+            break;
+          }
         }
+        // One-time balance compatibility: an old million-click assignment must
+        // not survive the new human-input limit. Keep identity, baselines/reward;
+        // normal progress checks still own completion and its counter.
+        const policy = this.getDynamicQuestBalance(slot.difficulty);
+        if (
+          !quest.completed &&
+          quest.type === "click" &&
+          quest.target > policy.maxClicks
+        ) {
+          quest.target = policy.maxClicks;
+          quest.title = `Click ${this.formatNumber(quest.target)} times`;
+          quest.description = `Click the donut ${this.formatNumber(quest.target)} times`;
+        }
+        if (
+          !quest.completed &&
+          quest.type === "combo" &&
+          quest.clickTarget > policy.maxClicks * 0.5
+        ) {
+          quest.clickTarget = Math.ceil(policy.maxClicks * 0.5);
+          quest.description = `Click ${this.formatNumber(quest.clickTarget)}x AND produce ${this.formatNumber(quest.produceTarget)} donuts`;
+          quest.progress = this.economicNumber(
+            this.getDynamicQuestProgress(quest),
+          );
+        }
+      }
+    }
 
-        quest.progress = Math.max(0, newProgress);
+    expireTimedQuest(slot, now = this.getGameTime()) {
+      this.settleBeforeMutation();
+      const quest = slot.currentQuest;
+      if (
+        !quest ||
+        quest.type !== "timedProduce" ||
+        quest.completed ||
+        quest.claimed ||
+        now <= quest.timedStartTime + quest.timeLimit
+      )
+        return false;
+      slot.currentQuest = null;
+      slot.cooldownEnd = quest.timedStartTime + quest.timeLimit + slot.cooldown;
+      this.requestQuestCheckpoint();
+      this.showNotification("Timed quest expired!");
+      return true;
+    }
 
-        if (quest.progress >= quest.target && !quest.completed) {
+    updateDynamicSlots() {
+      this.settleBeforeMutation();
+      if (this._questStateLoading) return;
+      for (const slot of Object.values(this.dynamicSlots)) {
+        if (this.expireTimedQuest(slot)) continue;
+        if (this._settlingTime || this.timeState.inactive) continue;
+        if (
+          !slot.currentQuest &&
+          (!slot.cooldownEnd || this.getGameTime() >= slot.cooldownEnd)
+        ) {
+          this.generateQuestForSlot(slot.id);
+        }
+      }
+    }
+
+    getDynamicQuestProgress(quest) {
+      const difference = (value, start) =>
+        Math.max(0, this.economicNumber(value) - this.economicNumber(start));
+      switch (quest.type) {
+        case "click":
+          return difference(this.totalClicks, quest.startClicks);
+        case "produce":
+        case "timedProduce":
+        case "multiplier":
+          return difference(this.totalDonutsEarned, quest.startProduction);
+        case "buyAny":
+          return difference(
+            Object.values(this.items).reduce(
+              (sum, item) => sum + this.economicNumber(item.count),
+              0,
+            ),
+            quest.startBuildings,
+          );
+        case "buySpecific":
+          return difference(
+            this.items[quest.buildingType]?.count,
+            quest.startCount,
+          );
+        case "efficiency":
+          return this.calculatePerSecond();
+        case "combo":
+          return Math.min(
+            this.questProgressPercent(
+              difference(this.totalClicks, quest.startClicks),
+              quest.clickTarget,
+            ),
+            this.questProgressPercent(
+              difference(this.totalDonutsEarned, quest.startProduction),
+              quest.produceTarget,
+            ),
+          );
+        case "spending":
+          return difference(
+            this.questTracking.currentRun.totalSpent,
+            quest.startSpent,
+          );
+        default:
+          return 0;
+      }
+    }
+
+    questProgressPercent(progress, target) {
+      if (!Number.isFinite(target) || target <= 0) return 0;
+      return Math.min(100, (this.economicNumber(progress) / target) * 100);
+    }
+
+    normalizeQuestTargetProgress(progress, target, productionTolerance = 0) {
+      // A different settlement partition can land a few Number ULPs below a
+      // reached boundary (e.g. 599.9999999999999 / 600). Do not defer its receipt.
+      if (!Number.isFinite(progress) || !Number.isFinite(target))
+        return progress;
+      const tolerance = Number.isFinite(productionTolerance)
+        ? Math.max(0, productionTolerance)
+        : 0;
+      return progress < target &&
+        target - progress <=
+          Math.max(tolerance, Number.EPSILON * Math.max(1, target) * 8)
+        ? target
+        : progress;
+    }
+
+    checkDynamicQuestProgress(productionTolerance = 0) {
+      this.settleBeforeMutation();
+      if (this._questStateLoading) return;
+      for (const slot of Object.values(this.dynamicSlots)) {
+        if (this.expireTimedQuest(slot)) continue;
+        const quest = slot.currentQuest;
+        if (!quest || quest.completed || quest.claimed) continue;
+        quest.progress = this.normalizeQuestTargetProgress(
+          this.economicNumber(this.getDynamicQuestProgress(quest)),
+          quest.target,
+          ["produce", "timedProduce", "multiplier"].includes(quest.type)
+            ? productionTolerance
+            : 0,
+        );
+        if (quest.progress >= quest.target) {
           quest.completed = true;
+          quest.completionTime = this.getGameTime();
+          this.questTracking.currentRun.questsCompleted =
+            this.economicNumber(this.questTracking.currentRun.questsCompleted) +
+            1;
+          this.requestQuestCheckpoint();
           this.showNotification(`Quest completed: ${quest.title}!`, 3000, {
             questProgress: true,
           });
-          // Track quest completion for meta-milestones
-          if (!this.questTracking.currentRun.questsCompleted) {
-            this.questTracking.currentRun.questsCompleted = 0;
-          }
-          this.questTracking.currentRun.questsCompleted++;
         }
       }
     }
 
     // Check milestone quest progress
-    checkMilestoneProgress() {
+    checkMilestoneProgress(productionTolerance = 0) {
+      if (this._questStateLoading) return;
       // Building milestones
       for (const [buildingType, tiers] of Object.entries(
         this.milestoneQuests.building,
       )) {
         for (const [tier, quest] of Object.entries(tiers)) {
-          if (quest.claimed) continue;
-          quest.progress = this.items[buildingType]?.count || 0;
+          if (quest.claimed || quest.completed) continue;
+          quest.progress = this.economicNumber(this.items[buildingType]?.count);
           if (quest.progress >= quest.target && !quest.completed) {
             this.completeMilestoneQuest(
               quest,
@@ -9179,8 +11002,12 @@
       for (const [target, quest] of Object.entries(
         this.milestoneQuests.production,
       )) {
-        if (quest.claimed) continue;
-        quest.progress = this.totalDonutsEarned;
+        if (quest.claimed || quest.completed) continue;
+        quest.progress = this.normalizeQuestTargetProgress(
+          this.economicNumber(this.totalDonutsEarned),
+          quest.target,
+          productionTolerance,
+        );
         if (quest.progress >= quest.target && !quest.completed) {
           this.completeMilestoneQuest(
             quest,
@@ -9193,8 +11020,8 @@
 
       // Click milestones
       for (const [, quest] of Object.entries(this.milestoneQuests.clicks)) {
-        if (quest.claimed) continue;
-        quest.progress = this.totalClicks;
+        if (quest.claimed || quest.completed) continue;
+        quest.progress = this.economicNumber(this.totalClicks);
         if (quest.progress >= quest.target && !quest.completed) {
           this.completeMilestoneQuest(
             quest,
@@ -9209,7 +11036,7 @@
       if (this.milestoneQuests.cps) {
         const currentCPS = this.calculatePerSecond();
         for (const [, quest] of Object.entries(this.milestoneQuests.cps)) {
-          if (quest.claimed) continue;
+          if (quest.claimed || quest.completed) continue;
           quest.progress = currentCPS;
           if (quest.progress >= quest.target && !quest.completed) {
             this.completeMilestoneQuest(
@@ -9225,13 +11052,13 @@
       // Total buildings milestones (new)
       if (this.milestoneQuests.totalBuildings) {
         const totalBuildings = Object.values(this.items).reduce(
-          (sum, item) => sum + item.count,
+          (sum, item) => sum + this.economicNumber(item.count),
           0,
         );
         for (const [, quest] of Object.entries(
           this.milestoneQuests.totalBuildings,
         )) {
-          if (quest.claimed) continue;
+          if (quest.claimed || quest.completed) continue;
           quest.progress = totalBuildings;
           if (quest.progress >= quest.target && !quest.completed) {
             this.completeMilestoneQuest(
@@ -9248,7 +11075,7 @@
       if (this.milestoneQuests.upgrades) {
         const totalUpgrades = this.getTotalPurchasedUpgrades();
         for (const [, quest] of Object.entries(this.milestoneQuests.upgrades)) {
-          if (quest.claimed) continue;
+          if (quest.claimed || quest.completed) continue;
           quest.progress = totalUpgrades;
           if (quest.progress >= quest.target && !quest.completed) {
             this.completeMilestoneQuest(
@@ -9267,7 +11094,7 @@
         for (const [, quest] of Object.entries(
           this.milestoneQuests.questsCompleted,
         )) {
-          if (quest.claimed) continue;
+          if (quest.claimed || quest.completed) continue;
           quest.progress = totalCompleted;
           if (quest.progress >= quest.target && !quest.completed) {
             this.completeMilestoneQuest(
@@ -9366,13 +11193,18 @@
     ) {
       if (!quest || quest.completed) return;
 
+      if (
+        this.freezeMilestoneReward(questType, quest, questKey, tierKey) === null
+      )
+        return;
       quest.completed = true;
-      this.freezeMilestoneReward(questType, quest, questKey, tierKey);
+      this.requestQuestCheckpoint();
       this.showNotification(message, 3000, { questProgress: true });
     }
 
     // Claim milestone quest reward
     claimMilestoneReward(questType, questKey, tierKey) {
+      this.settleBeforeMutation();
       let quest;
       if (questType === "building") {
         quest = this.milestoneQuests.building[questKey]?.[tierKey];
@@ -9399,42 +11231,57 @@
         tierKey,
       );
 
-      this.donutCount += reward;
+      if (
+        !Number.isFinite(reward) ||
+        reward < 0 ||
+        !this.creditDonuts(reward, false)
+      )
+        return false;
       quest.claimed = true;
       this.showNotification(`+${this.formatNumber(reward)} donuts earned!`);
       this.updateQuestDisplay();
+      this.updateDisplay();
+      this.requestSave();
+      return true;
     }
 
     // Claim dynamic quest reward
-    claimDynamicReward(slotId) {
+    claimDynamicReward(slotId, expectedQuestId = null) {
+      this.settleBeforeMutation();
       const slot = this.dynamicSlots[slotId];
-      const quest = slot.currentQuest;
+      const quest = slot?.currentQuest;
 
-      if (!quest || !quest.completed || quest.claimed) return;
+      if (
+        !quest ||
+        !quest.completed ||
+        quest.claimed ||
+        (expectedQuestId !== null && quest.id !== expectedQuestId)
+      )
+        return false;
 
-      if (quest.reward.type === "donuts") {
-        this.donutCount += quest.reward.amount;
-        this.showNotification(
-          `+${this.formatNumber(quest.reward.amount)} donuts earned!`,
-        );
-      } else if (quest.reward.type === "multiplier") {
-        if (
-          !this.applyMultiplierReward(
-            quest.reward.amount,
-            quest.reward.duration,
-          )
-        ) {
-          return; // Queue full, can't claim
-        }
-      }
+      if (!this.deliverQuestReward(quest.reward)) return false;
 
       quest.claimed = true;
 
       // Start cooldown
       slot.currentQuest = null;
-      slot.cooldownEnd = Date.now() + slot.cooldown;
+      slot.cooldownEnd = this.getGameTime() + slot.cooldown;
 
       this.updateQuestDisplay();
+      this.updateDisplay();
+      this.requestSave();
+      return true;
+    }
+
+    deliverQuestReward(reward) {
+      if (!this.isValidQuestReward(reward)) return false;
+      if (reward.type === "multiplier")
+        return this.applyMultiplierReward(reward.amount, reward.duration);
+      if (!this.creditDonuts(reward.amount, false)) return false;
+      this.showNotification(
+        `+${this.formatNumber(reward.amount)} donuts earned!`,
+      );
+      return true;
     }
 
     // Track spending at tier (called when buying)
@@ -9448,10 +11295,7 @@
       const tracking = this.questTracking.currentRun.spentAtTier[buildingType];
       tracking.cumulative = (tracking.cumulative || 0) + cost;
 
-      // Track total spent for spending quests
-      this.questTracking.currentRun.totalSpent =
-        (this.questTracking.currentRun.totalSpent || 0) + cost;
-
+      // totalSpent is recorded once by buyItem from the actual rounded charge.
       // Snapshot at tier
       const newCount = this.items[buildingType].count + 1;
       const tiers = this.milestoneTiers[buildingType] || [];
@@ -9575,7 +11419,7 @@
       });
       this.questsMenu.addEventListener("mouseleave", () => {
         this.isHoveringQuestMenu = false;
-        const now = Date.now();
+        const now = this.getGameTime();
         this._lastQuestUIRefresh = now;
         this._lastQuestUILiveUpdate = now;
         this.updateQuestDisplay();
@@ -9609,6 +11453,7 @@
     }
 
     updateQuestKPIs() {
+      if (!this.canPresent()) return;
       const activeCount = document.getElementById("quest-active-count");
       const completedCount = document.getElementById("quest-completed-count");
 
@@ -9679,7 +11524,7 @@
 
     openQuestMenu() {
       this.questsMenu.classList.remove("hidden");
-      const now = Date.now();
+      const now = this.getGameTime();
       this._lastQuestUIRefresh = now;
       this._lastQuestUILiveUpdate = now;
       this.updateQuestDisplay();
@@ -9690,6 +11535,7 @@
     }
 
     updateQuestDisplay() {
+      if (!this.canPresent()) return;
       const activeContainer = this.questsMenu.querySelector(
         ".quests-container.active",
       );
@@ -9711,130 +11557,111 @@
       this.updateQuestKPIs();
     }
 
-    renderActiveQuests(container) {
-      container.innerHTML = "";
-      const fragment = document.createDocumentFragment();
-
-      // Dynamic Slots Section
-      const dynamicSection = document.createElement("div");
-      dynamicSection.className = "quest-section dynamic-quests";
-      dynamicSection.innerHTML = "<h3>Active Quests</h3>";
-
-      for (const slotId of Object.keys(this.dynamicSlots)) {
-        const slot = this.dynamicSlots[slotId];
-        const slotElement = this.renderDynamicSlot(slot);
-        dynamicSection.appendChild(slotElement);
-      }
-      fragment.appendChild(dynamicSection);
-
-      // Milestones Section
-      const milestoneSection = document.createElement("div");
-      milestoneSection.className = "quest-section milestone-quests";
-      milestoneSection.innerHTML = "<h3>Milestones</h3>";
-
-      // Building milestones (unclaimed, showing next tier per building)
-      for (const [buildingType, tiers] of Object.entries(
+    getActiveQuestEntries() {
+      const entries = Object.values(this.dynamicSlots).map((slot) => ({
+        kind: "dynamic",
+        id: slot.id,
+        slot,
+        quest: slot.currentQuest,
+      }));
+      const addTrack = (track, category, key = null) => {
+        let shownActive = false;
+        for (const [target, quest] of Object.entries(track || {})) {
+          if (quest.claimed) continue;
+          if (!quest.completed) {
+            if (shownActive || quest.retired) continue;
+            shownActive = true;
+          }
+          entries.push({
+            kind: "milestone",
+            id: quest.id,
+            quest,
+            category,
+            key: key ?? target,
+            tier: key === null ? null : target,
+          });
+        }
+      };
+      for (const [key, track] of Object.entries(
         this.milestoneQuests.building,
       )) {
-        for (const [tier, quest] of Object.entries(tiers)) {
-          if (quest.claimed) continue;
-          const element = this.createMilestoneElement(
-            quest,
-            "building",
-            buildingType,
-            tier,
+        addTrack(track, "building", key);
+      }
+      for (const category of [
+        "production",
+        "clicks",
+        "cps",
+        "totalBuildings",
+        "upgrades",
+        "questsCompleted",
+      ]) {
+        addTrack(this.milestoneQuests[category], category);
+      }
+      // Stable partition: preserve slot/track/tier order inside each state category.
+      const rank = (entry) =>
+        entry.quest?.completed && !entry.quest.claimed
+          ? 0
+          : entry.quest
+            ? 1
+            : 2;
+      return entries.sort((a, b) => rank(a) - rank(b));
+    }
+
+    getQuestListSignature(entries = this.getActiveQuestEntries()) {
+      return JSON.stringify(
+        entries.map((entry) => [
+          entry.id,
+          entry.quest?.id,
+          Boolean(entry.quest?.completed),
+          Boolean(entry.quest?.claimed),
+          entry.slot?.cooldownEnd,
+        ]),
+      );
+    }
+
+    renderActiveQuests(container) {
+      container.innerHTML = "";
+      const entries = this.getActiveQuestEntries();
+      const ready = (entry) => entry.quest?.completed && !entry.quest.claimed;
+      const groups = [
+        {
+          title: "Ready to Claim",
+          className: "ready-quests",
+          entries: entries.filter(ready),
+        },
+        {
+          title: "Active Quests",
+          className: "dynamic-quests",
+          entries: entries.filter((e) => !ready(e) && e.kind === "dynamic"),
+        },
+        {
+          title: "Milestones",
+          className: "milestone-quests",
+          entries: entries.filter((e) => !ready(e) && e.kind === "milestone"),
+        },
+      ];
+      const fragment = document.createDocumentFragment();
+      for (const group of groups) {
+        if (group.entries.length === 0) continue;
+        const section = document.createElement("div");
+        section.className = `quest-section ${group.className}`;
+        section.innerHTML = `<h3>${group.title}</h3>`;
+        for (const entry of group.entries) {
+          section.appendChild(
+            entry.kind === "dynamic"
+              ? this.renderDynamicSlot(entry.slot)
+              : this.createMilestoneElement(
+                  entry.quest,
+                  entry.category,
+                  entry.key,
+                  entry.tier,
+                ),
           );
-          milestoneSection.appendChild(element);
-          break; // Only show next unclaimed tier per building
         }
+        fragment.appendChild(section);
       }
-
-      // Production milestones (next unclaimed)
-      for (const [target, quest] of Object.entries(
-        this.milestoneQuests.production,
-      )) {
-        if (quest.claimed) continue;
-        const element = this.createMilestoneElement(
-          quest,
-          "production",
-          target,
-        );
-        milestoneSection.appendChild(element);
-        break;
-      }
-
-      // Click milestones (next unclaimed)
-      for (const [target, quest] of Object.entries(
-        this.milestoneQuests.clicks,
-      )) {
-        if (quest.claimed) continue;
-        const element = this.createMilestoneElement(quest, "clicks", target);
-        milestoneSection.appendChild(element);
-        break;
-      }
-
-      // CPS milestones (next unclaimed)
-      if (this.milestoneQuests.cps) {
-        for (const [target, quest] of Object.entries(
-          this.milestoneQuests.cps,
-        )) {
-          if (quest.claimed) continue;
-          const element = this.createMilestoneElement(quest, "cps", target);
-          milestoneSection.appendChild(element);
-          break;
-        }
-      }
-
-      // Total buildings milestones (next unclaimed)
-      if (this.milestoneQuests.totalBuildings) {
-        for (const [target, quest] of Object.entries(
-          this.milestoneQuests.totalBuildings,
-        )) {
-          if (quest.claimed) continue;
-          const element = this.createMilestoneElement(
-            quest,
-            "totalBuildings",
-            target,
-          );
-          milestoneSection.appendChild(element);
-          break;
-        }
-      }
-
-      // Upgrade milestones (next unclaimed)
-      if (this.milestoneQuests.upgrades) {
-        for (const [target, quest] of Object.entries(
-          this.milestoneQuests.upgrades,
-        )) {
-          if (quest.claimed) continue;
-          const element = this.createMilestoneElement(
-            quest,
-            "upgrades",
-            target,
-          );
-          milestoneSection.appendChild(element);
-          break;
-        }
-      }
-
-      // Quest completion milestones (next unclaimed)
-      if (this.milestoneQuests.questsCompleted) {
-        for (const [target, quest] of Object.entries(
-          this.milestoneQuests.questsCompleted,
-        )) {
-          if (quest.claimed) continue;
-          const element = this.createMilestoneElement(
-            quest,
-            "questsCompleted",
-            target,
-          );
-          milestoneSection.appendChild(element);
-          break;
-        }
-      }
-
-      fragment.appendChild(milestoneSection);
       container.appendChild(fragment);
+      this._questListSignature = this.getQuestListSignature(entries);
     }
 
     renderCompletedQuests(container) {
@@ -9953,12 +11780,20 @@
       const slotDiv = document.createElement("div");
       slotDiv.className = `quest-slot ${slot.difficulty}`;
       slotDiv.setAttribute("data-slot-id", slot.id);
+      slotDiv.setAttribute("data-quest-id", slot.currentQuest?.id || "");
+      slotDiv.classList.toggle(
+        "completed",
+        Boolean(slot.currentQuest?.completed),
+      );
 
       const quest = slot.currentQuest;
-      const now = Date.now();
+      const now = this.getGameTime();
 
       if (quest) {
-        const progress = Math.min((quest.progress / quest.target) * 100, 100);
+        const progress = this.questProgressPercent(
+          quest.progress,
+          quest.target,
+        );
         const rewardText =
           quest.reward.type === "donuts"
             ? `${this.formatNumber(quest.reward.amount)} donut`
@@ -9993,7 +11828,7 @@
         const claimButton = slotDiv.querySelector(".claim-reward");
         claimButton.addEventListener("click", () => {
           if (quest.completed && !quest.claimed) {
-            this.claimDynamicReward(slot.id);
+            this.claimDynamicReward(slot.id, quest.id);
           }
         });
       } else if (slot.cooldownEnd && slot.cooldownEnd > now) {
@@ -10020,13 +11855,22 @@
     }
 
     // Lightweight in-place quest slot updates to keep timers smooth without full rerender flicker
-    updateQuestLiveElements(now = Date.now()) {
+    updateQuestLiveElements(now = this.getGameTime()) {
+      if (!this.canPresent()) return;
       if (!this.questsMenu || this.questsMenu.classList.contains("hidden")) {
         return;
       }
 
-      let kpiNeedsRefresh = false;
-
+      const activeContainer = this.questsMenu.querySelector(
+        ".quests-container.active",
+      );
+      if (
+        activeContainer &&
+        !activeContainer.classList.contains("hidden") &&
+        this._questListSignature !== this.getQuestListSignature()
+      ) {
+        this.renderActiveQuests(activeContainer);
+      }
       for (const slotId of Object.keys(this.dynamicSlots)) {
         const slot = this.dynamicSlots[slotId];
         let slotElement = this.questsMenu.querySelector(
@@ -10046,6 +11890,7 @@
         );
 
         const structureMismatch =
+          (quest && slotElement.dataset.questId !== quest.id) ||
           (quest && !hasQuestInfo) ||
           (inCooldown && !hasCooldownInfo) ||
           (!quest && !inCooldown && !hasLoadingInfo);
@@ -10055,14 +11900,14 @@
           const replacement = this.renderDynamicSlot(slot);
           slotElement.replaceWith(replacement);
           slotElement = replacement;
-          kpiNeedsRefresh = true;
         }
 
         if (quest) {
-          const progress =
-            quest.target > 0
-              ? Math.min((quest.progress / quest.target) * 100, 100)
-              : 0;
+          const progress = this.questProgressPercent(
+            quest.progress,
+            quest.target,
+          );
+          slotElement.classList.toggle("completed", Boolean(quest.completed));
           const progressBar = slotElement.querySelector(".progress-bar");
           const progressText = slotElement.querySelector(".progress-text");
           if (progressBar) progressBar.style.width = `${progress}%`;
@@ -10100,16 +11945,41 @@
         }
       }
 
-      if (kpiNeedsRefresh) {
-        this.updateQuestKPIs();
+      for (const entry of this.getActiveQuestEntries()) {
+        if (entry.kind !== "milestone") continue;
+        const element = this.questsMenu.querySelector(
+          `.milestone[data-quest-id="${entry.id}"]`,
+        );
+        if (!element) continue;
+        const quest = entry.quest;
+        const bar = element.querySelector(".progress-bar");
+        const text = element.querySelector(".progress-text");
+        const reward = element.querySelector(".reward-text");
+        if (bar)
+          bar.style.width = `${this.questProgressPercent(quest.progress, quest.target)}%`;
+        if (text)
+          text.textContent = `${this.formatNumber(quest.progress)}/${this.formatNumber(quest.target)}`;
+        if (reward)
+          reward.textContent = `Reward: ${quest.completed ? "" : "~"}${this.formatNumber(
+            this.calculateMilestoneRewardByType(
+              entry.category,
+              quest,
+              entry.key,
+              entry.tier,
+            ),
+          )} donuts`;
       }
+      // Readiness changes need a KPI refresh even without a slot structure change.
+      this.updateQuestKPIs();
     }
 
     createMilestoneElement(quest, category, key, tierKey = null) {
       const questDiv = document.createElement("div");
       questDiv.className = "quest-item milestone";
+      questDiv.setAttribute("data-quest-id", quest.id);
+      questDiv.classList.toggle("completed", Boolean(quest.completed));
 
-      const progress = Math.min((quest.progress / quest.target) * 100, 100);
+      const progress = this.questProgressPercent(quest.progress, quest.target);
       const title = this.getMilestoneTitle({
         ...quest,
         category,
@@ -10124,7 +11994,7 @@
         key,
         tierKey,
       );
-      const rewardText = `~${this.formatNumber(reward)} donuts`;
+      const rewardText = `${quest.completed ? "" : "~"}${this.formatNumber(reward)} donuts`;
 
       questDiv.innerHTML = `
         <div class="quest-info">
@@ -10183,173 +12053,52 @@
         );
       });
 
-      this._lastQuestUIRefresh = Date.now();
+      this._lastQuestUIRefresh = this.getGameTime();
       this.updateQuestDisplay();
     }
 
-    // createQuestElement metodunu güncelle
-    createQuestElement(quest) {
-      const questDiv = document.createElement("div");
-      questDiv.className = "quest-item";
-      questDiv.setAttribute("data-quest-id", quest.id); // Quest ID'sini ekle
-
-      const progress = (quest.progress / quest.target) * 100;
-      const rewardText =
-        quest.reward.type === "donuts"
-          ? `${this.formatNumber(quest.reward.amount)} donut`
-          : `${quest.reward.amount.toFixed(2)}x production multiplier (${
-              quest.reward.duration / 1000
-            }s)`;
-
-      questDiv.innerHTML = `
-        <div class="quest-info">
-            <h4>${quest.title}</h4>
-            <p>${quest.description}</p>
-            <div class="quest-progress">
-                <div class="progress-bar" style="width: ${progress}%"></div>
-                <span class="progress-text">${this.formatNumber(
-                  quest.progress,
-                )}/${this.formatNumber(quest.target)}</span>
-            </div>
-            <p class="reward-text">Reward: ${rewardText}</p>
-        </div>
-        <button class="claim-reward" ${
-          quest.completed && !quest.claimed ? "" : "disabled"
-        }>
-            ${
-              quest.claimed
-                ? "Completed"
-                : quest.completed
-                  ? "Claim Reward"
-                  : "In Progress"
-            }
-        </button>
-    `;
-
-      const claimButton = questDiv.querySelector(".claim-reward");
-      claimButton.addEventListener("click", () => {
-        if (quest.completed && !quest.claimed) {
-          this.claimQuestReward(quest);
-        }
-      });
-
-      return questDiv;
-    }
     claimQuestReward(quest) {
-      if (!quest.completed || quest.claimed) return;
-
-      // Multiplier reward - use new queue system
-      if (quest.reward.type === "multiplier") {
-        // Check if queue is full
-        if (this.multiplierState.active && this.multiplierState.queued) {
-          this.showNotification(
-            "Multiplier queue is full! Wait for current multiplier to end.",
-          );
-          return;
-        }
-      }
-
-      // Normal ödül işleme
-      if (quest.reward.type === "donuts") {
-        this.donutCount += quest.reward.amount;
-        this.showNotification(
-          `+${this.formatNumber(quest.reward.amount)} donuts earned!`,
-        );
-      } else if (quest.reward.type === "multiplier") {
-        this.applyMultiplierReward(quest.reward.amount, quest.reward.duration);
-      }
-
-      quest.claimed = true;
-      quest.completionTime = Date.now();
-
-      // Quest elementini güncelle
-      const questElement = document.querySelector(
-        `[data-quest-id="${quest.id}"]`,
+      this.settleBeforeMutation();
+      // Compatibility entry point must use the live slot lifecycle, not a detached card.
+      const slot = Object.values(this.dynamicSlots).find(
+        (slot) => slot.currentQuest === quest,
       );
-      if (questElement) {
-        const completedContainer = document.querySelector(
-          ".quests-container.completed",
-        );
-        completedContainer.appendChild(questElement);
-
-        const claimButton = questElement.querySelector(".claim-reward");
-        claimButton.disabled = true;
-        claimButton.textContent = "Completed";
-      }
-
+      if (slot) return this.claimDynamicReward(slot.id, quest.id);
+      if (
+        !quest ||
+        !Object.values(this.quests).includes(quest) ||
+        !quest.completed ||
+        quest.claimed ||
+        !this.deliverQuestReward(quest.reward)
+      )
+        return false;
+      quest.claimed = true;
+      quest.completionTime = this.getGameTime();
+      this.requestSave();
+      this.updateQuestDisplay();
       this.updateDisplay();
-    }
-    createMultiplierTimer(multiplier) {
-      const timerDiv = document.createElement("div");
-      timerDiv.className = "multiplier-timer";
-      timerDiv.setAttribute("data-multiplier-id", multiplier.id);
-
-      const remainingTime = Math.ceil((multiplier.endTime - Date.now()) / 1000);
-
-      timerDiv.innerHTML = `
-      <div class="multiplier-info">
-        <span class="multiplier-amount">${multiplier.amount.toFixed(2)}x</span>
-        <span class="multiplier-time">${remainingTime}s</span>
-      </div>
-      <div class="multiplier-progress">
-        <div class="timer-bar"></div>
-      </div>
-    `;
-
-      // Timer bar animasyonu için style ekle
-      const timerBar = timerDiv.querySelector(".timer-bar");
-      timerBar.style.animation = `timer-countdown ${remainingTime}s linear`;
-
-      return timerDiv;
+      return true;
     }
 
     // activateMultiplier - routes to new queue-based system
     activateMultiplier(amount, duration) {
-      // Use the new queue-based multiplier system
-      this.applyMultiplierReward(amount, duration);
-
-      // Also maintain legacy activeMultipliers for backward compatibility
-      const multiplier = {
-        id: Date.now(),
-        amount: amount,
-        endTime: Date.now() + duration,
-        duration: duration,
-      };
-
-      this.activeMultipliers = this.activeMultipliers.filter(
-        (m) => m.endTime > Date.now(),
-      );
-      this.activeMultipliers.push(multiplier);
-
-      this.updateProductionMultiplier();
+      // Compatibility entry point; new rewards have only ONE durable owner.
+      const applied = this.applyMultiplierReward(amount, duration);
+      if (applied) this.requestSave();
+      return applied;
     }
 
-    // Timer container oluşturma metodu
-    createTimerContainer() {
-      const container = document.createElement("div");
-      container.id = "multiplier-timers";
-      container.className = "multiplier-timers-container";
-      document.body.appendChild(container);
-      return container;
-    }
     updateProductionMultiplier() {
-      // Base multiplier from legacy activeMultipliers
-      let legacyMultiplier = 1;
-      this.activeMultipliers.forEach((multiplier) => {
-        legacyMultiplier *= multiplier.amount;
-      });
-
-      // Combine with new multiplier sources
-      this.productionMultiplier =
-        legacyMultiplier * this.getFinalProductionMultiplier();
-
-      // Üretimi güncelle
+      // Compatibility adapter for older callers; no independent multiplier engine.
+      this.updateQuestMultipliers();
       this.updateTotalPerSecond();
       this.updateDisplay();
     }
     checkQuestProgress() {
+      this.settleBeforeMutation();
+      if (this.timeState.inactive) return;
       // Throttle kontrolü - 250ms
-      const now = Date.now();
+      const now = this.getGameTime();
       if (now - (this._lastQuestCheck || 0) < 250) {
         return;
       }
@@ -10424,6 +12173,7 @@
           switch (target) {
             case "stats-btn":
               statsMenu.classList.add("mobile-active");
+              this.updateStatsDisplay();
               break;
             case "settings-btn":
               settingsMenu.classList.add("mobile-active");
@@ -10487,25 +12237,6 @@
       });
     }
 
-    // Bina sayısı hesaplaması için cache
-    getTotalBuildingCount() {
-      const now = Date.now();
-      if (
-        now - this.lastBuildingUpdate > 1000 ||
-        this.cachedBuildingCount === 0
-      ) {
-        let total = 0;
-        for (let key in this.items) {
-          if (key !== "cursor") {
-            total += this.items[key].count;
-          }
-        }
-        this.cachedBuildingCount = total;
-        this.lastBuildingUpdate = now;
-      }
-      return this.cachedBuildingCount;
-    }
-
     setupAutoBuyer() {
       const container = document.querySelector(".auto-buyer-items");
       const toggle = document.getElementById("auto-buyer-toggle");
@@ -10514,7 +12245,7 @@
       toggle.checked = this.autoBuyer.enabled;
       toggle.addEventListener("change", (e) => {
         this.autoBuyer.enabled = e.target.checked;
-        this.saveGame();
+        this.requestSave();
       });
 
       // Her item için kontrol elemanlarını oluştur
@@ -10556,15 +12287,20 @@
         if (e.target.type === "checkbox") {
           this.autoBuyer.settings[itemKey].enabled = e.target.checked;
         } else if (e.target.type === "number") {
-          this.autoBuyer.settings[itemKey].threshold = parseFloat(
-            e.target.value,
-          );
+          const threshold = parseFloat(e.target.value);
+          if (!Number.isFinite(threshold) || threshold < 1) {
+            e.target.value = this.autoBuyer.settings[itemKey].threshold;
+            return;
+          }
+          this.autoBuyer.settings[itemKey].threshold = threshold;
         }
-        this.saveGame();
+        this.requestSave();
       });
     }
 
     checkAutoBuyer() {
+      if (document.visibilityState === "hidden" || this.timeState.inactive)
+        return;
       if (!this.autoBuyer.enabled) return;
 
       for (let key in this.items) {
@@ -10575,19 +12311,12 @@
         const bulkCost = this.calculateBulkPrice(item, this.purchaseAmount);
 
         if (this.donutCount >= bulkCost * settings.threshold) {
-          this.buyItem(key);
+          this.buyItem(key, true);
         }
       }
     }
 
     // Utility fonksiyonları
-    _debounce(func, wait) {
-      let timeout;
-      return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
-    }
 
     _throttle(func, limit) {
       let inThrottle;
@@ -10645,6 +12374,8 @@
     }
 
     createComboDonut() {
+      if (document.visibilityState === "hidden" || this.timeState.inactive)
+        return;
       const donut = document.createElement("div");
       donut.className = "combo-donut";
 
@@ -10714,6 +12445,8 @@
     }
 
     processAutoCatchQueue() {
+      if (document.visibilityState === "hidden" || this.timeState.inactive)
+        return;
       if (this.autoCatcherConfig.catchQueue.size === 0) return;
 
       const now = performance.now();
@@ -10740,6 +12473,9 @@
     }
 
     catchFallingDonut(donut) {
+      if (document.visibilityState === "hidden" || this.timeState.inactive)
+        return;
+      this.settleBeforeMutation();
       if (!donut || !donut.parentElement) return;
 
       let clickValue = this.calculateClickValue();
@@ -10775,8 +12511,7 @@
       this.showComboClickEffect(centerX, centerY, clickValue);
 
       // Skor güncelleme
-      this.donutCount += clickValue;
-      this.totalDonutsEarned += clickValue;
+      this.creditDonuts(clickValue);
 
       // Temizlik
       setTimeout(() => {
@@ -10789,6 +12524,9 @@
     }
 
     handleComboDonutClick(event, donutElement) {
+      if (document.visibilityState === "hidden" || this.timeState.inactive)
+        return;
+      this.settleBeforeMutation();
       event.stopPropagation();
 
       // Normal click value hesapla
@@ -10799,8 +12537,7 @@
         clickValue *= this.comboMultiplier;
       }
 
-      this.donutCount += clickValue;
-      this.totalDonutsEarned += clickValue;
+      this.creditDonuts(clickValue);
 
       // Görsel feedback
       this.showComboClickEffect(event.clientX, event.clientY, clickValue);
@@ -10855,14 +12592,10 @@
       donutCoinElement.addEventListener("click", () => {
         this.claimDonutCoin();
       });
-
-      // Her saniye kalan süreyi güncelle
-      setInterval(() => {
-        this.updateDonutCoinDisplay();
-      }, 1000);
     }
 
     updateDonutCoinDisplay() {
+      if (!this.canPresent()) return;
       const donutCoinCount = document.getElementById("donut-coin-count");
       const timeRemaining = document.querySelector(".time-remaining");
       const totalCoins = document.querySelector(".total-coins");
@@ -10914,6 +12647,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const game = new Game(); // Game sınıfından bir örnek oluştur
     game.init(); // Game sınıfındaki init fonksiyonunu çağırarak oyunu başlat
+    donutDebug.attach(game);
     const resetButton = document.getElementById("reset-button");
 
     if (resetButton) {
