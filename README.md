@@ -1,49 +1,71 @@
-# Donut Clicker 🍩
+# Donut Clicker
 
-**Donut Clicker** is a polished, feature-rich incremental idle game where you embark on a journey to build the ultimate donut empire. Starting with nothing but a single donut and a dream, you'll click your way to billions, automating your production with a variety of buildings, upgrades, and mystical crafting recipes.
+A browser-based incremental / idle game built with vanilla JavaScript.
 
-## ✨ Core Features
+Donut Clicker is a long-running personal game project focused on progression, automation, offline earnings, save reliability, and keeping a relatively large game loop responsive without using a frontend framework.
 
-- **Dynamic Clicking**: Earn donuts with every click. As you progress, unlock upgrades that turn your simple clicks into massive production bursts.
-- **Deep Automation**: Purchase over 10 unique building types, from humble **Cursors** and **Bakers** to reality-bending **Portals** and the legendary **Capital Crest**.
-- **Prestige System**: Hit the ceiling? Reset your progress to gain **Prestige Points**, providing permanent production multipliers that allow you to reach even greater heights.
-- **Quest System**: Complete dozens of challenges—from "Beginner Clicker" to "Donut Universe"—to earn massive donut rewards and temporary production boosters.
-- **Crafting & Resources**: 
-  - **The Mine**: Extract Copper, Iron, Gold, and Diamonds. Trade them in the market or use them for upgrades.
-  - **The Baker's Kitchen**: Collect ingredients like Dough, Sugar, and Chocolate to craft special recipes.
-  - **Recipe Book**: Master complex recipes that provide unique, permanent bonuses to your production buildings.
-- **Auto-Buyer**: Automate your purchases with a customizable auto-buyer, purchasing buildings while the page is visible. Hidden and closed sessions advance production at 25% for up to 12 continuous hours; the auto-buyer does not simulate purchases while away.
-- **Responsive Design**: Play seamlessly on desktop or mobile with a fully optimized UI.
+**Live:** https://donutclicker.net
 
-## 🚀 Recent Updates (v1.4.4)
+## Features
 
-- **Mystery Buildings**: Future production facilities are now shrouded in mystery until you're close to unlocking them.
-- **Auto-Buyer Optimization**: Enhanced logic for smoother automated growth.
-- **Recipe Book Expansion**: New recipes added to the Master Baker's Notes.
-- **UI/UX Polishing**: Improved animations for orbiting cursors and falling donuts.
-- **Bug Fixes**: Resolved issues with quest reward stacking and image preloading.
+- 11 production buildings with upgrade progression
+- Prestige and long-term progression
+- Quest system with rewards and temporary boosts
+- Baker crafting with ingredients and persistent recipe bonuses
+- Mine resource generation and market mechanics
+- Farm system with animals, goods, contracts, traits, mastery and crates
+- Auto-buyer and combo / auto-catch systems
+- Offline progression with capped background earnings
+- Local save system with validation and backup recovery
+- Responsive desktop and mobile interface
 
-## 🛠️ Technology Stack
+## Engineering
 
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3.
-- **Animations**: CSS Keyframes & RequestAnimationFrame for high-performance rendering.
-- **Storage**: LocalStorage for persistent save states.
-- **Analytics**: Integrated Google Tag Manager for performance tracking.
-- **Deployment**: GitHub Pages / Custom Domain.
+The game runs entirely in the browser and is built without a frontend framework.
 
-## 🎮 How to Play
+Some of the main technical work in the project includes:
 
-1.  **Click the Donut**: Start your journey by clicking the large donut in the center.
-2.  **Buy Buildings**: Use your donuts to purchase buildings from the Store on the right.
-3.  **Upgrade**: Watch the Upgrade List at the top of the store for powerful multipliers.
-4.  **Manage Resources**: Check the **Mine** and **Baker** panels (bottom) to manage ores and ingredients.
-5.  **Complete Quests**: Open the Quests menu on the left to track your progress and claim rewards.
-6.  **Prestige**: Once your growth slows down, use the Prestige menu to reset and grow faster than ever before.
+- Centralized production and click calculations
+- Versioned `localStorage` saves
+- Save validation and backup recovery
+- Legacy save compatibility
+- Active, background and offline time settlement
+- Reduced rendering work while the page is hidden
+- Cached production and building-price calculations
+- Data-driven building and upgrade definitions
+- Long-session performance optimizations
+- Responsive UI behavior across desktop and mobile
 
-## 🌐 Live Demo
+## Tech Stack
 
-Play the game now: [donutclicker.net](https://donutclicker.net/)
+- JavaScript
+- HTML
+- CSS
+- LocalStorage
+- GitHub Pages
+- Cloudflare
 
----
+## Run Locally
 
-*Developed with by ktz*
+No build step is required.
+
+Clone the repository:
+
+    git clone https://github.com/tokgozkerem/donut-clicker-game.git
+    cd donut-clicker-game
+
+Start any static HTTP server, for example:
+
+    python3 -m http.server 8000
+
+Then open:
+
+    http://localhost:8000
+
+## Live Version
+
+https://donutclicker.net
+
+## Authors
+
+Built and maintained by **ktz**.
